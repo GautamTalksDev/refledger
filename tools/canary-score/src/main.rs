@@ -1,13 +1,17 @@
-//! Join canary/ledger.jsonl against the published chain.
+//! Join a canary ledger (local path or URL) against the published chain.
 //!
 //! For each performed action report: detected, classified correctly,
-//! detection latency = to.first_observed − performed_at.
+//! detection latency = to.first_observed - performed_at.
 //! Writes p50/p95/max and misclassification count to docs/DETECTION.md.
+//!
+//! The canary lives at https://github.com/GautamTalksDev/canary — not inside
+//! this repository. Pass `--ledger` a filesystem path or an https URL to
+//! `canary/ledger.jsonl` (raw.githubusercontent.com works).
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use clap::Parser;
 use serde::Deserialize;
 use serde_json::Value;
@@ -16,9 +20,10 @@ use time::OffsetDateTime;
 
 #[derive(Debug, Parser)]
 struct Args {
-    /// Canary ledger JSONL (from refledger/canary).
+    /// Canary ledger JSONL: local path or https URL
+    /// (GautamTalksDev/canary `canary/ledger.jsonl`).
     #[arg(long)]
-    ledger: PathBuf,
+    ledger: String,
     /// Directory of chain JSONL day files.
     #[arg(long)]
     log_dir: PathBuf,
@@ -26,7 +31,7 @@ struct Args {
     #[arg(long, default_value = "docs/DETECTION.md")]
     out: PathBuf,
     /// Canary repo slug as it appears in log entries.
-    #[arg(long, default_value = "refledger/canary")]
+    #[arg(long, default_value = "GautamTalksDev/canary")]
     canary_repo: String,
 }
 
@@ -130,7 +135,7 @@ fn main() -> Result<()> {
     let md = format!(
         r#"# Detection latency
 
-Measured by joining `refledger/canary` ledger actions against the
+Measured by joining `GautamTalksDev/canary` ledger actions against the
 Refledger chain. Canary events are excluded from public ecosystem stats.
 
 **Generated:** {}
@@ -194,19 +199,34 @@ fn latency_secs(performed: &str, first_observed: &str) -> Option<i64> {
     Some((b - a).whole_seconds().max(0))
 }
 
-fn load_ledger(path: &Path) -> Result<Vec<LedgerLine>> {
-    let text = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
+fn load_ledger(source: &str) -> Result<Vec<LedgerLine>> {
+    let text = read_ledger_text(source)?;
     let mut out = Vec::new();
     for (i, line) in text.lines().enumerate() {
         if line.trim().is_empty() {
             continue;
         }
         out.push(
-            serde_json::from_str(line)
-                .with_context(|| format!("{}:{}", path.display(), i + 1))?,
+            serde_json::from_str(line).with_context(|| format!("{source}:{}", i + 1))?,
         );
     }
     Ok(out)
+}
+
+fn read_ledger_text(source: &str) -> Result<String> {
+    if source.starts_with("https://") || source.starts_with("http://") {
+        let response = ureq::get(source)
+            .call()
+            .with_context(|| format!("GET {source}"))?;
+        let status = response.status();
+        if !(200..300).contains(&status) {
+            bail!("GET {source}: HTTP {status}");
+        }
+        return response
+            .into_string()
+            .with_context(|| format!("read body {source}"));
+    }
+    fs::read_to_string(source).with_context(|| format!("read {source}"))
 }
 
 fn load_entries(dir: &Path) -> Result<Vec<Value>> {

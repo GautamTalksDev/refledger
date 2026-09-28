@@ -1,0 +1,14 @@
+{
+  "description": "Head with maximum u64 seq — exercises large integer canonicalisation.",
+  "expected_canonical": "{\"entry_hash\":\"sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"log_id\":\"refledger\",\"recorded_at\":\"2099-12-31T23:59:59.999Z\",\"seq\":18446744073709551615}",
+  "expected_public_key_hex": "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c",
+  "expected_rekor_prehash_sha512_hex": "17edbe79cc9cd2d460c998a888c9cf7d2839d5fd4b3e0ef23d4cc88375c9617fd5125a92585f208a2c26096c8536b56c5688d7fa68437b4b709fad502311ab1d",
+  "expected_signature_hex": "d0e396204ec3e0d84307df4b8171250104d1f3cfb33d9e46968d270573bb4da6ae74b13dc55cf91a1ec66b0c295b4009e7b8f36d44093545dfc227773a11f20f",
+  "head": {
+    "entry_hash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "log_id": "refledger",
+    "recorded_at": "2099-12-31T23:59:59.999Z",
+    "seq": 18446744073709551615
+  },
+  "test_key_seed_hex": "0101010101010101010101010101010101010101010101010101010101010101"
+}

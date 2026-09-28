@@ -82,7 +82,7 @@ struct Args {
     token_type: String,
 
     /// User-Agent identifying this instrument (OPERATIONS.md style).
-    #[arg(long, default_value = "refledger-calibrate/0.1 (+https://raw.githubusercontent.com/refledger/refledger/main/OPERATIONS.md)")]
+    #[arg(long, default_value = "refledger-calibrate/0.1 (+https://raw.githubusercontent.com/GautamTalksDev/refledger/main/OPERATIONS.md)")]
     user_agent: String,
 }
 

@@ -36,4 +36,4 @@
 {"repo":"actions/cache","path":"save","added_at":"2026-09-28T00:00:00Z","reason":{"type":"transitive","via_repo":"aquasecurity/setup-trivy","via_commit":"tag-commit-expand"},"active":true}
 {"repo":"tj-actions/glob","added_at":"2026-09-28T00:00:00Z","reason":{"type":"transitive","via_repo":"tj-actions/changed-files","via_commit":"tag-commit-expand"},"active":true}
 {"repo":"tj-actions/json2file","added_at":"2026-09-28T00:00:00Z","reason":{"type":"transitive","via_repo":"tj-actions/changed-files","via_commit":"tag-commit-expand"},"active":true}
-{"repo":"refledger/canary","added_at":"2026-09-28T00:00:00Z","reason":{"type":"manual"},"active":true,"note":"canary"}
+{"repo":"GautamTalksDev/canary","added_at":"2026-09-28T00:00:00Z","reason":{"type":"manual"},"active":true,"note":"canary"}

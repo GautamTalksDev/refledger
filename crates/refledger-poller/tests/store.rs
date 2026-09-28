@@ -579,6 +579,141 @@ fn replay_including_digests_is_byte_for_byte_without_a_wall_clock() {
     assert!(text.contains("2026-01-03T00:00:00.000Z"));
 }
 
+#[test]
+fn startup_downtime_records_poller_down_gap_per_group_in_digest() {
+    use refledger_poller::observation::SkipReason;
+    use refledger_poller::population::PollGroup;
+    use refledger_poller::scheduler::M1_INTERVAL;
+    use time::Duration;
+
+    let dir = TempDir::new().unwrap();
+    let last_poll = odt(2026, Month::January, 1, 12, 0, 0, 0);
+    let restart = last_poll + Duration::minutes(20);
+
+    let groups = vec![
+        PollGroup {
+            repo: "acme/widgets".into(),
+            paths: vec![None],
+        },
+        PollGroup {
+            repo: "acme/gadgets".into(),
+            paths: vec![None],
+        },
+    ];
+
+    {
+        let mut store = Store::open(
+            dir.path(),
+            StoreOptions {
+                recovered_at: last_poll,
+                ..opts(static_rekor())
+            },
+        )
+        .unwrap();
+        store
+            .append_observation(&ok_obs(last_poll, vec![lw("v1", &sha('a'), &sha('a'))]))
+            .unwrap();
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("acme/gadgets")
+                    .unwrap()
+                    .observed_at(last_poll)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"g\"")),
+                        refs: vec![],
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+    }
+
+    let mut store = Store::open(
+        dir.path(),
+        StoreOptions {
+            recovered_at: restart,
+            ..opts(static_rekor())
+        },
+    )
+    .unwrap();
+    let gaps = store
+        .record_startup_downtime(&groups, M1_INTERVAL, restart)
+        .unwrap();
+    assert_eq!(gaps.len(), 2, "one PollerDown per group");
+    for obs in &gaps {
+        match obs.outcome() {
+            Outcome::Skipped {
+                reason: SkipReason::PollerDown { from, to },
+            } => {
+                assert_eq!(from.as_offset_datetime(), last_poll);
+                assert_eq!(to.as_offset_datetime(), restart);
+            }
+            other => panic!("expected PollerDown, got {other:?}"),
+        }
+    }
+
+    // No gap when restart is within 2× interval.
+    let near = store
+        .record_startup_downtime(&groups, M1_INTERVAL, restart + Duration::seconds(30))
+        .unwrap();
+    assert!(near.is_empty(), "sub-threshold gap must not double-record");
+
+    store
+        .append_entry(UnhashedEntry::correction(
+            last_poll,
+            0,
+            "genesis placeholder — log opened",
+        ))
+        .unwrap();
+    let digest = store.seal_day(day(2026, Month::January, 1)).unwrap();
+    let stats = digest.observation_digest.as_ref().expect("digest");
+    assert!(
+        stats.skipped >= 2,
+        "digest must count PollerDown gaps, skipped={}",
+        stats.skipped
+    );
+
+    // Wire form visible in observation files.
+    let widgets = fs::read_to_string(
+        dir.path()
+            .join("observations/2026/01/01/acme--widgets.jsonl"),
+    )
+    .unwrap();
+    assert!(
+        widgets.contains("poller_down"),
+        "gap must be on the wire: {widgets}"
+    );
+}
+
+#[test]
+fn post_genesis_identity_warning_lands_in_next_digest_note() {
+    let dir = TempDir::new().unwrap();
+    let mut store = Store::open(dir.path(), opts(static_rekor())).unwrap();
+    store
+        .append_entry(correction(odt(2026, Month::January, 1, 0, 0, 0, 0), 0))
+        .unwrap();
+    store
+        .record_identity_warning("contact URL unreachable: https://example.test: HTTP 503")
+        .unwrap();
+    store
+        .append_observation(&obs_at(odt(2026, Month::January, 1, 12, 0, 0, 0)))
+        .unwrap();
+    let digest = store.seal_day(day(2026, Month::January, 1)).unwrap();
+    let note = digest
+        .observation_digest
+        .as_ref()
+        .and_then(|d| d.note.as_ref())
+        .expect("warning must appear in digest note");
+    assert!(
+        note.contains("contact URL unreachable"),
+        "note={note}"
+    );
+}
+
 fn replay(archive: &[Observation], cache_path: &std::path::Path) -> Vec<u8> {
     let dir = TempDir::new().unwrap();
     let mut store = Store::open(dir.path(), opts(static_rekor())).unwrap();

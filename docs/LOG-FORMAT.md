@@ -1,15 +1,4 @@
-# Tagwatch log format
-
-> **2026-09-28 — project rename.** The product that implements this format is
-> now **Refledger** (`refledger-log`, `refledger-verify`, `refledger-poller`;
-> default `log_id` = `"refledger"`). The earlier working name Tagwatch collided
-> with [woefe/tagwatch](https://github.com/woefe/tagwatch) and was replaced
-> before genesis so the signed chain never embeds the colliding name. This
-> document's filename and the historical prose below are left unchanged: a
-> format change after genesis would need a new `format_version`, and renaming
-> the file would break every citation that already points here. Implementations
-> share this specification and the JSON wire format — never code — under
-> either product name.
+# Refledger log format
 
 This document is the written specification that the signer and the independently written verifier both implement. Two people who have never spoken, implementing only from this document and the conformance vectors, must produce identical bytes for identical inputs.
 

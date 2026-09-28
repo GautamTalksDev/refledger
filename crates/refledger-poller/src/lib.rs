@@ -23,9 +23,10 @@ pub use archive::{
     ObservationArchive, R2Archive,
 };
 pub use identity::{
-    contact_url_from_ua, ensure_contact_resolves, refuse_to_poll_unless_identified,
-    user_agent, user_agent_with, validate_user_agent, DEFAULT_CONTACT_URL, DEFAULT_LOG_ID,
-    IdentityError, VERSION,
+    apply_contact_reachability, contact_url_from_ua, ensure_contact_resolves,
+    format_contact_warning, probe_contact_url, refuse_to_poll_unless_identified, user_agent,
+    user_agent_with, validate_user_agent, DEFAULT_CONTACT_URL, DEFAULT_LOG_ID, IdentityError,
+    VERSION,
 };
 
 pub use derive::{derive, derive_observation_digest, ChainTip, DeriveError, ObservationDayStats};

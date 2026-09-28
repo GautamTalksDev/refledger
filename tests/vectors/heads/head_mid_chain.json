@@ -1,0 +1,14 @@
+{
+  "description": "Mid-chain head: seq 7 after several sealed days.",
+  "expected_canonical": "{\"entry_hash\":\"sha256:abababababababababababababababababababababababababababababababab\",\"log_id\":\"refledger\",\"recorded_at\":\"2026-09-21T12:00:00.000Z\",\"seq\":7}",
+  "expected_public_key_hex": "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c",
+  "expected_rekor_prehash_sha512_hex": "dd2c332f50001cd9229d86f4cd05dec22b3a36d5ac2839b6d2e6d36505ee10d94ae31b1787bf4f597f1beb3606c5b0fb9d32e8569109923f373c582efff96106",
+  "expected_signature_hex": "279ebfc919193b62402860248cc51c0cdbd8815eefce16dfc0d33aaabfa24f322696c4c94e866ecfc6926d05cc13640a10dff40738bb494872a248efe7568709",
+  "head": {
+    "entry_hash": "sha256:abababababababababababababababababababababababababababababababab",
+    "log_id": "refledger",
+    "recorded_at": "2026-09-21T12:00:00.000Z",
+    "seq": 7
+  },
+  "test_key_seed_hex": "0101010101010101010101010101010101010101010101010101010101010101"
+}

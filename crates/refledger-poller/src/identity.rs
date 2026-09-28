@@ -19,7 +19,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// repository page). Replace with `https://refledger.dev/operations` once the
 /// domain is live — update this constant and OPERATIONS.md §2 together.
 pub const DEFAULT_CONTACT_URL: &str =
-    "https://raw.githubusercontent.com/refledger/refledger/main/OPERATIONS.md";
+    "https://raw.githubusercontent.com/GautamTalksDev/refledger/main/OPERATIONS.md";
 
 #[derive(Debug, Error)]
 pub enum IdentityError {
@@ -75,9 +75,8 @@ pub fn validate_user_agent(ua: &str) -> Result<(), IdentityError> {
     Ok(())
 }
 
-/// OPERATIONS.md §2: the contact URL must resolve before the first request.
-pub fn ensure_contact_resolves(ua: &str) -> Result<(), IdentityError> {
-    validate_user_agent(ua)?;
+/// HTTP probe only — assumes [`validate_user_agent`] already passed.
+pub fn probe_contact_url(ua: &str) -> Result<(), IdentityError> {
     let url = contact_url_from_ua(ua)?;
     let agent = ureq::AgentBuilder::new()
         .timeout(std::time::Duration::from_secs(15))
@@ -94,7 +93,42 @@ pub fn ensure_contact_resolves(ua: &str) -> Result<(), IdentityError> {
     Ok(())
 }
 
-/// Combined startup gate: validate shape, then confirm the policy resolves.
-pub fn refuse_to_poll_unless_identified(ua: &str) -> Result<(), IdentityError> {
-    ensure_contact_resolves(ua)
+/// OPERATIONS.md §2: validate shape, then confirm the policy resolves.
+pub fn ensure_contact_resolves(ua: &str) -> Result<(), IdentityError> {
+    validate_user_agent(ua)?;
+    probe_contact_url(ua)
+}
+
+/// Format a post-genesis contact outage for the next ObservationDigest note.
+pub fn format_contact_warning(err: &IdentityError) -> String {
+    format!("contact URL unreachable: {err}")
+}
+
+/// Map a reachability result given whether genesis already exists.
+///
+/// Shape validation is the caller's job. HTTP failure is fatal only before
+/// genesis; after genesis it becomes a warning string for the next digest.
+pub fn apply_contact_reachability(
+    genesis_exists: bool,
+    reach: Result<(), IdentityError>,
+) -> Result<Option<String>, IdentityError> {
+    match reach {
+        Ok(()) => Ok(None),
+        Err(err) if genesis_exists => Ok(Some(format_contact_warning(&err))),
+        Err(err) => Err(err),
+    }
+}
+
+/// Combined startup gate: validate shape, then probe the contact URL.
+///
+/// Returns `Ok(None)` when the URL resolves. After genesis, an unreachable
+/// URL returns `Ok(Some(warning))` so polling continues and the warning is
+/// recorded in the next digest's notes. Before genesis the same failure is
+/// fatal — a silent archive with no published policy must not start.
+pub fn refuse_to_poll_unless_identified(
+    ua: &str,
+    genesis_exists: bool,
+) -> Result<Option<String>, IdentityError> {
+    validate_user_agent(ua)?;
+    apply_contact_reachability(genesis_exists, probe_contact_url(ua))
 }

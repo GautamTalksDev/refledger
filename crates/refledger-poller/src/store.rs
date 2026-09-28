@@ -19,7 +19,7 @@ use base64::Engine;
 use serde_json::Value;
 use sha2::{Digest, Sha256, Sha512};
 use thiserror::Error;
-use time::{Date, OffsetDateTime, PrimitiveDateTime, Time};
+use time::{Date, Duration, OffsetDateTime, PrimitiveDateTime, Time};
 
 use refledger_log::canonical_json;
 use refledger_log::chain::{Chain, UnhashedEntry};
@@ -31,7 +31,9 @@ use crate::archive::{
 };
 use crate::derive::{derive_observation_digest, ObservationDayStats};
 use crate::identity::{user_agent, DEFAULT_LOG_ID};
-use crate::observation::{Observation, Outcome};
+use crate::observation::{Observation, ObservationError, Outcome, SkipReason, Timestamp};
+use crate::population::PollGroup;
+use crate::scheduler::skip_observation;
 
 const REKOR_KIND: &str = "hashedrekord";
 const REKOR_VERSION: &str = "0.0.1";
@@ -62,6 +64,8 @@ pub enum StoreError {
     NonMonotonic(String),
     #[error("unknown request ticket")]
     UnknownTicket,
+    #[error("observation: {0}")]
+    Observation(#[from] ObservationError),
     #[error("io: {0}")]
     Io(String),
     #[error("chain: {0}")]
@@ -496,6 +500,8 @@ pub struct Store<V: Volume> {
     archive: Box<dyn ObservationArchive>,
     /// Archive upload failures waiting for the next digest note.
     pending_archive_failures: Vec<ArchiveFailure>,
+    /// Contact-URL / identity warnings waiting for the next digest note.
+    pending_identity_warnings: Vec<String>,
     chain: Chain,
     /// Days that have observations, non-digest log entries, or a closed dispatch.
     activity: BTreeSet<Date>,
@@ -517,6 +523,7 @@ impl<V: Volume> Store<V> {
         vol.lock()?;
         let (chain, activity, sealed) = load_chain(&mut vol, opts.recovered_at, &opts.log_id)?;
         let pending_archive_failures = load_archive_failures(&mut vol)?;
+        let pending_identity_warnings = load_identity_warnings(&mut vol)?;
         Ok(Self {
             vol,
             log_id: opts.log_id,
@@ -524,6 +531,7 @@ impl<V: Volume> Store<V> {
             rekor: opts.rekor,
             archive: opts.archive,
             pending_archive_failures,
+            pending_identity_warnings,
             chain,
             activity,
             sealed,
@@ -597,6 +605,77 @@ impl<V: Volume> Store<V> {
         self.vol.append_record(&rel, &line)
     }
 
+    /// On open/restart: for each poll group whose latest `observed_at` is more
+    /// than `2 × interval` before `now`, write one Skipped `PollerDown{from,to}`
+    /// observation before the first new poll. Without this, a VM reboot during
+    /// a contact-URL blip leaves a silent gap the exit condition cannot see.
+    pub fn record_startup_downtime(
+        &mut self,
+        groups: &[PollGroup],
+        interval: Duration,
+        now: OffsetDateTime,
+    ) -> Result<Vec<Observation>, StoreError> {
+        let threshold = interval * 2;
+        let mut written = Vec::new();
+        for g in groups {
+            let Some(latest) = self.latest_observed_at(&g.repo)? else {
+                continue;
+            };
+            if now - latest <= threshold {
+                continue;
+            }
+            let from = Timestamp::from_offset_datetime(latest)?;
+            let to = Timestamp::from_offset_datetime(now)?;
+            let obs = skip_observation(
+                &g.repo,
+                now,
+                SkipReason::PollerDown { from, to },
+            )?;
+            self.append_observation(&obs)?;
+            written.push(obs);
+        }
+        Ok(written)
+    }
+
+    /// Record a post-genesis contact-URL warning for the next digest note.
+    pub fn record_identity_warning(&mut self, warning: &str) -> Result<(), StoreError> {
+        let line = serde_json::json!({ "warning": warning });
+        let bytes =
+            serde_json::to_vec(&line).map_err(|e| StoreError::Message(e.to_string()))?;
+        self.vol
+            .append_record("log/identity_warnings.jsonl", &bytes)?;
+        self.pending_identity_warnings.push(warning.to_owned());
+        Ok(())
+    }
+
+    /// Latest `observed_at` for `repo` across all observation files, if any.
+    pub fn latest_observed_at(&self, repo: &str) -> Result<Option<OffsetDateTime>, StoreError> {
+        let segment = crate::observation::RepoSlug::parse(repo)
+            .map_err(StoreError::Observation)?
+            .path_segment();
+        let suffix = format!("/{segment}.jsonl");
+        let mut latest: Option<OffsetDateTime> = None;
+        for path in self.vol.list("observations")? {
+            if !path.ends_with(&suffix) || path.contains(".torn.") {
+                continue;
+            }
+            let bytes = self.vol.read(&path)?.unwrap_or_default();
+            for line in bytes.split(|b| *b == b'\n') {
+                if line.is_empty() {
+                    continue;
+                }
+                let obs: Observation = serde_json::from_slice(line)
+                    .map_err(|e| StoreError::Corrupt(format!("{path}: {e}")))?;
+                let at = obs.observed_at().as_offset_datetime();
+                latest = Some(match latest {
+                    Some(prev) if prev >= at => prev,
+                    _ => at,
+                });
+            }
+        }
+        Ok(latest)
+    }
+
     pub fn append_entry(&mut self, entry: UnhashedEntry) -> Result<Appended, StoreError> {
         let day = entry.recorded_at.date();
         if self
@@ -644,6 +723,7 @@ impl<V: Volume> Store<V> {
         self.publish_head(&entry)?;
         // Clear pending failures now that today's digest has absorbed them.
         self.clear_consumed_archive_failures()?;
+        self.clear_consumed_identity_warnings()?;
         // Ship this day's observations off-VM. Failure is non-fatal to the seal
         // but must surface in the next digest's note.
         self.upload_sealed_day(day, &day_files)?;
@@ -828,6 +908,15 @@ impl<V: Volume> Store<V> {
         Ok(())
     }
 
+    fn clear_consumed_identity_warnings(&mut self) -> Result<(), StoreError> {
+        if self.pending_identity_warnings.is_empty() {
+            return Ok(());
+        }
+        self.pending_identity_warnings.clear();
+        self.vol.write_exact("log/identity_warnings.jsonl", b"")?;
+        Ok(())
+    }
+
     fn day_stats(&self, day: Date, as_of: OffsetDateTime) -> Result<ObservationDayStats, StoreError> {
         let prefix = format!(
             "observations/{:04}/{:02}/{:02}/",
@@ -910,6 +999,11 @@ impl<V: Volume> Store<V> {
             let text = format_archive_failure_note(failure);
             if !mentioned.contains(&text) {
                 notes.push(text);
+            }
+        }
+        for warning in &self.pending_identity_warnings {
+            if !mentioned.contains(warning) {
+                notes.push(warning.clone());
             }
         }
         notes.sort();
@@ -1052,6 +1146,30 @@ fn load_archive_failures<V: Volume>(vol: &mut V) -> Result<Vec<ArchiveFailure>, 
             })?
             .to_owned();
         out.push(ArchiveFailure { day, error });
+    }
+    Ok(out)
+}
+
+fn load_identity_warnings<V: Volume>(vol: &mut V) -> Result<Vec<String>, StoreError> {
+    let Some(bytes) = vol.read("log/identity_warnings.jsonl")? else {
+        return Ok(Vec::new());
+    };
+    let mut out = Vec::new();
+    for (i, line) in bytes.split(|b| *b == b'\n').enumerate() {
+        if line.is_empty() {
+            continue;
+        }
+        let value: Value = serde_json::from_slice(line).map_err(|e| {
+            StoreError::Corrupt(format!("identity_warnings.jsonl:{}: {e}", i + 1))
+        })?;
+        let warning = value
+            .get("warning")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| {
+                StoreError::Corrupt(format!("identity_warnings.jsonl:{}: missing warning", i + 1))
+            })?
+            .to_owned();
+        out.push(warning);
     }
     Ok(out)
 }

@@ -12,9 +12,9 @@ M1 runs on one VM. The seven-day exit condition is measured there.
 
 ## Pre-genesis operator checklist
 
-1. **Name:** product is Refledger (`log_id` = `refledger`). Claim the GitHub org, domain, npm, and PyPI names before genesis (see `docs/NAMING.md`).
-2. **Policy URL:** User-Agent contact must resolve to `OPERATIONS.md`. Default is the raw GitHub URL until `refledger.dev` is live. The poller refuses to start otherwise.
-3. **Canary:** create `refledger/canary` in the org (never under a personal account — a later transfer is a `RepoRedirected` mid-archive).
+1. **Name:** product is Refledger (`log_id` = `refledger`). Repos live under personal account `GautamTalksDev` (see `docs/NAMING.md`); claim domain, npm, and PyPI before genesis.
+2. **Policy URL:** User-Agent contact must resolve to `OPERATIONS.md`. Default is the raw GitHub URL on `GautamTalksDev/refledger` until `refledger.dev` is live. The poller refuses to start otherwise (fatal only pre-genesis).
+3. **Canary:** create [`GautamTalksDev/canary`](https://github.com/GautamTalksDev/canary) under the same account as its own repository (do not nest it inside Refledger; do not move it later, a transfer is a `RepoRedirected` mid-archive).
 4. **Signing key:** offline age-encrypted backup off the VM (`docs/KEY-BACKUP.md`).
 5. **Observation archive:** configure R2 (`REFLEDGER_R2_*`) so each seal uploads that day's observation JSONL. Failures appear in the next ObservationDigest note.
 

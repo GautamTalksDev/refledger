@@ -62,7 +62,7 @@ The exit condition brought into this file was **500 actions for seven days**. De
 
 ### 2026-09-28 — amended after tag-commit expand
 
-**M1 population is 32 seeds plus tag-commit closure, 38 total (35 repositories polled), plus one Manual canary (`refledger/canary`, note `"canary"`) excluded from ecosystem stats.**
+**M1 population is 32 seeds plus tag-commit closure, 38 total (35 repositories polled), plus one Manual canary ([`GautamTalksDev/canary`](https://github.com/GautamTalksDev/canary), note `"canary"`) excluded from ecosystem stats.**
 
 That is the number the seven-day run is for. It is not 500, and it is not whatever count a later poller process happens to have loaded. Changing it is a new dated section.
 

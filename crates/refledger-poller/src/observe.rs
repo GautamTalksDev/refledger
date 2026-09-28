@@ -255,6 +255,12 @@ pub enum SkipReason {
     ShutdownMidSweep,
     /// Sweep missed its window by more than twice the poll interval.
     SchedulerLag,
+    /// Poller was down long enough that the gap would otherwise be silent.
+    /// `from` is the latest prior `observed_at` for the group; `to` is restart.
+    PollerDown {
+        from: Timestamp,
+        to: Timestamp,
+    },
 }
 
 /// Captured when GitHub refuses a request under secondary-limit pressure.

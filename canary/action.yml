@@ -1,7 +1,0 @@
-name: Canary
-description: Refledger detection canary — not for production use
-runs:
-  using: composite
-  steps:
-    - run: echo "refledger canary action"
-      shell: bash

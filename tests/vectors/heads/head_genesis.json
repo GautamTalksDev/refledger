@@ -1,0 +1,14 @@
+{
+  "description": "Genesis-day head: seq 0, first signed tip.",
+  "expected_canonical": "{\"entry_hash\":\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"log_id\":\"refledger\",\"recorded_at\":\"2026-01-01T00:00:00.000Z\",\"seq\":0}",
+  "expected_public_key_hex": "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c",
+  "expected_rekor_prehash_sha512_hex": "646bdc79aeebe44cad0108c27c4523d6b06c808eb927d6cab8a9a8cab562b66fcf8b7ebdecedb3e7328f1d5ab2d380ea5aaa6690d3c4feb866fcf163674a65b9",
+  "expected_signature_hex": "5544ae22a059525be2543193fcb44181584a62053d437bd35f17bb722f813eb5f8c52cf0976dbf2789433a4a015298aca3a02843e55ab53b97888222bd6ea806",
+  "head": {
+    "entry_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "log_id": "refledger",
+    "recorded_at": "2026-01-01T00:00:00.000Z",
+    "seq": 0
+  },
+  "test_key_seed_hex": "0101010101010101010101010101010101010101010101010101010101010101"
+}

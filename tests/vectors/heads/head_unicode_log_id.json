@@ -1,0 +1,14 @@
+{
+  "description": "Head whose log_id contains non-ASCII Unicode (CJK + combining).",
+  "expected_canonical": "{\"entry_hash\":\"sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\",\"log_id\":\"refledger-测试-ログ\",\"recorded_at\":\"2026-06-15T08:30:00.000Z\",\"seq\":42}",
+  "expected_public_key_hex": "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c",
+  "expected_rekor_prehash_sha512_hex": "e35b2364307de42f1b78fa61d09d605a85ec248225d6f1223a63d39b73d2e49f380d0900e8afb2b43eaff94abb8382aa51e67daa177c8e70d52ec3f5d5c48d1b",
+  "expected_signature_hex": "9c4cd8b213d4f0a715598d6527ede0d66f2d921f07dc08024d359faa065512c5c16fbb804939b610e7acb8a43360792f02bd6ee2f13f407f868c4ceae837730b",
+  "head": {
+    "entry_hash": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+    "log_id": "refledger-测试-ログ",
+    "recorded_at": "2026-06-15T08:30:00.000Z",
+    "seq": 42
+  },
+  "test_key_seed_hex": "0101010101010101010101010101010101010101010101010101010101010101"
+}

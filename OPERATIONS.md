@@ -11,7 +11,7 @@ Refledger polls public GitHub repositories for git tag refs and records what eac
 Every request identifies itself with a User-Agent of the form:
 
 ```
-refledger/<version> (+https://raw.githubusercontent.com/refledger/refledger/main/OPERATIONS.md)
+refledger/<version> (+https://raw.githubusercontent.com/GautamTalksDev/refledger/main/OPERATIONS.md)
 ```
 
 A contact URL is always present in the User-Agent and always resolves to this policy (or its successor at the same path). Until `https://refledger.dev/operations` is live, the raw GitHub URL above is the published contact. The poller refuses to start if the contact URL still contains a `<…>` placeholder, fails to parse, or does not return HTTP 2xx.
@@ -87,4 +87,4 @@ Two REST endpoints named in §3 are superseded for the reasons below. The §3 li
 
 - **Interval:** one tier, every poll group once per **60 seconds**, dues spread across the interval (never a burst at `:00`). Concurrency **4**. Global secondary-points governor capped at **300/minute** (one third of the documented 900 ceiling), applied to every request class.
 - **Calibration:** Mode A/B measurement is **not** an M1 gate. At tens of repositories the spend is under 4% of the secondary ceiling either way GitHub buckets. Calibration is required before the watched population passes ~200 (`docs/CALIBRATION.md`).
-- **Detection latency:** the published figure for §7 will live at `docs/DETECTION.md`, produced by joining `refledger/canary`'s ledger against the chain.
+- **Detection latency:** the published figure for §7 will live at `docs/DETECTION.md`, produced by joining `GautamTalksDev/canary`'s ledger against the chain.
