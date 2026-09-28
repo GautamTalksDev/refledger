@@ -33,6 +33,10 @@ use crate::derive::{derive_observation_digest, ObservationDayStats};
 use crate::identity::{user_agent, DEFAULT_LOG_ID};
 use crate::observation::{Observation, ObservationError, Outcome, SkipReason, Timestamp};
 use crate::population::PollGroup;
+use crate::publish::{
+    format_publish_failure_note, LedgerPublishPayload, LedgerPublisher, NoopPublisher,
+    PublishFailure,
+};
 use crate::scheduler::skip_observation;
 
 const REKOR_KIND: &str = "hashedrekord";
@@ -94,10 +98,13 @@ pub struct StoreOptions {
     pub rekor: Box<dyn RekorClient>,
     /// Off-VM destination for sealed observation files. Defaults to [`NoopArchive`].
     pub archive: Box<dyn ObservationArchive>,
+    /// Dedicated publishing clone for `data/log/` on the public repo.
+    /// Defaults to [`NoopPublisher`].
+    pub publisher: Box<dyn LedgerPublisher>,
 }
 
 impl StoreOptions {
-    /// Production defaults: `log_id = "refledger"`, no-op archive until R2 is configured.
+    /// Production defaults: `log_id = "refledger"`, no-op archive/publish until configured.
     pub fn new(signing_key: SigningKey, recovered_at: OffsetDateTime) -> Self {
         Self {
             log_id: DEFAULT_LOG_ID.to_owned(),
@@ -105,6 +112,7 @@ impl StoreOptions {
             recovered_at,
             rekor: Box::new(HttpRekor::production()),
             archive: Box::new(NoopArchive),
+            publisher: Box::new(NoopPublisher),
         }
     }
 }
@@ -498,10 +506,13 @@ pub struct Store<V: Volume> {
     key: SigningKey,
     rekor: Box<dyn RekorClient>,
     archive: Box<dyn ObservationArchive>,
+    publisher: Box<dyn LedgerPublisher>,
     /// Archive upload failures waiting for the next digest note.
     pending_archive_failures: Vec<ArchiveFailure>,
     /// Contact-URL / identity warnings waiting for the next digest note.
     pending_identity_warnings: Vec<String>,
+    /// Ledger publish failures waiting for the next digest note.
+    pending_publish_failures: Vec<PublishFailure>,
     chain: Chain,
     /// Days that have observations, non-digest log entries, or a closed dispatch.
     activity: BTreeSet<Date>,
@@ -524,14 +535,17 @@ impl<V: Volume> Store<V> {
         let (chain, activity, sealed) = load_chain(&mut vol, opts.recovered_at, &opts.log_id)?;
         let pending_archive_failures = load_archive_failures(&mut vol)?;
         let pending_identity_warnings = load_identity_warnings(&mut vol)?;
+        let pending_publish_failures = load_publish_failures(&mut vol)?;
         Ok(Self {
             vol,
             log_id: opts.log_id,
             key: opts.signing_key,
             rekor: opts.rekor,
             archive: opts.archive,
+            publisher: opts.publisher,
             pending_archive_failures,
             pending_identity_warnings,
+            pending_publish_failures,
             chain,
             activity,
             sealed,
@@ -553,6 +567,10 @@ impl<V: Volume> Store<V> {
 
     pub fn set_archive(&mut self, archive: Box<dyn ObservationArchive>) {
         self.archive = archive;
+    }
+
+    pub fn set_publisher(&mut self, publisher: Box<dyn LedgerPublisher>) {
+        self.publisher = publisher;
     }
 
     pub fn entries(&self) -> &[Entry] {
@@ -689,10 +707,12 @@ impl<V: Volume> Store<V> {
         self.commit(entry).map(Appended::Written)
     }
 
-    /// Seal day D. The digest is the first entry of D+1, then the buffer drains.
+    /// Seal day D. The digest is the first entry of day D+1, then the buffer drains.
     ///
     /// After the digest is committed, that day's observation files are uploaded
-    /// off-VM. A failed upload is queued and appears in the *next* digest's note.
+    /// off-VM and the sealed `log/` is copied into a dedicated publishing clone
+    /// and fast-forward pushed. Archive or publish failures are queued and
+    /// appear in the *next* ObservationDigest note — never fatal to the seal.
     pub fn seal_day(&mut self, day: Date) -> Result<Entry, StoreError> {
         let label = fmt_day(day);
         if self.sealed.contains(&day) {
@@ -724,10 +744,64 @@ impl<V: Volume> Store<V> {
         // Clear pending failures now that today's digest has absorbed them.
         self.clear_consumed_archive_failures()?;
         self.clear_consumed_identity_warnings()?;
+        self.clear_consumed_publish_failures()?;
         // Ship this day's observations off-VM. Failure is non-fatal to the seal
         // but must surface in the next digest's note.
         self.upload_sealed_day(day, &day_files)?;
+        // Copy sealed log bytes into the publishing clone and FF-push. Never
+        // force. Failure is non-fatal and retried on the next seal.
+        self.publish_sealed_log(day, entry.seq)?;
         Ok(entry)
+    }
+
+    fn publish_sealed_log(&mut self, day: Date, seq: u64) -> Result<(), StoreError> {
+        let files = self.log_files_for_publish()?;
+        let payload = LedgerPublishPayload { day, seq, files };
+        if let Err(err) = self.publisher.publish_seal(&payload) {
+            let failure = PublishFailure {
+                day: fmt_day(day),
+                error: err,
+            };
+            self.record_publish_failure(&failure)?;
+        }
+        Ok(())
+    }
+
+    fn log_files_for_publish(&self) -> Result<Vec<(String, Vec<u8>)>, StoreError> {
+        let mut out = Vec::new();
+        for rel in self.vol.list("log")? {
+            let publishable = rel.ends_with("heads.jsonl") || is_day_log(&rel);
+            if !publishable || rel.contains(".torn.") {
+                continue;
+            }
+            if let Some(bytes) = self.vol.read(&rel)? {
+                out.push((rel, bytes));
+            }
+        }
+        out.sort_by(|a, b| a.0.cmp(&b.0));
+        Ok(out)
+    }
+
+    fn record_publish_failure(&mut self, failure: &PublishFailure) -> Result<(), StoreError> {
+        let line = serde_json::json!({
+            "day": failure.day,
+            "error": failure.error,
+        });
+        let bytes =
+            serde_json::to_vec(&line).map_err(|e| StoreError::Message(e.to_string()))?;
+        self.vol
+            .append_record("log/publish_failures.jsonl", &bytes)?;
+        self.pending_publish_failures.push(failure.clone());
+        Ok(())
+    }
+
+    fn clear_consumed_publish_failures(&mut self) -> Result<(), StoreError> {
+        if self.pending_publish_failures.is_empty() {
+            return Ok(());
+        }
+        self.pending_publish_failures.clear();
+        self.vol.write_exact("log/publish_failures.jsonl", b"")?;
+        Ok(())
     }
 
     /// Resubmit heads whose latest line has no Rekor `log_index`.
@@ -1006,6 +1080,12 @@ impl<V: Volume> Store<V> {
                 notes.push(warning.clone());
             }
         }
+        for failure in &self.pending_publish_failures {
+            let text = format_publish_failure_note(failure);
+            if !mentioned.contains(&text) {
+                notes.push(text);
+            }
+        }
         notes.sort();
         if notes.is_empty() {
             Ok(None)
@@ -1174,6 +1254,37 @@ fn load_identity_warnings<V: Volume>(vol: &mut V) -> Result<Vec<String>, StoreEr
     Ok(out)
 }
 
+fn load_publish_failures<V: Volume>(vol: &mut V) -> Result<Vec<PublishFailure>, StoreError> {
+    let Some(bytes) = vol.read("log/publish_failures.jsonl")? else {
+        return Ok(Vec::new());
+    };
+    let mut out = Vec::new();
+    for (i, line) in bytes.split(|b| *b == b'\n').enumerate() {
+        if line.is_empty() {
+            continue;
+        }
+        let value: Value = serde_json::from_slice(line).map_err(|e| {
+            StoreError::Corrupt(format!("publish_failures.jsonl:{}: {e}", i + 1))
+        })?;
+        let day = value
+            .get("day")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| {
+                StoreError::Corrupt(format!("publish_failures.jsonl:{}: missing day", i + 1))
+            })?
+            .to_owned();
+        let error = value
+            .get("error")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| {
+                StoreError::Corrupt(format!("publish_failures.jsonl:{}: missing error", i + 1))
+            })?
+            .to_owned();
+        out.push(PublishFailure { day, error });
+    }
+    Ok(out)
+}
+
 fn load_chain<V: Volume>(
     vol: &mut V,
     recovered_at: OffsetDateTime,
@@ -1271,8 +1382,31 @@ fn recover_tail<V: Volume>(
 }
 
 fn is_day_log(rel: &str) -> bool {
-    let name = rel.rsplit('/').next().unwrap_or(rel);
-    name.ends_with(".jsonl") && name != "heads.jsonl" && !rel.contains(".torn.")
+    // Day files are exactly log/YYYY/MM/DD.jsonl — never sidecars under log/.
+    if rel.contains(".torn.") {
+        return false;
+    }
+    let Some(rest) = rel.strip_prefix("log/") else {
+        return false;
+    };
+    let parts: Vec<&str> = rest.split('/').collect();
+    if parts.len() != 3 {
+        return false;
+    }
+    let (y, m, file) = (parts[0], parts[1], parts[2]);
+    let Some(d) = file.strip_suffix(".jsonl") else {
+        return false;
+    };
+    if y.len() != 4 || m.len() != 2 || d.len() != 2 {
+        return false;
+    }
+    if !y.chars().all(|c| c.is_ascii_digit())
+        || !m.chars().all(|c| c.is_ascii_digit())
+        || !d.chars().all(|c| c.is_ascii_digit())
+    {
+        return false;
+    }
+    true
 }
 
 fn observation_rel(day: Date, repo_segment: String) -> String {

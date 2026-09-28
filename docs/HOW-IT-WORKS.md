@@ -17,6 +17,7 @@ flowchart TD
     D --> L[("Hash chain")]
     L --> H["Daily signed head"]
     H --> K["Sigstore Rekor"]
+    H --> G["public git repo<br/>fast-forward only"]
     O --> M[("Off machine mirror")]
 ```
 
@@ -173,6 +174,8 @@ sequenceDiagram
     St->>R: submit head for witnessing
     R-->>St: log index or recorded error
     St->>M: upload day D observation files
+    St->>St: copy log bytes into publish clone
+    St->>St: commit data/log only and fast-forward push
 ```
 
 The **ObservationDigest** is the clever bit. Observations are far too numerous to chain one by one, so instead each day's digest records the hash of every observation file plus counts of ok, not modified, failed and skipped polls. That puts the raw evidence under the signature. Every stability claim in the ledger now traces to signed data.
@@ -186,7 +189,7 @@ A day with zero observations still gets a digest, with zeros in it. A missing da
 | Witness | What it protects against |
 |---|---|
 | **The hash chain** | Editing, deleting or reordering any entry |
-| **Published git history** | Rewriting the chain and re signing it quietly once the log is published |
+| **Public git history** | Rewriting the chain and re signing it quietly. Each sealed day is fast-forward pushed to `GautamTalksDev/refledger`; force pushes are forbidden |
 | **Sigstore Rekor** | Rewriting git too. Rekor is a public log we don't control |
 
 A head that goes more than 48 hours without a Rekor witness is noted in the next digest and fails `refledger-verify --strict`.

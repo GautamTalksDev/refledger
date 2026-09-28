@@ -42,7 +42,7 @@ Both attacks share a shape: many old, stable, *exact* version tags moving togeth
 
 **A ledger.** Every movement becomes an entry in an append only, hash chained log. Each entry names the one before it. Change a single byte anywhere and the chain breaks at that exact spot.
 
-**A witness.** Once a day the day's ObservationDigest is signed with Ed25519, appended to `heads.jsonl`, and submitted to [Sigstore's Rekor](https://docs.sigstore.dev/logging/overview/), a public transparency log we don't control. We can't rewrite yesterday even if we wanted to.
+**A witness.** Once a day the day's ObservationDigest is signed with Ed25519, appended to `heads.jsonl`, submitted to [Sigstore's Rekor](https://docs.sigstore.dev/logging/overview/), and fast-forward pushed to the public repository so `git clone` carries the ledger. We can't rewrite yesterday even if we wanted to.
 
 **Reproducible.** Give anyone the raw observation archive and they can regenerate the entire ledger byte for byte. You don't have to trust our log. You can rebuild it.
 

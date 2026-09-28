@@ -15,6 +15,7 @@ pub mod enrich;
 pub mod github;
 pub mod identity;
 pub mod population;
+pub mod publish;
 pub mod scheduler;
 pub mod store;
 
@@ -27,6 +28,10 @@ pub use identity::{
     format_contact_warning, probe_contact_url, refuse_to_poll_unless_identified, user_agent,
     user_agent_with, validate_user_agent, DEFAULT_CONTACT_URL, DEFAULT_LOG_ID, IdentityError,
     VERSION,
+};
+pub use publish::{
+    format_publish_failure_note, GitLedgerPublisher, LedgerPublishPayload, LedgerPublisher,
+    NoopPublisher, PublishFailure,
 };
 
 pub use derive::{derive, derive_observation_digest, ChainTip, DeriveError, ObservationDayStats};

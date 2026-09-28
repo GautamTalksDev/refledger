@@ -56,6 +56,7 @@ fn opts(rekor: Box<dyn RekorClient>) -> StoreOptions {
         recovered_at: odt(2026, Month::January, 2, 0, 0, 0, 0),
         rekor,
         archive: Box::new(refledger_poller::NoopArchive),
+        publisher: Box::new(refledger_poller::NoopPublisher),
     }
 }
 
@@ -711,6 +712,209 @@ fn post_genesis_identity_warning_lands_in_next_digest_note() {
     assert!(
         note.contains("contact URL unreachable"),
         "note={note}"
+    );
+}
+
+/// Build a bare remote + publishing clone under `root` for FF-only publish tests.
+fn setup_publish_clone(root: &std::path::Path) -> (std::path::PathBuf, std::path::PathBuf) {
+    let bare = root.join("remote.git");
+    let clone = root.join("publish-clone");
+    assert!(Command::new("git")
+        .args(["init", "--bare", "-b", "main"])
+        .arg(&bare)
+        .status()
+        .unwrap()
+        .success());
+    assert!(Command::new("git")
+        .args(["clone", bare.to_str().unwrap(), clone.to_str().unwrap()])
+        .status()
+        .unwrap()
+        .success());
+    // Seed an empty data/log so the first seal commits onto an existing branch tip.
+    let data_log = clone.join("data/log");
+    fs::create_dir_all(&data_log).unwrap();
+    fs::write(data_log.join(".gitkeep"), b"").unwrap();
+    assert!(Command::new("git")
+        .args(["-C", clone.to_str().unwrap(), "add", "data/log/.gitkeep"])
+        .status()
+        .unwrap()
+        .success());
+    assert!(Command::new("git")
+        .args([
+            "-C",
+            clone.to_str().unwrap(),
+            "-c",
+            "user.email=test@refledger.invalid",
+            "-c",
+            "user.name=refledger-test",
+            "commit",
+            "-m",
+            "seed",
+        ])
+        .status()
+        .unwrap()
+        .success());
+    assert!(Command::new("git")
+        .args(["-C", clone.to_str().unwrap(), "push", "-u", "origin", "main"])
+        .status()
+        .unwrap()
+        .success());
+    (bare, clone)
+}
+
+#[test]
+fn seal_publishes_data_log_to_dedicated_clone() {
+    use refledger_poller::GitLedgerPublisher;
+
+    let root = TempDir::new().unwrap();
+    let (_bare, clone) = setup_publish_clone(root.path());
+    let data = TempDir::new().unwrap();
+    let mut options = opts(static_rekor());
+    options.publisher = Box::new(GitLedgerPublisher::new(&clone, None));
+    let mut store = Store::open(data.path(), options).unwrap();
+    let jan1 = day(2026, Month::January, 1);
+    store.stop_dispatch(jan1);
+    let entry = store.seal_day(jan1).unwrap();
+
+    let log = Command::new("git")
+        .args(["-C", clone.to_str().unwrap(), "log", "-1", "--pretty=%s"])
+        .output()
+        .unwrap();
+    let subject = String::from_utf8_lossy(&log.stdout);
+    assert_eq!(
+        subject.trim(),
+        format!("ledger: seal 2026-01-01 seq {}", entry.seq)
+    );
+    let files = Command::new("git")
+        .args(["-C", clone.to_str().unwrap(), "ls-tree", "-r", "--name-only", "HEAD"])
+        .output()
+        .unwrap();
+    let tree = String::from_utf8_lossy(&files.stdout);
+    assert!(tree.contains("data/log/heads.jsonl"), "{tree}");
+    assert!(
+        tree.contains("data/log/2026/01/02.jsonl"),
+        "digest lands on D+1: {tree}"
+    );
+    // Live data dir is not the clone.
+    assert_ne!(data.path(), clone.as_path());
+}
+
+#[test]
+fn rejected_publish_push_is_recorded_and_retried_next_seal() {
+    use refledger_poller::GitLedgerPublisher;
+
+    let root = TempDir::new().unwrap();
+    let (bare, clone) = setup_publish_clone(root.path());
+    let data = TempDir::new().unwrap();
+    let mut options = opts(static_rekor());
+    options.publisher = Box::new(GitLedgerPublisher::new(&clone, None));
+    let mut store = Store::open(data.path(), options).unwrap();
+    let jan1 = day(2026, Month::January, 1);
+    store.stop_dispatch(jan1);
+    store.seal_day(jan1).unwrap();
+
+    // Divergent tip on the bare remote so the next FF push fails.
+    let other = root.path().join("other");
+    assert!(Command::new("git")
+        .args(["clone", bare.to_str().unwrap(), other.to_str().unwrap()])
+        .status()
+        .unwrap()
+        .success());
+    fs::write(other.join("data/log/divergent.txt"), b"other tip").unwrap();
+    assert!(Command::new("git")
+        .args(["-C", other.to_str().unwrap(), "add", "data/log/divergent.txt"])
+        .status()
+        .unwrap()
+        .success());
+    assert!(Command::new("git")
+        .args([
+            "-C",
+            other.to_str().unwrap(),
+            "-c",
+            "user.email=test@refledger.invalid",
+            "-c",
+            "user.name=refledger-test",
+            "commit",
+            "-m",
+            "divergent",
+        ])
+        .status()
+        .unwrap()
+        .success());
+    assert!(Command::new("git")
+        .args(["-C", other.to_str().unwrap(), "push", "origin", "main"])
+        .status()
+        .unwrap()
+        .success());
+
+    let jan2 = day(2026, Month::January, 2);
+    store.stop_dispatch(jan2);
+    let failed = store.seal_day(jan2).unwrap();
+    assert!(
+        failed
+            .observation_digest
+            .as_ref()
+            .and_then(|d| d.note.as_ref())
+            .is_none(),
+        "publish failure of D must not land in D's own digest"
+    );
+
+    // Heal the publish clone so the next seal can FF-push again (retry path).
+    assert!(Command::new("git")
+        .args(["-C", clone.to_str().unwrap(), "fetch", "origin"])
+        .status()
+        .unwrap()
+        .success());
+    assert!(Command::new("git")
+        .args(["-C", clone.to_str().unwrap(), "reset", "--hard", "origin/main"])
+        .status()
+        .unwrap()
+        .success());
+
+    let jan3 = day(2026, Month::January, 3);
+    store.stop_dispatch(jan3);
+    let next = store.seal_day(jan3).unwrap();
+    let note = next.observation_digest.unwrap().note.unwrap();
+    assert!(
+        note.contains("ledger publish failed for 2026-01-02"),
+        "expected publish failure in next digest, got {note}"
+    );
+    // Retry of the healed clone succeeded: tip is a seal commit again.
+    let log = Command::new("git")
+        .args(["-C", clone.to_str().unwrap(), "log", "-1", "--pretty=%s"])
+        .output()
+        .unwrap();
+    let subject = String::from_utf8_lossy(&log.stdout);
+    assert!(
+        subject.trim().starts_with("ledger: seal 2026-01-03"),
+        "retry must publish: {subject}"
+    );
+}
+
+#[test]
+fn dirty_publish_clone_outside_data_log_refuses() {
+    use refledger_poller::GitLedgerPublisher;
+
+    let root = TempDir::new().unwrap();
+    let (_bare, clone) = setup_publish_clone(root.path());
+    fs::write(clone.join("README.md"), b"do not commit me\n").unwrap();
+
+    let data = TempDir::new().unwrap();
+    let mut options = opts(static_rekor());
+    options.publisher = Box::new(GitLedgerPublisher::new(&clone, None));
+    let mut store = Store::open(data.path(), options).unwrap();
+    let jan1 = day(2026, Month::January, 1);
+    store.stop_dispatch(jan1);
+    store.seal_day(jan1).unwrap();
+
+    let failures = store
+        .read_rel("log/publish_failures.jsonl")
+        .unwrap()
+        .unwrap();
+    let text = String::from_utf8_lossy(&failures);
+    assert!(
+        text.contains("outside data/log"),
+        "dirty tree must refuse: {text}"
     );
 }
 
