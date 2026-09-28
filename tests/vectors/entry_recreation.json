@@ -1,0 +1,42 @@
+{
+  "description": "Recreation with gap_seconds and both bindings.",
+  "expected_canonical": "{\"classification\":\"release_level_only\",\"event\":\"recreation\",\"format_version\":1,\"from\":{\"commit_sha\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"first_observed\":\"2026-04-01T10:00:00.000Z\",\"last_observed\":\"2026-04-01T10:00:00.000Z\",\"observation_count\":1,\"stable_days\":0,\"target_sha\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"tree_sha\":\"cccccccccccccccccccccccccccccccccccccccc\"},\"gap_seconds\":90000,\"observation_window_seconds\":1800,\"prev_hash\":\"sha256:5555555555555555555555555555555555555555555555555555555555555555\",\"recorded_at\":\"2026-04-02T11:00:00.000Z\",\"ref\":\"refs/tags/v0.9.0\",\"ref_form\":\"exact\",\"ref_type_after\":\"annotated\",\"ref_type_before\":\"lightweight\",\"repo\":\"acme/widgets\",\"seq\":5,\"severity\":\"medium\",\"source_observations\":[\"01ARZ3NDEKTSV4RRFFQ69G5FAV\",\"01ARZ3NDEKTSV4RRFFQ69G5FAW\"],\"to\":{\"commit_sha\":\"0000000000000000000000000000000000000000\",\"first_observed\":\"2026-04-02T11:00:00.000Z\",\"observation_count\":1,\"stable_days\":0,\"target_sha\":\"ffffffffffffffffffffffffffffffffffffffff\",\"tree_sha\":\"1111111111111111111111111111111111111111\"}}",
+  "expected_hash": "sha256:4fd811f2a9ad9cf572ed5bfb0f387addfa81192b6df470ed4e1a0a559f1a006a",
+  "input": {
+    "classification": "release_level_only",
+    "event": "recreation",
+    "format_version": 1,
+    "from": {
+      "commit_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "first_observed": "2026-04-01T10:00:00.000Z",
+      "last_observed": "2026-04-01T10:00:00.000Z",
+      "observation_count": 1,
+      "stable_days": 0,
+      "target_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "tree_sha": "cccccccccccccccccccccccccccccccccccccccc"
+    },
+    "gap_seconds": 90000,
+    "observation_window_seconds": 1800,
+    "prev_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+    "recorded_at": "2026-04-02T11:00:00.000Z",
+    "ref": "refs/tags/v0.9.0",
+    "ref_form": "exact",
+    "ref_type_after": "annotated",
+    "ref_type_before": "lightweight",
+    "repo": "acme/widgets",
+    "seq": 5,
+    "severity": "medium",
+    "source_observations": [
+      "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+      "01ARZ3NDEKTSV4RRFFQ69G5FAW"
+    ],
+    "to": {
+      "commit_sha": "0000000000000000000000000000000000000000",
+      "first_observed": "2026-04-02T11:00:00.000Z",
+      "observation_count": 1,
+      "stable_days": 0,
+      "target_sha": "ffffffffffffffffffffffffffffffffffffffff",
+      "tree_sha": "1111111111111111111111111111111111111111"
+    }
+  }
+}

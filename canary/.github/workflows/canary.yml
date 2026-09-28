@@ -1,0 +1,52 @@
+# Moves tags through every Refledger §6.2 pattern and appends ground truth
+# to canary/ledger.jsonl. Every third-party action is pinned by SHA.
+#
+# performed_at is stamped AFTER git push returns (finalize-ledger.sh), not when
+# the cron fires — scheduled workflows start late under load, and we'd otherwise
+# be timing GitHub's queue rather than detection.
+name: canary-rotate
+
+on:
+  schedule:
+    # Six patterns; one every 4 hours → full cycle per day.
+    - cron: "17 */4 * * *"
+  workflow_dispatch:
+    inputs:
+      force_pattern:
+        description: "Optional pattern name to run once"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: canary-rotate
+  cancel-in-progress: false
+
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "refledger-canary"
+          git config user.email "canary@users.noreply.github.com"
+
+      - name: Rotate pattern
+        env:
+          FORCE_PATTERN: ${{ inputs.force_pattern }}
+        run: bash scripts/rotate.sh
+
+      - name: Push tags and commits
+        run: |
+          git push origin HEAD:main
+          git push origin --tags --force
+
+      - name: Record performed_at after push
+        run: bash scripts/finalize-ledger.sh

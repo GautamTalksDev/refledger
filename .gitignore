@@ -1,0 +1,9 @@
+/target/
+**/target/
+/data/
+*.age
+.env
+.env.*
+!.env.example
+.DS_Store
+**/wip/

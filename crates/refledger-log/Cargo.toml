@@ -1,0 +1,31 @@
+[package]
+name = "refledger-log"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Append-only signed log types and signing for Refledger"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+# preserve_order deliberately OFF: canonicalisation must not depend on
+# insertion-order map serialisation.
+serde_json = "1"
+sha2 = "0.10"
+ed25519-dalek = { version = "2", features = ["digest"] }
+hex = "0.4"
+time = { version = "0.3", features = ["serde", "formatting", "parsing"] }
+thiserror = "2"
+zeroize = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+proptest = "1"
+insta = "1"
+trybuild = "1"
+tempfile = "3"
+hex = "0.4"
+sha2 = "0.10"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+base64 = "0.22"
+ureq = { version = "2", default-features = false, features = ["tls", "json"] }

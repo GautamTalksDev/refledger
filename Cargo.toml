@@ -1,0 +1,12 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/refledger-log",
+    "crates/refledger-verify",
+    "crates/refledger-poller",
+]
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.79"
+license = "Apache-2.0"

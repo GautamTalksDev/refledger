@@ -1,0 +1,14 @@
+{
+  "description": "Sparsest valid entry: correction with only required envelope fields.",
+  "expected_canonical": "{\"corrects_seq\":0,\"event\":\"correction\",\"format_version\":1,\"prev_hash\":\"sha256:8888888888888888888888888888888888888888888888888888888888888888\",\"reason\":\"fixture: optionals absent\",\"recorded_at\":\"2026-05-02T00:00:00.000Z\",\"seq\":8}",
+  "expected_hash": "sha256:e81fa4ea3ef00ce8e1019fbed15aac6d9d03f037cb6214dc608d3ab7672620e9",
+  "input": {
+    "corrects_seq": 0,
+    "event": "correction",
+    "format_version": 1,
+    "prev_hash": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+    "reason": "fixture: optionals absent",
+    "recorded_at": "2026-05-02T00:00:00.000Z",
+    "seq": 8
+  }
+}

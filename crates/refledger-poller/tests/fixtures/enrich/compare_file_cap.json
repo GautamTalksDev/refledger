@@ -1,0 +1,15 @@
+{
+  "observation": {
+    "repo": "torvalds/linux",
+    "basehead": "v5.0...v6.0",
+    "captured_at": "2026-09-28",
+    "status": "ahead",
+    "ahead_by": 311041,
+    "behind_by": 0,
+    "total_commits": 10000,
+    "files_len": 300,
+    "top_level_truncated_field": null,
+    "docs_file_cap": 300,
+    "finding": "GitHub docs: compare returns up to 300 changed files on page 1; live oversized compare returned exactly 300 files and no top-level `truncated` field. enrich.rs therefore sets diff_possibly_truncated when files.len() >= 300 (the documented and observed cap)."
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "headers": {
+    "etag": "W/\"moved\""
+  },
+  "body": [
+    {
+      "ref": "refs/tags/v1",
+      "node_id": "x",
+      "url": "https://api.github.com/repos/acme/widgets/git/refs/tags/v1",
+      "object": {
+        "sha": "2222222222222222222222222222222222222222",
+        "type": "commit",
+        "url": "https://api.github.com/repos/acme/widgets/git/commits/2222222222222222222222222222222222222222"
+      }
+    }
+  ]
+}

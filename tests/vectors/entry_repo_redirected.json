@@ -1,0 +1,15 @@
+{
+  "description": "RepoRedirected: 301 recorded, not followed.",
+  "expected_canonical": "{\"event\":\"repo_redirected\",\"format_version\":1,\"http_status\":301,\"prev_hash\":\"sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"recorded_at\":\"2026-08-02T00:00:00.000Z\",\"redirect_location\":\"https://api.github.com/repositories/999001\",\"repo\":\"acme/old-name\",\"seq\":13}",
+  "expected_hash": "sha256:11b9f95ba8f430f53a5edcaccc0576f86eae57f16381f8b96310b7a8ee829616",
+  "input": {
+    "event": "repo_redirected",
+    "format_version": 1,
+    "http_status": 301,
+    "prev_hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "recorded_at": "2026-08-02T00:00:00.000Z",
+    "redirect_location": "https://api.github.com/repositories/999001",
+    "repo": "acme/old-name",
+    "seq": 13
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "status": 301,
+  "headers": {
+    "location": "https://api.github.com/repositories/999001"
+  },
+  "body": {
+    "message": "Moved Permanently",
+    "url": "https://api.github.com/repositories/999001"
+  }
+}

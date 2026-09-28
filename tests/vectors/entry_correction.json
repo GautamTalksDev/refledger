@@ -1,0 +1,14 @@
+{
+  "description": "Correction entry: corrects_seq + reason only.",
+  "expected_canonical": "{\"corrects_seq\":2,\"event\":\"correction\",\"format_version\":1,\"prev_hash\":\"sha256:6666666666666666666666666666666666666666666666666666666666666666\",\"reason\":\"misclassified commit_metadata_only move as content_change\",\"recorded_at\":\"2026-04-03T00:00:00.000Z\",\"seq\":6}",
+  "expected_hash": "sha256:843147fe073c06017a5a239f4a69867e243457878c270bcf9819f733ebedbcb8",
+  "input": {
+    "corrects_seq": 2,
+    "event": "correction",
+    "format_version": 1,
+    "prev_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "reason": "misclassified commit_metadata_only move as content_change",
+    "recorded_at": "2026-04-03T00:00:00.000Z",
+    "seq": 6
+  }
+}

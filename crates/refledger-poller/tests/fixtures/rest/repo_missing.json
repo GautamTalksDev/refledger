@@ -1,0 +1,8 @@
+{
+  "status": 404,
+  "headers": {},
+  "body": {
+    "message": "Not Found",
+    "status": "404"
+  }
+}

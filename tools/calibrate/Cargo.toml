@@ -1,0 +1,26 @@
+# Standalone one-shot calibration instrument — NOT a workspace member.
+# This forces Cargo to treat this directory as its own root so it is never
+# absorbed into the refledger workspace.
+[workspace]
+
+[package]
+name = "refledger-calibrate"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.79"
+license = "Apache-2.0"
+publish = false
+description = "One-shot instrument to measure GitHub REST secondary rate-limit bucketing"
+
+[[bin]]
+name = "refledger-calibrate"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive", "env"] }
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls", "json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+time = { version = "0.3", features = ["formatting", "parsing", "serde"] }
+csv = "1"
+anyhow = "1"

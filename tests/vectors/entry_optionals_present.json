@@ -1,0 +1,57 @@
+{
+  "description": "Move with every move-optional field present, including ancestry and ref_form.",
+  "expected_canonical": "{\"ancestry\":\"diverged\",\"classification\":\"content_change\",\"detection_latency_note\":\"observed within one poll interval\",\"diff\":{\"diff_possibly_truncated\":false,\"files_added\":1,\"files_modified\":1,\"files_removed\":0,\"files_renamed\":0,\"paths\":[\"action.yml\",\"README.md\"]},\"entry_hash\":\"sha256:abababababababababababababababababababababababababababababababab\",\"event\":\"move\",\"format_version\":1,\"from\":{\"action_yml_sha\":\"dddddddddddddddddddddddddddddddddddddddd\",\"commit_sha\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"first_observed\":\"2026-01-01T00:00:00.000Z\",\"last_observed\":\"2026-05-01T00:00:00.000Z\",\"observation_count\":30,\"stable_days\":120,\"target_sha\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"tree_sha\":\"cccccccccccccccccccccccccccccccccccccccc\"},\"observation_window_seconds\":120,\"prev_hash\":\"sha256:9999999999999999999999999999999999999999999999999999999999999999\",\"recorded_at\":\"2026-05-03T12:00:00.000Z\",\"ref\":\"refs/tags/v3.0.0\",\"ref_form\":\"exact\",\"ref_type_after\":\"annotated\",\"ref_type_before\":\"annotated\",\"repo\":\"acme/widgets\",\"seq\":9,\"severity\":\"high\",\"source_observations\":[\"01ARZ3NDEKTSV4RRFFQ69G5FAV\",\"01ARZ3NDEKTSV4RRFFQ69G5FAW\"],\"to\":{\"action_yml_sha\":\"1111111111111111111111111111111111111111\",\"commit_sha\":\"ffffffffffffffffffffffffffffffffffffffff\",\"first_observed\":\"2026-05-03T12:00:00.000Z\",\"observation_count\":1,\"stable_days\":0,\"target_sha\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"tree_sha\":\"0000000000000000000000000000000000000000\"}}",
+  "expected_hash": "sha256:ca7de91386a1f97da1cd0273e294f7e94e9cd0febfd160165869132ff1ca64ba",
+  "input": {
+    "ancestry": "diverged",
+    "classification": "content_change",
+    "detection_latency_note": "observed within one poll interval",
+    "diff": {
+      "diff_possibly_truncated": false,
+      "files_added": 1,
+      "files_modified": 1,
+      "files_removed": 0,
+      "files_renamed": 0,
+      "paths": [
+        "action.yml",
+        "README.md"
+      ]
+    },
+    "entry_hash": "sha256:abababababababababababababababababababababababababababababababab",
+    "event": "move",
+    "format_version": 1,
+    "from": {
+      "action_yml_sha": "dddddddddddddddddddddddddddddddddddddddd",
+      "commit_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "first_observed": "2026-01-01T00:00:00.000Z",
+      "last_observed": "2026-05-01T00:00:00.000Z",
+      "observation_count": 30,
+      "stable_days": 120,
+      "target_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "tree_sha": "cccccccccccccccccccccccccccccccccccccccc"
+    },
+    "observation_window_seconds": 120,
+    "prev_hash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "recorded_at": "2026-05-03T12:00:00.000Z",
+    "ref": "refs/tags/v3.0.0",
+    "ref_form": "exact",
+    "ref_type_after": "annotated",
+    "ref_type_before": "annotated",
+    "repo": "acme/widgets",
+    "seq": 9,
+    "severity": "high",
+    "source_observations": [
+      "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+      "01ARZ3NDEKTSV4RRFFQ69G5FAW"
+    ],
+    "to": {
+      "action_yml_sha": "1111111111111111111111111111111111111111",
+      "commit_sha": "ffffffffffffffffffffffffffffffffffffffff",
+      "first_observed": "2026-05-03T12:00:00.000Z",
+      "observation_count": 1,
+      "stable_days": 0,
+      "target_sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "tree_sha": "0000000000000000000000000000000000000000"
+    }
+  }
+}

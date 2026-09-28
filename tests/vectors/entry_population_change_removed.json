@@ -1,0 +1,21 @@
+{
+  "description": "PopulationChange Removed — observation stops; history retained.",
+  "expected_canonical": "{\"event\":\"population_change\",\"format_version\":1,\"population_change\":{\"change\":\"removed\",\"note\":\"maintainer request\",\"path\":\"nested/action\",\"reason\":{\"type\":\"manual\"}},\"prev_hash\":\"sha256:a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3\",\"recorded_at\":\"2026-09-28T00:02:00.000Z\",\"repo\":\"acme/widgets\",\"seq\":18}",
+  "expected_hash": "sha256:ee05e804581ef8ef617cc2d11f7cfe86be2c9fd58d6b097d9e3ec655747d8586",
+  "input": {
+    "event": "population_change",
+    "format_version": 1,
+    "population_change": {
+      "change": "removed",
+      "note": "maintainer request",
+      "path": "nested/action",
+      "reason": {
+        "type": "manual"
+      }
+    },
+    "prev_hash": "sha256:a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3",
+    "recorded_at": "2026-09-28T00:02:00.000Z",
+    "repo": "acme/widgets",
+    "seq": 18
+  }
+}

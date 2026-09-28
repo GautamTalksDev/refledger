@@ -1,0 +1,22 @@
+{
+  "description": "ObservationDigest optional note: a torn write preserved beside the log. Absent note is omitted, never null.",
+  "expected_canonical": "{\"event\":\"observation_digest\",\"format_version\":1,\"observation_digest\":{\"date\":\"2026-08-02\",\"failed\":0,\"files\":[],\"not_modified\":0,\"note\":\"torn write preserved: log/2026/08/02.jsonl.torn.20260803T000000.000Z (17 bytes)\",\"ok\":0,\"repos_polled\":0,\"skipped\":0},\"prev_hash\":\"sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"recorded_at\":\"2026-08-03T00:00:00.000Z\",\"seq\":14}",
+  "expected_hash": "sha256:6ca66ed10d572c3938d26c1c4c2725371fd5245fe0ca81c8d800d03aff196b10",
+  "input": {
+    "event": "observation_digest",
+    "format_version": 1,
+    "observation_digest": {
+      "date": "2026-08-02",
+      "failed": 0,
+      "files": [],
+      "not_modified": 0,
+      "note": "torn write preserved: log/2026/08/02.jsonl.torn.20260803T000000.000Z (17 bytes)",
+      "ok": 0,
+      "repos_polled": 0,
+      "skipped": 0
+    },
+    "prev_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "recorded_at": "2026-08-03T00:00:00.000Z",
+    "seq": 14
+  }
+}

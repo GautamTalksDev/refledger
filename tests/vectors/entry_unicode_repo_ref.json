@@ -1,0 +1,42 @@
+{
+  "description": "Move with Unicode in repo and ref names.",
+  "expected_canonical": "{\"ancestry\":\"ahead\",\"classification\":\"content_change\",\"event\":\"move\",\"format_version\":1,\"from\":{\"commit_sha\":\"2222222222222222222222222222222222222222\",\"first_observed\":\"2026-05-01T00:00:00.000Z\",\"last_observed\":\"2026-05-31T00:00:00.000Z\",\"observation_count\":3,\"stable_days\":30,\"target_sha\":\"1111111111111111111111111111111111111111\",\"tree_sha\":\"3333333333333333333333333333333333333333\"},\"observation_window_seconds\":3600,\"prev_hash\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"recorded_at\":\"2026-06-01T00:00:00.000Z\",\"ref\":\"refs/tags/バージョン-1.0.0-😀\",\"ref_form\":\"exact\",\"ref_type_after\":\"annotated\",\"ref_type_before\":\"annotated\",\"repo\":\"例/リポジトリ\",\"seq\":10,\"severity\":\"medium\",\"source_observations\":[\"01ARZ3NDEKTSV4RRFFQ69G5FAV\",\"01ARZ3NDEKTSV4RRFFQ69G5FAW\"],\"to\":{\"commit_sha\":\"5555555555555555555555555555555555555555\",\"first_observed\":\"2026-06-01T00:00:00.000Z\",\"observation_count\":1,\"stable_days\":0,\"target_sha\":\"4444444444444444444444444444444444444444\",\"tree_sha\":\"6666666666666666666666666666666666666666\"}}",
+  "expected_hash": "sha256:ad0c3b553a5b1518b72d7d118519e5ce48fad76dfc9d9768648cf4a39b7cce37",
+  "input": {
+    "ancestry": "ahead",
+    "classification": "content_change",
+    "event": "move",
+    "format_version": 1,
+    "from": {
+      "commit_sha": "2222222222222222222222222222222222222222",
+      "first_observed": "2026-05-01T00:00:00.000Z",
+      "last_observed": "2026-05-31T00:00:00.000Z",
+      "observation_count": 3,
+      "stable_days": 30,
+      "target_sha": "1111111111111111111111111111111111111111",
+      "tree_sha": "3333333333333333333333333333333333333333"
+    },
+    "observation_window_seconds": 3600,
+    "prev_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "recorded_at": "2026-06-01T00:00:00.000Z",
+    "ref": "refs/tags/バージョン-1.0.0-😀",
+    "ref_form": "exact",
+    "ref_type_after": "annotated",
+    "ref_type_before": "annotated",
+    "repo": "例/リポジトリ",
+    "seq": 10,
+    "severity": "medium",
+    "source_observations": [
+      "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+      "01ARZ3NDEKTSV4RRFFQ69G5FAW"
+    ],
+    "to": {
+      "commit_sha": "5555555555555555555555555555555555555555",
+      "first_observed": "2026-06-01T00:00:00.000Z",
+      "observation_count": 1,
+      "stable_days": 0,
+      "target_sha": "4444444444444444444444444444444444444444",
+      "tree_sha": "6666666666666666666666666666666666666666"
+    }
+  }
+}

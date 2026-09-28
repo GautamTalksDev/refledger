@@ -1,0 +1,20 @@
+{
+  "description": "PopulationChange Added Transitive via parent action@commit (Trivy path).",
+  "expected_canonical": "{\"event\":\"population_change\",\"format_version\":1,\"population_change\":{\"change\":\"added\",\"reason\":{\"type\":\"transitive\",\"via\":\"aquasecurity/trivy-action@0123456789abcdef0123456789abcdef01234567\"}},\"prev_hash\":\"sha256:a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2\",\"recorded_at\":\"2026-09-28T00:01:00.000Z\",\"repo\":\"aquasecurity/setup-trivy\",\"seq\":17}",
+  "expected_hash": "sha256:3cd333656b444c14e3865c3c4d943a166504958133338f0d8eafa18cdc6e18aa",
+  "input": {
+    "event": "population_change",
+    "format_version": 1,
+    "population_change": {
+      "change": "added",
+      "reason": {
+        "type": "transitive",
+        "via": "aquasecurity/trivy-action@0123456789abcdef0123456789abcdef01234567"
+      }
+    },
+    "prev_hash": "sha256:a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2",
+    "recorded_at": "2026-09-28T00:01:00.000Z",
+    "repo": "aquasecurity/setup-trivy",
+    "seq": 17
+  }
+}

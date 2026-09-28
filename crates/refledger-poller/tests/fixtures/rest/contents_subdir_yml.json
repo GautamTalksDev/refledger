@@ -1,0 +1,10 @@
+{
+  "status": 200,
+  "headers": {},
+  "body": {
+    "name": "action.yml",
+    "path": "actions/foo/action.yml",
+    "sha": "a100000000000000000000000000000000000001",
+    "type": "file"
+  }
+}

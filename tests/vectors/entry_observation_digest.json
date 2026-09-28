@@ -1,0 +1,30 @@
+{
+  "description": "Daily ObservationDigest committing to that day's observation JSONL files.",
+  "expected_canonical": "{\"event\":\"observation_digest\",\"format_version\":1,\"observation_digest\":{\"date\":\"2026-08-02\",\"failed\":1,\"files\":[{\"path\":\"data/observations/2026/08/02/acme--gone.jsonl\",\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},{\"path\":\"data/observations/2026/08/02/acme--widgets.jsonl\",\"sha256\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}],\"not_modified\":10,\"ok\":2,\"repos_polled\":3,\"skipped\":0},\"prev_hash\":\"sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"recorded_at\":\"2026-08-03T00:00:00.000Z\",\"seq\":14}",
+  "expected_hash": "sha256:f61556f735379dc0706da4d17dffce8e11d38a69ff0b441067cd2ec21ee5e0a0",
+  "input": {
+    "event": "observation_digest",
+    "format_version": 1,
+    "observation_digest": {
+      "date": "2026-08-02",
+      "failed": 1,
+      "files": [
+        {
+          "path": "data/observations/2026/08/02/acme--gone.jsonl",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "path": "data/observations/2026/08/02/acme--widgets.jsonl",
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      ],
+      "not_modified": 10,
+      "ok": 2,
+      "repos_polled": 3,
+      "skipped": 0
+    },
+    "prev_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "recorded_at": "2026-08-03T00:00:00.000Z",
+    "seq": 14
+  }
+}

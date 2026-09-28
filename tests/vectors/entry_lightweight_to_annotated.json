@@ -1,0 +1,41 @@
+{
+  "description": "Release-level move: lightweight to annotated; severity info.",
+  "expected_canonical": "{\"classification\":\"release_level_only\",\"event\":\"move\",\"format_version\":1,\"from\":{\"commit_sha\":\"3333333333333333333333333333333333333333\",\"first_observed\":\"2026-04-01T00:00:00.000Z\",\"last_observed\":\"2026-04-20T00:00:00.000Z\",\"observation_count\":5,\"stable_days\":19,\"target_sha\":\"2222222222222222222222222222222222222222\",\"tree_sha\":\"4444444444444444444444444444444444444444\"},\"observation_window_seconds\":600,\"prev_hash\":\"sha256:7777777777777777777777777777777777777777777777777777777777777777\",\"recorded_at\":\"2026-05-01T09:15:00.000Z\",\"ref\":\"refs/tags/v2\",\"ref_form\":\"floating_major\",\"ref_type_after\":\"annotated\",\"ref_type_before\":\"lightweight\",\"repo\":\"acme/widgets\",\"seq\":7,\"severity\":\"info\",\"source_observations\":[\"01ARZ3NDEKTSV4RRFFQ69G5FAV\",\"01ARZ3NDEKTSV4RRFFQ69G5FAW\"],\"to\":{\"commit_sha\":\"3333333333333333333333333333333333333333\",\"first_observed\":\"2026-05-01T09:15:00.000Z\",\"observation_count\":1,\"stable_days\":0,\"target_sha\":\"5555555555555555555555555555555555555555\",\"tree_sha\":\"4444444444444444444444444444444444444444\"}}",
+  "expected_hash": "sha256:213a6d67e4781c4cf85b51247e4f864853ea3ac58c1ab3bc0d25ab154f55ae5a",
+  "input": {
+    "classification": "release_level_only",
+    "event": "move",
+    "format_version": 1,
+    "from": {
+      "commit_sha": "3333333333333333333333333333333333333333",
+      "first_observed": "2026-04-01T00:00:00.000Z",
+      "last_observed": "2026-04-20T00:00:00.000Z",
+      "observation_count": 5,
+      "stable_days": 19,
+      "target_sha": "2222222222222222222222222222222222222222",
+      "tree_sha": "4444444444444444444444444444444444444444"
+    },
+    "observation_window_seconds": 600,
+    "prev_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+    "recorded_at": "2026-05-01T09:15:00.000Z",
+    "ref": "refs/tags/v2",
+    "ref_form": "floating_major",
+    "ref_type_after": "annotated",
+    "ref_type_before": "lightweight",
+    "repo": "acme/widgets",
+    "seq": 7,
+    "severity": "info",
+    "source_observations": [
+      "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+      "01ARZ3NDEKTSV4RRFFQ69G5FAW"
+    ],
+    "to": {
+      "commit_sha": "3333333333333333333333333333333333333333",
+      "first_observed": "2026-05-01T09:15:00.000Z",
+      "observation_count": 1,
+      "stable_days": 0,
+      "target_sha": "5555555555555555555555555555555555555555",
+      "tree_sha": "4444444444444444444444444444444444444444"
+    }
+  }
+}

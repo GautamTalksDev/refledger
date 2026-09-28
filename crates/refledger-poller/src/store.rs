@@ -1,0 +1,1332 @@
+//! Durable store for the log, observations, and daily signed heads.
+//!
+//! This module owns every path under the data directory. Callers hand it
+//! values; they do not open those files.
+//!
+//! Day D's [`Event::ObservationDigest`] is always the first entry of day
+//! D+1's log file, with `recorded_at` = D+1 00:00:00.000Z. Events from D+1
+//! detected before that seal are buffered and appended after it. Nothing
+//! here reads the wall clock — timestamps come from the caller, and the
+//! digest timestamp is that fixed boundary.
+
+use std::collections::BTreeSet;
+use std::fs::{self, File, OpenOptions};
+use std::io::Write;
+use std::os::unix::io::AsRawFd;
+use std::path::{Component, Path, PathBuf};
+
+use base64::Engine;
+use serde_json::Value;
+use sha2::{Digest, Sha256, Sha512};
+use thiserror::Error;
+use time::{Date, OffsetDateTime, PrimitiveDateTime, Time};
+
+use refledger_log::canonical_json;
+use refledger_log::chain::{Chain, UnhashedEntry};
+use refledger_log::entry::{Entry, Event};
+use refledger_log::{key_id, public_key_pkix_pem, sign_ed25519ph, sign_head, Head, SigningKey};
+
+use crate::archive::{
+    format_archive_failure_note, ArchiveFailure, DayArchive, NoopArchive, ObservationArchive,
+};
+use crate::derive::{derive_observation_digest, ObservationDayStats};
+use crate::identity::{user_agent, DEFAULT_LOG_ID};
+use crate::observation::{Observation, Outcome};
+
+const REKOR_KIND: &str = "hashedrekord";
+const REKOR_VERSION: &str = "0.0.1";
+const REKOR_PRODUCTION: &str = "https://rekor.sigstore.dev";
+/// A head without a Rekor `log_index` older than this is a witness backlog.
+/// Recorded in the next digest's note and fails `refledger-verify --strict`.
+pub const WITNESS_BACKLOG_HOURS: i64 = 48;
+
+#[derive(Debug, Error)]
+pub enum StoreError {
+    #[error("data directory is already locked")]
+    AlreadyLocked,
+    #[error("log is corrupt and will not be appended to: {0}")]
+    Corrupt(String),
+    #[error("durability: {0}")]
+    Durability(String),
+    #[error("simulated crash before the append completed")]
+    SimulatedCrash,
+    #[error("dispatch for {0} is closed")]
+    DispatchClosed(String),
+    #[error("{0} in-flight requests have not drained")]
+    InflightRemaining(u64),
+    #[error("day {0} is already sealed")]
+    AlreadySealed(String),
+    #[error("day {0} is still unsealed")]
+    UnsealedPrior(String),
+    #[error("recorded_at went backwards: {0}")]
+    NonMonotonic(String),
+    #[error("unknown request ticket")]
+    UnknownTicket,
+    #[error("io: {0}")]
+    Io(String),
+    #[error("chain: {0}")]
+    Chain(String),
+    #[error("{0}")]
+    Message(String),
+}
+
+/// What [`Store::append_entry`] did with a derived event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Appended {
+    Written(Entry),
+    Buffered,
+}
+
+/// Proof that [`Store::begin_request`] accepted a dispatch.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RequestTicket(u64);
+
+/// Parameters for [`Store::open`]. No field is a wall clock read.
+pub struct StoreOptions {
+    pub log_id: String,
+    pub signing_key: SigningKey,
+    /// When a torn tail is moved aside, the sidecar name uses this timestamp.
+    pub recovered_at: OffsetDateTime,
+    pub rekor: Box<dyn RekorClient>,
+    /// Off-VM destination for sealed observation files. Defaults to [`NoopArchive`].
+    pub archive: Box<dyn ObservationArchive>,
+}
+
+impl StoreOptions {
+    /// Production defaults: `log_id = "refledger"`, no-op archive until R2 is configured.
+    pub fn new(signing_key: SigningKey, recovered_at: OffsetDateTime) -> Self {
+        Self {
+            log_id: DEFAULT_LOG_ID.to_owned(),
+            signing_key,
+            recovered_at,
+            rekor: Box::new(HttpRekor::production()),
+            archive: Box::new(NoopArchive),
+        }
+    }
+}
+
+/// Rekor `POST /api/v1/log/entries` acceptance.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RekorAcceptance {
+    pub log_index: u64,
+    pub uuid: String,
+    pub log_id: Option<String>,
+    pub integrated_time: Option<u64>,
+}
+
+/// Witness client. A failure is recorded and retried; it is not fatal.
+pub trait RekorClient: Send + Sync {
+    fn submit(&self, proposed: &Value) -> Result<RekorAcceptance, String>;
+}
+
+/// Production client for `hashedrekord` 0.0.1.
+///
+/// Checked against Rekor's OpenAPI (`createLogEntry`, `POST /api/v1/log/entries`,
+/// 201 body is a map of UUID → `{ logIndex, logID, integratedTime }`) and
+/// `pkg/types/hashedrekord/v0.0.1`. That validator loads Ed25519 signatures
+/// with `WithED25519ph`. `ed25519ph` only accepts a SHA-512 prehash
+/// (`ComputeDigestForVerifying` rejects SHA-256 once `WithCryptoSignerOpts`
+/// selects it). The artifact hash is therefore SHA-512 of the canonical head
+/// bytes — the same bytes §4 of LOG-FORMAT signs with pure Ed25519. The
+/// public key is PKIX PEM (`x509.ParsePKIXPublicKey`).
+pub struct HttpRekor {
+    base: String,
+}
+
+impl HttpRekor {
+    pub fn production() -> Self {
+        Self::new(REKOR_PRODUCTION)
+    }
+
+    pub fn new(base: impl Into<String>) -> Self {
+        Self {
+            base: base.into().trim_end_matches('/').to_owned(),
+        }
+    }
+}
+
+impl RekorClient for HttpRekor {
+    fn submit(&self, proposed: &Value) -> Result<RekorAcceptance, String> {
+        let url = format!("{}/api/v1/log/entries", self.base);
+        let bytes = serde_json::to_vec(proposed).map_err(|e| e.to_string())?;
+        let agent = ureq::AgentBuilder::new()
+            .timeout(std::time::Duration::from_secs(20))
+            .build();
+        let response = agent
+            .post(&url)
+            .set("Content-Type", "application/json")
+            .set("User-Agent", &user_agent())
+            .send_bytes(&bytes)
+            .map_err(|e| e.to_string())?;
+        let text = response.into_string().map_err(|e| e.to_string())?;
+        let value: Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+        let obj = value
+            .as_object()
+            .ok_or_else(|| "rekor response is not an object".to_owned())?;
+        let (uuid, entry) = obj
+            .iter()
+            .next()
+            .ok_or_else(|| "rekor response contained no entry".to_owned())?;
+        let log_index = entry
+            .get("logIndex")
+            .and_then(|v| v.as_u64())
+            .ok_or_else(|| "rekor response missing logIndex".to_owned())?;
+        Ok(RekorAcceptance {
+            log_index,
+            uuid: uuid.clone(),
+            log_id: entry
+                .get("logID")
+                .and_then(|v| v.as_str())
+                .map(str::to_owned),
+            integrated_time: entry.get("integratedTime").and_then(|v| v.as_u64()),
+        })
+    }
+}
+
+/// In-memory stand-in that records a fixed log index. Tests use this so
+/// replay never touches the network.
+pub struct StaticRekor {
+    pub log_index: u64,
+}
+
+impl RekorClient for StaticRekor {
+    fn submit(&self, proposed: &Value) -> Result<RekorAcceptance, String> {
+        let _ = proposed;
+        Ok(RekorAcceptance {
+            log_index: self.log_index,
+            uuid: format!("test-{}", self.log_index),
+            log_id: None,
+            integrated_time: None,
+        })
+    }
+}
+
+/// Always fails. The poller records the error and keeps going.
+pub struct FailingRekor {
+    pub message: String,
+}
+
+impl RekorClient for FailingRekor {
+    fn submit(&self, _proposed: &Value) -> Result<RekorAcceptance, String> {
+        Err(self.message.clone())
+    }
+}
+
+/// Filesystem the store writes through. Tests substitute [`FaultVolume`].
+pub trait Volume: Send {
+    fn lock(&mut self) -> Result<(), StoreError>;
+    fn read(&self, rel: &str) -> Result<Option<Vec<u8>>, StoreError>;
+    fn list(&self, prefix: &str) -> Result<Vec<String>, StoreError>;
+    fn append_record(&mut self, rel: &str, line: &[u8]) -> Result<(), StoreError>;
+    fn write_exact(&mut self, rel: &str, bytes: &[u8]) -> Result<(), StoreError>;
+    fn remove(&mut self, rel: &str) -> Result<(), StoreError>;
+    fn unlock(&mut self);
+}
+
+pub struct OsVolume {
+    root: PathBuf,
+    lock: Option<File>,
+}
+
+impl OsVolume {
+    pub fn new(root: impl Into<PathBuf>) -> Self {
+        Self {
+            root: root.into(),
+            lock: None,
+        }
+    }
+
+    fn safe(&self, rel: &str) -> Result<PathBuf, StoreError> {
+        if rel.is_empty() || Path::new(rel).is_absolute() {
+            return Err(StoreError::Io(format!("refusing path {rel}")));
+        }
+        if Path::new(rel)
+            .components()
+            .any(|c| matches!(c, Component::ParentDir))
+        {
+            return Err(StoreError::Io(format!("refusing path {rel}")));
+        }
+        Ok(self.root.join(rel))
+    }
+
+    fn fsync_dir(&self, dir: &Path) -> Result<(), StoreError> {
+        let file = File::open(dir).map_err(|e| StoreError::Durability(format!("open dir: {e}")))?;
+        file.sync_all()
+            .map_err(|e| StoreError::Durability(format!("directory fsync: {e}")))
+    }
+}
+
+impl Volume for OsVolume {
+    fn lock(&mut self) -> Result<(), StoreError> {
+        fs::create_dir_all(&self.root).map_err(|e| StoreError::Io(e.to_string()))?;
+        let path = self.root.join(".store.lock");
+        let file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .open(&path)
+            .map_err(|e| StoreError::Io(e.to_string()))?;
+        // SAFETY: `file` is an open fd. LOCK_NB fails instead of blocking so
+        // a second poller cannot append onto the same chain.
+        let rc = unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) };
+        if rc != 0 {
+            let err = std::io::Error::last_os_error();
+            if err.kind() == std::io::ErrorKind::WouldBlock
+                || err.raw_os_error() == Some(libc::EAGAIN)
+                || err.raw_os_error() == Some(libc::EWOULDBLOCK)
+            {
+                return Err(StoreError::AlreadyLocked);
+            }
+            return Err(StoreError::Io(err.to_string()));
+        }
+        self.lock = Some(file);
+        Ok(())
+    }
+
+    fn unlock(&mut self) {
+        self.lock.take();
+    }
+
+    fn read(&self, rel: &str) -> Result<Option<Vec<u8>>, StoreError> {
+        let path = self.safe(rel)?;
+        if !path.exists() {
+            return Ok(None);
+        }
+        fs::read(&path)
+            .map(Some)
+            .map_err(|e| StoreError::Io(e.to_string()))
+    }
+
+    fn list(&self, prefix: &str) -> Result<Vec<String>, StoreError> {
+        let base = self.safe(prefix)?;
+        if !base.exists() {
+            return Ok(Vec::new());
+        }
+        let mut out = Vec::new();
+        walk_files(&self.root, &base, &mut out)?;
+        out.sort();
+        Ok(out)
+    }
+
+    fn append_record(&mut self, rel: &str, line: &[u8]) -> Result<(), StoreError> {
+        let path = self.safe(rel)?;
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).map_err(|e| StoreError::Io(e.to_string()))?;
+        }
+        let existed = path.exists();
+        let mut file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&path)
+            .map_err(|e| StoreError::Io(e.to_string()))?;
+        file.write_all(line)
+            .and_then(|_| file.write_all(b"\n"))
+            .map_err(|e| StoreError::Io(e.to_string()))?;
+        file.sync_all()
+            .map_err(|e| StoreError::Durability(format!("file fsync: {e}")))?;
+        if !existed {
+            if let Some(parent) = path.parent() {
+                if let Err(e) = self.fsync_dir(parent) {
+                    let _ = fs::remove_file(&path);
+                    return Err(e);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn write_exact(&mut self, rel: &str, bytes: &[u8]) -> Result<(), StoreError> {
+        let path = self.safe(rel)?;
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).map_err(|e| StoreError::Io(e.to_string()))?;
+        }
+        let existed = path.exists();
+        let mut file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(&path)
+            .map_err(|e| StoreError::Io(e.to_string()))?;
+        file.write_all(bytes)
+            .map_err(|e| StoreError::Io(e.to_string()))?;
+        file.sync_all()
+            .map_err(|e| StoreError::Durability(format!("file fsync: {e}")))?;
+        if !existed {
+            if let Some(parent) = path.parent() {
+                self.fsync_dir(parent)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn remove(&mut self, rel: &str) -> Result<(), StoreError> {
+        let path = self.safe(rel)?;
+        if path.exists() {
+            fs::remove_file(&path).map_err(|e| StoreError::Io(e.to_string()))?;
+        }
+        Ok(())
+    }
+}
+
+fn walk_files(root: &Path, dir: &Path, out: &mut Vec<String>) -> Result<(), StoreError> {
+    for ent in fs::read_dir(dir).map_err(|e| StoreError::Io(e.to_string()))? {
+        let ent = ent.map_err(|e| StoreError::Io(e.to_string()))?;
+        let path = ent.path();
+        if path.is_dir() {
+            walk_files(root, &path, out)?;
+        } else {
+            let rel = path
+                .strip_prefix(root)
+                .map_err(|e| StoreError::Io(e.to_string()))?;
+            out.push(rel.to_string_lossy().replace('\\', "/"));
+        }
+    }
+    Ok(())
+}
+
+/// Fault-injecting volume. Counts fsyncs and can fail a directory fsync or
+/// kill an append mid-write (bytes kept, no newline, no fsync).
+#[derive(Debug, Default)]
+pub struct FaultVolume {
+    files: std::collections::BTreeMap<String, Vec<u8>>,
+    locked: bool,
+    pub file_fsyncs: u32,
+    pub dir_fsyncs: u32,
+    fail_dir_fsync: bool,
+    kill_next: bool,
+}
+
+impl FaultVolume {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn fail_next_dir_fsync(&mut self) {
+        self.fail_dir_fsync = true;
+    }
+
+    pub fn kill_next_append(&mut self) {
+        self.kill_next = true;
+    }
+}
+
+impl Volume for FaultVolume {
+    fn lock(&mut self) -> Result<(), StoreError> {
+        if self.locked {
+            return Err(StoreError::AlreadyLocked);
+        }
+        self.locked = true;
+        Ok(())
+    }
+
+    fn read(&self, rel: &str) -> Result<Option<Vec<u8>>, StoreError> {
+        Ok(self.files.get(rel).cloned())
+    }
+
+    fn list(&self, prefix: &str) -> Result<Vec<String>, StoreError> {
+        let mut out: Vec<String> = self
+            .files
+            .keys()
+            .filter(|k| k.starts_with(prefix))
+            .cloned()
+            .collect();
+        out.sort();
+        Ok(out)
+    }
+
+    fn append_record(&mut self, rel: &str, line: &[u8]) -> Result<(), StoreError> {
+        if self.kill_next {
+            self.kill_next = false;
+            let mut partial = line.to_vec();
+            partial.pop();
+            self.files
+                .entry(rel.to_owned())
+                .or_default()
+                .extend(partial);
+            return Err(StoreError::SimulatedCrash);
+        }
+        let created = !self.files.contains_key(rel);
+        {
+            let buf = self.files.entry(rel.to_owned()).or_default();
+            buf.extend_from_slice(line);
+            buf.push(b'\n');
+        }
+        self.file_fsyncs += 1;
+        if created {
+            if self.fail_dir_fsync {
+                self.fail_dir_fsync = false;
+                if let Some(buf) = self.files.get_mut(rel) {
+                    let keep = buf.len().saturating_sub(line.len() + 1);
+                    buf.truncate(keep);
+                    if buf.is_empty() {
+                        self.files.remove(rel);
+                    }
+                }
+                return Err(StoreError::Durability("directory fsync failed".to_owned()));
+            }
+            self.dir_fsyncs += 1;
+        }
+        Ok(())
+    }
+
+    fn write_exact(&mut self, rel: &str, bytes: &[u8]) -> Result<(), StoreError> {
+        let created = !self.files.contains_key(rel);
+        self.files.insert(rel.to_owned(), bytes.to_vec());
+        self.file_fsyncs += 1;
+        if created {
+            self.dir_fsyncs += 1;
+        }
+        Ok(())
+    }
+
+    fn remove(&mut self, rel: &str) -> Result<(), StoreError> {
+        self.files.remove(rel);
+        Ok(())
+    }
+
+    fn unlock(&mut self) {
+        self.locked = false;
+    }
+}
+
+pub struct Store<V: Volume> {
+    vol: V,
+    log_id: String,
+    key: SigningKey,
+    rekor: Box<dyn RekorClient>,
+    archive: Box<dyn ObservationArchive>,
+    /// Archive upload failures waiting for the next digest note.
+    pending_archive_failures: Vec<ArchiveFailure>,
+    chain: Chain,
+    /// Days that have observations, non-digest log entries, or a closed dispatch.
+    activity: BTreeSet<Date>,
+    sealed: BTreeSet<Date>,
+    dispatch_closed: BTreeSet<Date>,
+    buffer: Vec<UnhashedEntry>,
+    inflight: BTreeSet<u64>,
+    next_ticket: u64,
+}
+
+impl Store<OsVolume> {
+    pub fn open(root: impl AsRef<Path>, opts: StoreOptions) -> Result<Self, StoreError> {
+        Self::open_with(OsVolume::new(root.as_ref()), opts)
+    }
+}
+
+impl<V: Volume> Store<V> {
+    pub fn open_with(mut vol: V, opts: StoreOptions) -> Result<Self, StoreError> {
+        vol.lock()?;
+        let (chain, activity, sealed) = load_chain(&mut vol, opts.recovered_at, &opts.log_id)?;
+        let pending_archive_failures = load_archive_failures(&mut vol)?;
+        Ok(Self {
+            vol,
+            log_id: opts.log_id,
+            key: opts.signing_key,
+            rekor: opts.rekor,
+            archive: opts.archive,
+            pending_archive_failures,
+            chain,
+            activity,
+            sealed,
+            dispatch_closed: BTreeSet::new(),
+            buffer: Vec::new(),
+            inflight: BTreeSet::new(),
+            next_ticket: 1,
+        })
+    }
+
+    pub fn into_volume(mut self) -> V {
+        self.vol.unlock();
+        self.vol
+    }
+
+    pub fn set_rekor(&mut self, rekor: Box<dyn RekorClient>) {
+        self.rekor = rekor;
+    }
+
+    pub fn set_archive(&mut self, archive: Box<dyn ObservationArchive>) {
+        self.archive = archive;
+    }
+
+    pub fn entries(&self) -> &[Entry] {
+        self.chain.entries()
+    }
+
+    pub fn dispatch_open(&self, day: Date) -> bool {
+        !self.dispatch_closed.contains(&day)
+    }
+
+    /// Stop dispatching new requests whose start stamp falls on `day`.
+    /// In-flight requests may still complete.
+    pub fn stop_dispatch(&mut self, day: Date) {
+        self.dispatch_closed.insert(day);
+        self.activity.insert(day);
+    }
+
+    pub fn begin_request(
+        &mut self,
+        started_at: OffsetDateTime,
+    ) -> Result<RequestTicket, StoreError> {
+        let day = started_at.date();
+        if self.dispatch_closed.contains(&day) {
+            return Err(StoreError::DispatchClosed(fmt_day(day)));
+        }
+        let id = self.next_ticket;
+        self.next_ticket += 1;
+        self.inflight.insert(id);
+        Ok(RequestTicket(id))
+    }
+
+    /// `obs.observed_at` is the completion stamp. That date is the
+    /// observation's day, not the day the request started.
+    pub fn complete_observation(
+        &mut self,
+        ticket: RequestTicket,
+        obs: &Observation,
+    ) -> Result<(), StoreError> {
+        if !self.inflight.remove(&ticket.0) {
+            return Err(StoreError::UnknownTicket);
+        }
+        self.append_observation(obs)
+    }
+
+    pub fn append_observation(&mut self, obs: &Observation) -> Result<(), StoreError> {
+        let day = obs.observed_at().as_offset_datetime().date();
+        self.activity.insert(day);
+        let rel = observation_rel(day, obs.repo().path_segment());
+        let line = serde_json::to_vec(obs).map_err(|e| StoreError::Message(e.to_string()))?;
+        self.vol.append_record(&rel, &line)
+    }
+
+    pub fn append_entry(&mut self, entry: UnhashedEntry) -> Result<Appended, StoreError> {
+        let day = entry.recorded_at.date();
+        if self
+            .activity
+            .iter()
+            .any(|d| *d < day && !self.sealed.contains(d))
+        {
+            self.buffer.push(entry);
+            return Ok(Appended::Buffered);
+        }
+        self.commit(entry).map(Appended::Written)
+    }
+
+    /// Seal day D. The digest is the first entry of D+1, then the buffer drains.
+    ///
+    /// After the digest is committed, that day's observation files are uploaded
+    /// off-VM. A failed upload is queued and appears in the *next* digest's note.
+    pub fn seal_day(&mut self, day: Date) -> Result<Entry, StoreError> {
+        let label = fmt_day(day);
+        if self.sealed.contains(&day) {
+            return Err(StoreError::AlreadySealed(label));
+        }
+        if !self.inflight.is_empty() {
+            return Err(StoreError::InflightRemaining(self.inflight.len() as u64));
+        }
+        if let Some(prior) = self
+            .activity
+            .iter()
+            .copied()
+            .find(|d| *d < day && !self.sealed.contains(d))
+        {
+            return Err(StoreError::UnsealedPrior(fmt_day(prior)));
+        }
+        let next = day
+            .next_day()
+            .ok_or_else(|| StoreError::Message(format!("no day after {label}")))?;
+        let as_of = start_of(next);
+        let stats = self.day_stats(day, as_of)?;
+        let day_files = stats.files.clone();
+        let unhashed = derive_observation_digest(as_of, stats)
+            .map_err(|e| StoreError::Message(e.to_string()))?;
+        let entry = self.commit(unhashed)?;
+        self.sealed.insert(day);
+        self.flush_buffer()?;
+        self.publish_head(&entry)?;
+        // Clear pending failures now that today's digest has absorbed them.
+        self.clear_consumed_archive_failures()?;
+        // Ship this day's observations off-VM. Failure is non-fatal to the seal
+        // but must surface in the next digest's note.
+        self.upload_sealed_day(day, &day_files)?;
+        Ok(entry)
+    }
+
+    /// Resubmit heads whose latest line has no Rekor `log_index`.
+    /// Disk failure is returned. A rejected submission is appended and is not an error.
+    pub fn retry_witnesses(&mut self) -> Result<u32, StoreError> {
+        let lines = self.head_lines()?;
+        let mut latest: std::collections::BTreeMap<u64, &Value> = std::collections::BTreeMap::new();
+        for line in &lines {
+            if let Some(seq) = line
+                .get("head")
+                .and_then(|h| h.get("seq"))
+                .and_then(|v| v.as_u64())
+            {
+                latest.insert(seq, line);
+            }
+        }
+        let mut appended = 0u32;
+        let pending: Vec<Value> = latest
+            .into_values()
+            .filter(|v| {
+                v.get("rekor")
+                    .and_then(|r| r.get("log_index"))
+                    .and_then(|i| i.as_u64())
+                    .is_none()
+            })
+            .cloned()
+            .collect();
+        for line in pending {
+            let head: Head =
+                serde_json::from_value(line.get("head").cloned().unwrap_or(Value::Null))
+                    .map_err(|e| StoreError::Message(e.to_string()))?;
+            let canonical = canonical_json(
+                &serde_json::to_value(&head).map_err(|e| StoreError::Message(e.to_string()))?,
+            )
+            .map_err(|e| StoreError::Message(e.to_string()))?;
+            let (body, artifact_hash) = hashedrekord_body(&canonical, &self.key)?;
+            let result = self.rekor.submit(&body);
+            let attempts = line
+                .get("rekor")
+                .and_then(|r| r.get("attempts"))
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0)
+                + 1;
+            let record = head_record_from_existing(&line, &artifact_hash, &result, attempts)?;
+            self.vol.append_record("log/heads.jsonl", &record)?;
+            appended += 1;
+        }
+        Ok(appended)
+    }
+
+    pub fn chain_bytes(&self) -> Result<Vec<u8>, StoreError> {
+        let mut out = Vec::new();
+        for rel in self.day_logs()? {
+            if let Some(bytes) = self.vol.read(&rel)? {
+                out.extend(bytes);
+            }
+        }
+        Ok(out)
+    }
+
+    pub fn read_rel(&self, rel: &str) -> Result<Option<Vec<u8>>, StoreError> {
+        self.vol.read(rel)
+    }
+
+    pub fn day_log(&self, day: Date) -> Result<Option<Vec<u8>>, StoreError> {
+        self.vol.read(&log_rel(day))
+    }
+
+    pub fn torn_files(&self) -> Result<Vec<(String, Vec<u8>)>, StoreError> {
+        let mut out = Vec::new();
+        for rel in self.vol.list("log")? {
+            if rel.contains(".torn.") {
+                if let Some(bytes) = self.vol.read(&rel)? {
+                    out.push((rel, bytes));
+                }
+            }
+        }
+        Ok(out)
+    }
+
+    fn flush_buffer(&mut self) -> Result<(), StoreError> {
+        let pending = std::mem::take(&mut self.buffer);
+        for entry in pending {
+            let _ = self.append_entry(entry)?;
+        }
+        Ok(())
+    }
+
+    fn commit(&mut self, unhashed: UnhashedEntry) -> Result<Entry, StoreError> {
+        if let Some(prev) = self.chain.entries().last() {
+            let prev_at = prev.recorded_at.as_offset_datetime();
+            if unhashed.recorded_at < prev_at {
+                return Err(StoreError::NonMonotonic(format!(
+                    "{prev_at} then {}",
+                    unhashed.recorded_at
+                )));
+            }
+        }
+        let is_digest = unhashed.event == Event::ObservationDigest;
+        let day = unhashed.recorded_at.date();
+        let rel = log_rel(day);
+        let existing = self.vol.read(&rel)?.unwrap_or_default();
+        if existing.is_empty() && !is_digest {
+            let prior =
+                self.activity.iter().any(|d| *d < day) || self.sealed.iter().any(|d| *d < day);
+            if prior {
+                return Err(StoreError::Message(format!(
+                    "{rel} must start with the previous day's observation digest"
+                )));
+            }
+        }
+        let appended = self
+            .chain
+            .append(unhashed)
+            .map_err(|e| StoreError::Chain(e.to_string()))?
+            .clone();
+        let value =
+            serde_json::to_value(&appended).map_err(|e| StoreError::Message(e.to_string()))?;
+        let line = canonical_json(&value).map_err(|e| StoreError::Message(e.to_string()))?;
+        if let Err(err) = self.vol.append_record(&rel, &line) {
+            self.chain.rollback_last();
+            return Err(err);
+        }
+        if !is_digest {
+            self.activity.insert(day);
+        }
+        Ok(appended)
+    }
+
+    fn upload_sealed_day(
+        &mut self,
+        day: Date,
+        files: &[(String, String)],
+    ) -> Result<(), StoreError> {
+        let mut payloads = Vec::new();
+        for (rel, _sha) in files {
+            let bytes = self.vol.read(rel)?.unwrap_or_default();
+            payloads.push((rel.clone(), bytes));
+        }
+        let archive = DayArchive {
+            day,
+            files: payloads,
+        };
+        if let Err(err) = self.archive.upload_day(&archive) {
+            let failure = ArchiveFailure {
+                day: fmt_day(day),
+                error: err,
+            };
+            self.record_archive_failure(&failure)?;
+        }
+        Ok(())
+    }
+
+    fn record_archive_failure(&mut self, failure: &ArchiveFailure) -> Result<(), StoreError> {
+        let line = serde_json::json!({
+            "day": failure.day,
+            "error": failure.error,
+        });
+        let bytes =
+            serde_json::to_vec(&line).map_err(|e| StoreError::Message(e.to_string()))?;
+        self.vol
+            .append_record("log/archive_upload_failures.jsonl", &bytes)?;
+        self.pending_archive_failures.push(failure.clone());
+        Ok(())
+    }
+
+    fn clear_consumed_archive_failures(&mut self) -> Result<(), StoreError> {
+        // Failures present at the start of this seal were written into today's
+        // digest note. Drop them from the pending file so they are not repeated.
+        if self.pending_archive_failures.is_empty() {
+            return Ok(());
+        }
+        // Anything recorded during upload_sealed_day this call must remain.
+        // clear_consumed runs *before* upload, so the whole vec is consumed.
+        self.pending_archive_failures.clear();
+        self.vol
+            .write_exact("log/archive_upload_failures.jsonl", b"")?;
+        Ok(())
+    }
+
+    fn day_stats(&self, day: Date, as_of: OffsetDateTime) -> Result<ObservationDayStats, StoreError> {
+        let prefix = format!(
+            "observations/{:04}/{:02}/{:02}/",
+            day.year(),
+            u8::from(day.month()),
+            day.day()
+        );
+        let mut files = self.vol.list("observations")?;
+        files.retain(|p| p.starts_with(&prefix) && p.ends_with(".jsonl"));
+        files.sort();
+        let mut repos = BTreeSet::new();
+        let mut ok = 0u64;
+        let mut not_modified = 0u64;
+        let mut failed = 0u64;
+        let mut skipped = 0u64;
+        let mut digests = Vec::new();
+        for path in files {
+            let bytes = self.vol.read(&path)?.unwrap_or_default();
+            let sha = hex::encode(Sha256::digest(&bytes));
+            for line in bytes.split(|b| *b == b'\n') {
+                if line.is_empty() {
+                    continue;
+                }
+                let obs: Observation = serde_json::from_slice(line)
+                    .map_err(|e| StoreError::Corrupt(format!("{path}: {e}")))?;
+                repos.insert(obs.repo().as_str().to_owned());
+                match obs.outcome() {
+                    Outcome::Ok { .. } => ok += 1,
+                    Outcome::NotModified { .. } => not_modified += 1,
+                    Outcome::Failed { .. } => failed += 1,
+                    Outcome::Skipped { .. } => skipped += 1,
+                }
+            }
+            digests.push((path, sha));
+        }
+        Ok(ObservationDayStats {
+            date: fmt_day(day),
+            repos_polled: repos.len() as u64,
+            ok,
+            not_modified,
+            failed,
+            skipped,
+            files: digests,
+            note: self.recovery_note(as_of)?,
+        })
+    }
+
+    fn recovery_note(&self, as_of: OffsetDateTime) -> Result<Option<String>, StoreError> {
+        let mut mentioned = String::new();
+        for entry in self.chain.entries() {
+            if let Some(note) = entry
+                .observation_digest
+                .as_ref()
+                .and_then(|d| d.note.as_ref())
+            {
+                mentioned.push_str(note);
+                mentioned.push('\n');
+            }
+        }
+        let mut notes = Vec::new();
+        for (rel, bytes) in self.torn_files()? {
+            if mentioned.contains(&rel) {
+                continue;
+            }
+            notes.push(format!(
+                "torn write preserved: {rel} ({} bytes)",
+                bytes.len()
+            ));
+        }
+        for seq in self.witness_backlog(as_of)? {
+            let text = format!(
+                "witness backlog: head seq {seq} has no Rekor log_index after {WITNESS_BACKLOG_HOURS}h"
+            );
+            if !mentioned.contains(&text) {
+                notes.push(text);
+            }
+        }
+        // Prior seal's archive failures — appear in *this* digest (the next one).
+        for failure in &self.pending_archive_failures {
+            let text = format_archive_failure_note(failure);
+            if !mentioned.contains(&text) {
+                notes.push(text);
+            }
+        }
+        notes.sort();
+        if notes.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(notes.join("; ")))
+        }
+    }
+
+    /// Seqs whose latest heads.jsonl line still lacks `rekor.log_index` and
+    /// whose `head.recorded_at` is older than [`WITNESS_BACKLOG_HOURS`].
+    pub fn witness_backlog(&self, as_of: OffsetDateTime) -> Result<Vec<u64>, StoreError> {
+        let lines = self.head_lines()?;
+        let mut latest: std::collections::BTreeMap<u64, &Value> = std::collections::BTreeMap::new();
+        for line in &lines {
+            if let Some(seq) = line
+                .get("head")
+                .and_then(|h| h.get("seq"))
+                .and_then(|v| v.as_u64())
+            {
+                latest.insert(seq, line);
+            }
+        }
+        let cutoff = as_of - time::Duration::hours(WITNESS_BACKLOG_HOURS);
+        let mut out = Vec::new();
+        for (seq, line) in latest {
+            let has_index = line
+                .get("rekor")
+                .and_then(|r| r.get("log_index"))
+                .and_then(|v| v.as_u64())
+                .is_some();
+            if has_index {
+                continue;
+            }
+            let Some(recorded) = line
+                .get("head")
+                .and_then(|h| h.get("recorded_at"))
+                .and_then(|v| v.as_str())
+            else {
+                continue;
+            };
+            let Ok(ts) = OffsetDateTime::parse(
+                recorded,
+                &time::format_description::well_known::Rfc3339,
+            ) else {
+                continue;
+            };
+            if ts <= cutoff {
+                out.push(seq);
+            }
+        }
+        out.sort_unstable();
+        Ok(out)
+    }
+
+    fn publish_head(&mut self, entry: &Entry) -> Result<(), StoreError> {
+        let entry_hash = entry
+            .entry_hash
+            .clone()
+            .ok_or_else(|| StoreError::Chain("digest entry has no hash".into()))?;
+        let head = Head {
+            seq: entry.seq,
+            entry_hash,
+            recorded_at: entry.recorded_at,
+            log_id: self.log_id.clone(),
+        };
+        let signed = sign_head(&head, &self.key).map_err(|e| StoreError::Message(e.to_string()))?;
+        let canonical = canonical_json(
+            &serde_json::to_value(&head).map_err(|e| StoreError::Message(e.to_string()))?,
+        )
+        .map_err(|e| StoreError::Message(e.to_string()))?;
+        let (body, artifact_hash) = hashedrekord_body(&canonical, &self.key)?;
+        let result = self.rekor.submit(&body);
+        let line = head_record(&signed, &self.key, &artifact_hash, &result, 1)?;
+        self.vol.append_record("log/heads.jsonl", &line)?;
+        Ok(())
+    }
+
+    fn head_lines(&self) -> Result<Vec<Value>, StoreError> {
+        let Some(bytes) = self.vol.read("log/heads.jsonl")? else {
+            return Ok(Vec::new());
+        };
+        let mut out = Vec::new();
+        for (i, line) in bytes.split(|b| *b == b'\n').enumerate() {
+            if line.is_empty() {
+                continue;
+            }
+            let value = serde_json::from_slice(line)
+                .map_err(|e| StoreError::Corrupt(format!("heads.jsonl:{}: {e}", i + 1)))?;
+            out.push(value);
+        }
+        Ok(out)
+    }
+
+    fn day_logs(&self) -> Result<Vec<String>, StoreError> {
+        let mut files = self.vol.list("log")?;
+        files.retain(|p| is_day_log(p));
+        files.sort();
+        Ok(files)
+    }
+}
+
+impl Store<FaultVolume> {
+    pub fn fault_mut(&mut self) -> &mut FaultVolume {
+        &mut self.vol
+    }
+}
+
+fn load_archive_failures<V: Volume>(vol: &mut V) -> Result<Vec<ArchiveFailure>, StoreError> {
+    let Some(bytes) = vol.read("log/archive_upload_failures.jsonl")? else {
+        return Ok(Vec::new());
+    };
+    let mut out = Vec::new();
+    for (i, line) in bytes.split(|b| *b == b'\n').enumerate() {
+        if line.is_empty() {
+            continue;
+        }
+        let value: Value = serde_json::from_slice(line).map_err(|e| {
+            StoreError::Corrupt(format!("archive_upload_failures.jsonl:{}: {e}", i + 1))
+        })?;
+        let day = value
+            .get("day")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| {
+                StoreError::Corrupt(format!(
+                    "archive_upload_failures.jsonl:{}: missing day",
+                    i + 1
+                ))
+            })?
+            .to_owned();
+        let error = value
+            .get("error")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| {
+                StoreError::Corrupt(format!(
+                    "archive_upload_failures.jsonl:{}: missing error",
+                    i + 1
+                ))
+            })?
+            .to_owned();
+        out.push(ArchiveFailure { day, error });
+    }
+    Ok(out)
+}
+
+fn load_chain<V: Volume>(
+    vol: &mut V,
+    recovered_at: OffsetDateTime,
+    log_id: &str,
+) -> Result<(Chain, BTreeSet<Date>, BTreeSet<Date>), StoreError> {
+    let mut files = vol.list("log")?;
+    files.retain(|p| is_day_log(p));
+    files.sort();
+    if let Some(last) = files.last().cloned() {
+        recover_tail(vol, &last, recovered_at)?;
+    }
+    for (i, rel) in files.iter().enumerate() {
+        if i + 1 == files.len() {
+            continue;
+        }
+        let bytes = vol.read(rel)?.unwrap_or_default();
+        if !bytes.is_empty() && !bytes.ends_with(b"\n") {
+            return Err(StoreError::Corrupt(format!(
+                "{rel} does not end in a newline and is not the chain tail"
+            )));
+        }
+    }
+    // Re-list: recovery may have removed an all-torn file.
+    let mut files = vol.list("log")?;
+    files.retain(|p| is_day_log(p));
+    files.sort();
+    let mut entries = Vec::new();
+    for rel in &files {
+        let bytes = vol.read(rel)?.unwrap_or_default();
+        if !bytes.is_empty() && !bytes.ends_with(b"\n") {
+            return Err(StoreError::Corrupt(format!(
+                "{rel} still has a torn tail after recovery"
+            )));
+        }
+        for (i, line) in bytes.split(|b| *b == b'\n').enumerate() {
+            if line.is_empty() {
+                continue;
+            }
+            let entry: Entry = serde_json::from_slice(line)
+                .map_err(|e| StoreError::Corrupt(format!("{rel}:{}: {e}", i + 1)))?;
+            entries.push(entry);
+        }
+    }
+    let chain = Chain::from_verified(log_id, entries)
+        .map_err(|e| StoreError::Corrupt(format!("tail failed verification: {e}")))?;
+
+    let mut activity = BTreeSet::new();
+    let mut sealed = BTreeSet::new();
+    for entry in chain.entries() {
+        if entry.event == Event::ObservationDigest {
+            if let Some(d) = &entry.observation_digest {
+                if let Some(date) = parse_day(&d.date) {
+                    sealed.insert(date);
+                }
+            }
+        } else {
+            activity.insert(entry.recorded_at.as_offset_datetime().date());
+        }
+    }
+    let obs = vol.list("observations")?;
+    for rel in obs {
+        if let Some(date) = date_from_obs_rel(&rel) {
+            activity.insert(date);
+        }
+    }
+    Ok((chain, activity, sealed))
+}
+
+fn recover_tail<V: Volume>(
+    vol: &mut V,
+    rel: &str,
+    recovered_at: OffsetDateTime,
+) -> Result<(), StoreError> {
+    let bytes = vol.read(rel)?.unwrap_or_default();
+    if bytes.is_empty() || bytes.ends_with(b"\n") {
+        return Ok(());
+    }
+    let split = bytes.iter().rposition(|b| *b == b'\n');
+    let (keep, torn) = match split {
+        Some(i) => (&bytes[..=i], &bytes[i + 1..]),
+        None => (&b""[..], &bytes[..]),
+    };
+    if torn.is_empty() {
+        return Ok(());
+    }
+    let torn_rel = format!("{rel}.torn.{}", stamp(recovered_at));
+    // Write the sidecar first so a crash cannot drop the only copy.
+    vol.write_exact(&torn_rel, torn)?;
+    if keep.is_empty() {
+        vol.remove(rel)?;
+    } else {
+        vol.write_exact(rel, keep)?;
+    }
+    Ok(())
+}
+
+fn is_day_log(rel: &str) -> bool {
+    let name = rel.rsplit('/').next().unwrap_or(rel);
+    name.ends_with(".jsonl") && name != "heads.jsonl" && !rel.contains(".torn.")
+}
+
+fn observation_rel(day: Date, repo_segment: String) -> String {
+    format!(
+        "observations/{:04}/{:02}/{:02}/{repo_segment}.jsonl",
+        day.year(),
+        u8::from(day.month()),
+        day.day()
+    )
+}
+
+fn log_rel(day: Date) -> String {
+    format!(
+        "log/{:04}/{:02}/{:02}.jsonl",
+        day.year(),
+        u8::from(day.month()),
+        day.day()
+    )
+}
+
+fn fmt_day(day: Date) -> String {
+    format!(
+        "{:04}-{:02}-{:02}",
+        day.year(),
+        u8::from(day.month()),
+        day.day()
+    )
+}
+
+fn parse_day(s: &str) -> Option<Date> {
+    let mut parts = s.split('-');
+    let year: i32 = parts.next()?.parse().ok()?;
+    let month: u8 = parts.next()?.parse().ok()?;
+    let day: u8 = parts.next()?.parse().ok()?;
+    if parts.next().is_some() {
+        return None;
+    }
+    Date::from_calendar_date(year, time::Month::try_from(month).ok()?, day).ok()
+}
+
+fn date_from_obs_rel(rel: &str) -> Option<Date> {
+    // observations/YYYY/MM/DD/<repo>.jsonl
+    let mut parts = rel.split('/');
+    if parts.next()? != "observations" {
+        return None;
+    }
+    let year: i32 = parts.next()?.parse().ok()?;
+    let month: u8 = parts.next()?.parse().ok()?;
+    let day: u8 = parts.next()?.parse().ok()?;
+    Date::from_calendar_date(year, time::Month::try_from(month).ok()?, day).ok()
+}
+
+fn start_of(day: Date) -> OffsetDateTime {
+    PrimitiveDateTime::new(day, Time::MIDNIGHT).assume_utc()
+}
+
+fn stamp(t: OffsetDateTime) -> String {
+    format!(
+        "{:04}{:02}{:02}T{:02}{:02}{:02}.{:03}Z",
+        t.year(),
+        u8::from(t.month()),
+        t.day(),
+        t.hour(),
+        t.minute(),
+        t.second(),
+        t.nanosecond() / 1_000_000
+    )
+}
+
+fn hashedrekord_body(
+    canonical_head: &[u8],
+    key: &SigningKey,
+) -> Result<(Value, String), StoreError> {
+    let hash = Sha512::digest(canonical_head);
+    let hex_hash = hex::encode(hash);
+    let artifact_hash = format!("sha512:{hex_hash}");
+    let sig =
+        sign_ed25519ph(key, canonical_head).map_err(|e| StoreError::Message(e.to_string()))?;
+    let pem = public_key_pkix_pem(&key.verifying_key_bytes());
+    let b64 = base64::engine::general_purpose::STANDARD;
+    let body = serde_json::json!({
+        "apiVersion": REKOR_VERSION,
+        "kind": REKOR_KIND,
+        "spec": {
+            "data": {
+                "hash": {
+                    "algorithm": "sha512",
+                    "value": hex_hash,
+                }
+            },
+            "signature": {
+                "content": b64.encode(sig),
+                "publicKey": {
+                    "content": b64.encode(pem.as_bytes()),
+                }
+            }
+        }
+    });
+    Ok((body, artifact_hash))
+}
+
+fn head_record(
+    signed: &refledger_log::SignedHead,
+    key: &SigningKey,
+    artifact_hash: &str,
+    result: &Result<RekorAcceptance, String>,
+    attempts: u64,
+) -> Result<Vec<u8>, StoreError> {
+    let mut rekor = serde_json::Map::new();
+    rekor.insert("kind".into(), REKOR_KIND.into());
+    rekor.insert("api_version".into(), REKOR_VERSION.into());
+    rekor.insert("artifact_hash".into(), artifact_hash.into());
+    rekor.insert("attempts".into(), serde_json::json!(attempts));
+    match result {
+        Ok(accepted) => {
+            rekor.insert("log_index".into(), serde_json::json!(accepted.log_index));
+            rekor.insert("uuid".into(), accepted.uuid.clone().into());
+            if let Some(id) = &accepted.log_id {
+                rekor.insert("log_id".into(), id.clone().into());
+            }
+            if let Some(t) = accepted.integrated_time {
+                rekor.insert("integrated_time".into(), serde_json::json!(t));
+            }
+        }
+        Err(err) => {
+            let clipped: String = err.chars().take(500).collect();
+            rekor.insert("error".into(), clipped.into());
+        }
+    }
+    let value = serde_json::json!({
+        "head": &signed.head,
+        "signature": &signed.signature,
+        "public_key": &signed.public_key,
+        "key_id": key_id(&key.verifying_key_bytes()),
+        "rekor": Value::Object(rekor),
+    });
+    canonical_json(&value).map_err(|e| StoreError::Message(e.to_string()))
+}
+
+fn head_record_from_existing(
+    previous: &Value,
+    artifact_hash: &str,
+    result: &Result<RekorAcceptance, String>,
+    attempts: u64,
+) -> Result<Vec<u8>, StoreError> {
+    let mut rekor = serde_json::Map::new();
+    rekor.insert("kind".into(), REKOR_KIND.into());
+    rekor.insert("api_version".into(), REKOR_VERSION.into());
+    rekor.insert("artifact_hash".into(), artifact_hash.into());
+    rekor.insert("attempts".into(), serde_json::json!(attempts));
+    match result {
+        Ok(accepted) => {
+            rekor.insert("log_index".into(), serde_json::json!(accepted.log_index));
+            rekor.insert("uuid".into(), accepted.uuid.clone().into());
+            if let Some(id) = &accepted.log_id {
+                rekor.insert("log_id".into(), id.clone().into());
+            }
+            if let Some(t) = accepted.integrated_time {
+                rekor.insert("integrated_time".into(), serde_json::json!(t));
+            }
+        }
+        Err(err) => {
+            let clipped: String = err.chars().take(500).collect();
+            rekor.insert("error".into(), clipped.into());
+        }
+    }
+    let value = serde_json::json!({
+        "head": previous.get("head").cloned().unwrap_or(Value::Null),
+        "signature": previous.get("signature").cloned().unwrap_or(Value::Null),
+        "public_key": previous.get("public_key").cloned().unwrap_or(Value::Null),
+        "key_id": previous.get("key_id").cloned().unwrap_or(Value::Null),
+        "rekor": Value::Object(rekor),
+    });
+    canonical_json(&value).map_err(|e| StoreError::Message(e.to_string()))
+}

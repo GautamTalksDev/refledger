@@ -1,0 +1,9 @@
+{
+  "status": 301,
+  "headers": {
+    "location": "https://api.github.com/repositories/999001/git/matching-refs/tags"
+  },
+  "body": {
+    "message": "Moved Permanently"
+  }
+}

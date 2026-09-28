@@ -1,0 +1,14 @@
+{
+  "description": "RepoUnavailable: one event for a 404, not N tag deletions.",
+  "expected_canonical": "{\"event\":\"repo_unavailable\",\"format_version\":1,\"http_status\":404,\"prev_hash\":\"sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"recorded_at\":\"2026-08-01T00:00:00.000Z\",\"repo\":\"acme/gone\",\"seq\":12}",
+  "expected_hash": "sha256:62ff46be54328d2f857bacbb4bda6d0b2bd214f9bcd5701f16c56227b3ad5bb3",
+  "input": {
+    "event": "repo_unavailable",
+    "format_version": 1,
+    "http_status": 404,
+    "prev_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "recorded_at": "2026-08-01T00:00:00.000Z",
+    "repo": "acme/gone",
+    "seq": 12
+  }
+}

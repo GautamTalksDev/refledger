@@ -1,0 +1,10 @@
+{
+  "status": 200,
+  "headers": {},
+  "body": {
+    "name": "action.yaml",
+    "path": "action.yaml",
+    "sha": "a100000000000000000000000000000000000001",
+    "type": "file"
+  }
+}

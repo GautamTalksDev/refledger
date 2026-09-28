@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "headers": {
+    "etag": "W/\"deep\""
+  },
+  "body": [
+    {
+      "ref": "refs/tags/too-deep",
+      "node_id": "x",
+      "url": "...",
+      "object": {
+        "sha": "d000000000000000000000000000000000000002",
+        "type": "tag",
+        "url": "..."
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+error[E0599]: no method named `build` found for struct `ObservationBuilder<HasRepo, MissingObservedAt, HasMethod, HasOutcome>` in the current scope
+  --> tests/observation_ui/missing_observed_at.rs:13:10
+   |
+ 6 |       let _ = Observation::builder()
+   |  _____________-
+ 7 | |         .repo("acme/widgets")
+ 8 | |         .unwrap()
+ 9 | |         .method(Method::Rest)
+...  |
+12 | |         })
+13 | |         .build();
+   | |         -^^^^^ method not found in `ObservationBuilder<HasRepo, MissingObservedAt, HasMethod, HasOutcome>`
+   | |_________|
+   |
+   |
+   = note: the method was found for `ObservationBuilder<HasRepo, HasObservedAt, HasMethod, HasOutcome>`

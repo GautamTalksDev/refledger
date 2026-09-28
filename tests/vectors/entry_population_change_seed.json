@@ -1,0 +1,20 @@
+{
+  "description": "PopulationChange Added with Seed reason — seed set membership.",
+  "expected_canonical": "{\"event\":\"population_change\",\"format_version\":1,\"population_change\":{\"change\":\"added\",\"note\":\"official_org:actions/*\",\"reason\":{\"type\":\"seed\"}},\"prev_hash\":\"sha256:a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"recorded_at\":\"2026-09-28T00:00:00.000Z\",\"repo\":\"actions/checkout\",\"seq\":16}",
+  "expected_hash": "sha256:03d863a5d8129c8c5fa4894e75148259569de1e4137318496a4604028e246dc4",
+  "input": {
+    "event": "population_change",
+    "format_version": 1,
+    "population_change": {
+      "change": "added",
+      "note": "official_org:actions/*",
+      "reason": {
+        "type": "seed"
+      }
+    },
+    "prev_hash": "sha256:a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+    "recorded_at": "2026-09-28T00:00:00.000Z",
+    "repo": "actions/checkout",
+    "seq": 16
+  }
+}

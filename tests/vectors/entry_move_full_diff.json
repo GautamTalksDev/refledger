@@ -1,0 +1,57 @@
+{
+  "description": "Move with Diff including diff_possibly_truncated=false and a complete path list.",
+  "expected_canonical": "{\"ancestry\":\"ahead\",\"classification\":\"content_change\",\"diff\":{\"diff_possibly_truncated\":false,\"files_added\":2,\"files_modified\":3,\"files_removed\":1,\"files_renamed\":1,\"paths\":[\"src/lib.rs\",\"src/main.rs\",\"README.md\",\"Cargo.toml\",\"old/name.rs\",\"new/name.rs\"]},\"event\":\"move\",\"format_version\":1,\"from\":{\"commit_sha\":\"2222222222222222222222222222222222222222\",\"first_observed\":\"2026-02-01T00:00:00.000Z\",\"last_observed\":\"2026-03-01T00:00:00.000Z\",\"observation_count\":8,\"stable_days\":28,\"target_sha\":\"1111111111111111111111111111111111111111\",\"tree_sha\":\"3333333333333333333333333333333333333333\"},\"observation_window_seconds\":7200,\"prev_hash\":\"sha256:2222222222222222222222222222222222222222222222222222222222222222\",\"recorded_at\":\"2026-03-16T08:30:00.000Z\",\"ref\":\"refs/tags/v1.1.0\",\"ref_form\":\"exact\",\"ref_type_after\":\"annotated\",\"ref_type_before\":\"annotated\",\"repo\":\"acme/widgets\",\"seq\":2,\"severity\":\"high\",\"source_observations\":[\"01ARZ3NDEKTSV4RRFFQ69G5FAV\",\"01ARZ3NDEKTSV4RRFFQ69G5FAW\"],\"to\":{\"commit_sha\":\"5555555555555555555555555555555555555555\",\"first_observed\":\"2026-03-16T08:30:00.000Z\",\"observation_count\":1,\"stable_days\":0,\"target_sha\":\"4444444444444444444444444444444444444444\",\"tree_sha\":\"6666666666666666666666666666666666666666\"}}",
+  "expected_hash": "sha256:3d4f9848cfe5a7861bf9ed2180e18734a4d94251cd0a767c4428762be0a706b1",
+  "input": {
+    "ancestry": "ahead",
+    "classification": "content_change",
+    "diff": {
+      "diff_possibly_truncated": false,
+      "files_added": 2,
+      "files_modified": 3,
+      "files_removed": 1,
+      "files_renamed": 1,
+      "paths": [
+        "src/lib.rs",
+        "src/main.rs",
+        "README.md",
+        "Cargo.toml",
+        "old/name.rs",
+        "new/name.rs"
+      ]
+    },
+    "event": "move",
+    "format_version": 1,
+    "from": {
+      "commit_sha": "2222222222222222222222222222222222222222",
+      "first_observed": "2026-02-01T00:00:00.000Z",
+      "last_observed": "2026-03-01T00:00:00.000Z",
+      "observation_count": 8,
+      "stable_days": 28,
+      "target_sha": "1111111111111111111111111111111111111111",
+      "tree_sha": "3333333333333333333333333333333333333333"
+    },
+    "observation_window_seconds": 7200,
+    "prev_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "recorded_at": "2026-03-16T08:30:00.000Z",
+    "ref": "refs/tags/v1.1.0",
+    "ref_form": "exact",
+    "ref_type_after": "annotated",
+    "ref_type_before": "annotated",
+    "repo": "acme/widgets",
+    "seq": 2,
+    "severity": "high",
+    "source_observations": [
+      "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+      "01ARZ3NDEKTSV4RRFFQ69G5FAW"
+    ],
+    "to": {
+      "commit_sha": "5555555555555555555555555555555555555555",
+      "first_observed": "2026-03-16T08:30:00.000Z",
+      "observation_count": 1,
+      "stable_days": 0,
+      "target_sha": "4444444444444444444444444444444444444444",
+      "tree_sha": "6666666666666666666666666666666666666666"
+    }
+  }
+}

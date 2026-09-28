@@ -1,0 +1,50 @@
+{
+  "description": "Diff with diff_possibly_truncated=true and empty paths (cap reached).",
+  "expected_canonical": "{\"ancestry\":\"ahead\",\"classification\":\"content_change\",\"diff\":{\"diff_possibly_truncated\":true,\"files_added\":100,\"files_modified\":150,\"files_removed\":50,\"files_renamed\":0,\"paths\":[]},\"event\":\"move\",\"format_version\":1,\"from\":{\"commit_sha\":\"2222222222222222222222222222222222222222\",\"first_observed\":\"2026-01-01T00:00:00.000Z\",\"last_observed\":\"2026-08-01T00:00:00.000Z\",\"observation_count\":5,\"stable_days\":212,\"target_sha\":\"1111111111111111111111111111111111111111\",\"tree_sha\":\"3333333333333333333333333333333333333333\"},\"observation_window_seconds\":3600,\"prev_hash\":\"sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"recorded_at\":\"2026-08-04T00:00:00.000Z\",\"ref\":\"refs/tags/v6.0\",\"ref_form\":\"exact\",\"ref_type_after\":\"annotated\",\"ref_type_before\":\"annotated\",\"repo\":\"torvalds/linux\",\"seq\":15,\"severity\":\"high\",\"source_observations\":[\"01ARZ3NDEKTSV4RRFFQ69G5FAV\",\"01ARZ3NDEKTSV4RRFFQ69G5FAW\"],\"to\":{\"commit_sha\":\"5555555555555555555555555555555555555555\",\"first_observed\":\"2026-08-04T00:00:00.000Z\",\"observation_count\":1,\"stable_days\":0,\"target_sha\":\"4444444444444444444444444444444444444444\",\"tree_sha\":\"6666666666666666666666666666666666666666\"}}",
+  "expected_hash": "sha256:163abb3e3a942227358a1c1b729604a9ad36380032a48d48053c52e96fd80f4e",
+  "input": {
+    "ancestry": "ahead",
+    "classification": "content_change",
+    "diff": {
+      "diff_possibly_truncated": true,
+      "files_added": 100,
+      "files_modified": 150,
+      "files_removed": 50,
+      "files_renamed": 0,
+      "paths": []
+    },
+    "event": "move",
+    "format_version": 1,
+    "from": {
+      "commit_sha": "2222222222222222222222222222222222222222",
+      "first_observed": "2026-01-01T00:00:00.000Z",
+      "last_observed": "2026-08-01T00:00:00.000Z",
+      "observation_count": 5,
+      "stable_days": 212,
+      "target_sha": "1111111111111111111111111111111111111111",
+      "tree_sha": "3333333333333333333333333333333333333333"
+    },
+    "observation_window_seconds": 3600,
+    "prev_hash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "recorded_at": "2026-08-04T00:00:00.000Z",
+    "ref": "refs/tags/v6.0",
+    "ref_form": "exact",
+    "ref_type_after": "annotated",
+    "ref_type_before": "annotated",
+    "repo": "torvalds/linux",
+    "seq": 15,
+    "severity": "high",
+    "source_observations": [
+      "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+      "01ARZ3NDEKTSV4RRFFQ69G5FAW"
+    ],
+    "to": {
+      "commit_sha": "5555555555555555555555555555555555555555",
+      "first_observed": "2026-08-04T00:00:00.000Z",
+      "observation_count": 1,
+      "stable_days": 0,
+      "target_sha": "4444444444444444444444444444444444444444",
+      "tree_sha": "6666666666666666666666666666666666666666"
+    }
+  }
+}

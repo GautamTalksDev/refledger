@@ -1,0 +1,16 @@
+error[E0599]: no method named `build` found for struct `BindingBuilder<MissingObservationCount>` in the current scope
+  --> tests/entry_ui/from_missing_observation_count.rs:20:10
+   |
+14 |       let _from = Binding::builder()
+   |  _________________-
+15 | |         .target_sha("a".repeat(40))
+16 | |         .commit_sha("b".repeat(40))
+17 | |         .tree_sha("c".repeat(40))
+18 | |         .first_observed(first)
+19 | |         .last_observed(last)
+20 | |         .build();
+   | |         -^^^^^ method not found in `BindingBuilder<MissingObservationCount>`
+   | |_________|
+   |
+   |
+   = note: the method was found for `BindingBuilder<HasObservationCount>`

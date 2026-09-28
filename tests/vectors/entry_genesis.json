@@ -1,0 +1,14 @@
+{
+  "description": "Genesis entry: seq 0, format_version 1, zero prev_hash.",
+  "expected_canonical": "{\"corrects_seq\":0,\"event\":\"correction\",\"format_version\":1,\"prev_hash\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"reason\":\"genesis placeholder — log opened\",\"recorded_at\":\"2026-01-01T00:00:00.000Z\",\"seq\":0}",
+  "expected_hash": "sha256:47ab65000f70ca9aaa965be0930bd53fb6df7f34547637408afa60eae2a54392",
+  "input": {
+    "corrects_seq": 0,
+    "event": "correction",
+    "format_version": 1,
+    "prev_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "reason": "genesis placeholder — log opened",
+    "recorded_at": "2026-01-01T00:00:00.000Z",
+    "seq": 0
+  }
+}

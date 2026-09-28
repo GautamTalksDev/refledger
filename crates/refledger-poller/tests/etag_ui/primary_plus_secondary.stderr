@@ -1,0 +1,13 @@
+error[E0369]: cannot add `SecondaryPoints` to `PrimaryPoints`
+ --> tests/etag_ui/primary_plus_secondary.rs:6:24
+  |
+6 |     let _sum = primary + secondary;
+  |                ------- ^ --------- SecondaryPoints
+  |                |
+  |                PrimaryPoints
+  |
+note: `PrimaryPoints` does not implement `Add<SecondaryPoints>`
+ --> src/github/ratelimit.rs
+  |
+  | pub struct PrimaryPoints(u32);
+  | ^^^^^^^^^^^^^^^^^^^^^^^^ `PrimaryPoints` is defined in another crate

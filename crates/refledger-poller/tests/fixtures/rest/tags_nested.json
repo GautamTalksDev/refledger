@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "headers": {
+    "etag": "W/\"nest\""
+  },
+  "body": [
+    {
+      "ref": "refs/tags/deep",
+      "node_id": "x",
+      "url": "https://api.github.com/repos/acme/widgets/git/refs/tags/deep",
+      "object": {
+        "sha": "d000000000000000000000000000000000000002",
+        "type": "tag",
+        "url": "https://api.github.com/repos/acme/widgets/git/tags/d000000000000000000000000000000000000002"
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "status": 200,
+  "headers": {
+    "etag": "W/\"repo-arch\""
+  },
+  "body": {
+    "full_name": "acme/widgets",
+    "archived": true,
+    "private": false
+  }
+}

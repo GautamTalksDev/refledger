@@ -1,0 +1,19 @@
+# Standalone canary scorer — not a workspace member.
+[workspace]
+
+[package]
+name = "refledger-canary-score"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "refledger-canary-score"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+time = { version = "0.3", features = ["parsing", "formatting", "serde"] }
+anyhow = "1"

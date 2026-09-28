@@ -1,0 +1,11 @@
+{
+  "status": 404,
+  "headers": {
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "message": "Not Found",
+    "documentation_url": "https://docs.github.com/rest/git/refs#list-matching-references",
+    "status": "404"
+  }
+}

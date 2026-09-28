@@ -1,0 +1,42 @@
+{
+  "description": "Minimal move entry (format_version 1): required move fields including source_observations.",
+  "expected_canonical": "{\"ancestry\":\"ahead\",\"classification\":\"content_change\",\"event\":\"move\",\"format_version\":1,\"from\":{\"commit_sha\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"first_observed\":\"2026-01-01T00:00:00.000Z\",\"last_observed\":\"2026-01-11T00:00:00.000Z\",\"observation_count\":4,\"stable_days\":10,\"target_sha\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"tree_sha\":\"cccccccccccccccccccccccccccccccccccccccc\"},\"observation_window_seconds\":3600,\"prev_hash\":\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"recorded_at\":\"2026-03-15T12:00:00.000Z\",\"ref\":\"refs/tags/v1.0.0\",\"ref_form\":\"exact\",\"ref_type_after\":\"annotated\",\"ref_type_before\":\"annotated\",\"repo\":\"acme/widgets\",\"seq\":1,\"severity\":\"high\",\"source_observations\":[\"01ARZ3NDEKTSV4RRFFQ69G5FAV\",\"01ARZ3NDEKTSV4RRFFQ69G5FAW\"],\"to\":{\"commit_sha\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"first_observed\":\"2026-03-15T12:00:00.000Z\",\"observation_count\":1,\"stable_days\":0,\"target_sha\":\"dddddddddddddddddddddddddddddddddddddddd\",\"tree_sha\":\"ffffffffffffffffffffffffffffffffffffffff\"}}",
+  "expected_hash": "sha256:f585e2be816ab32812e69b35d1b7d3aa59ba95ef63e94a81e2b23bff5ed3d43f",
+  "input": {
+    "ancestry": "ahead",
+    "classification": "content_change",
+    "event": "move",
+    "format_version": 1,
+    "from": {
+      "commit_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "first_observed": "2026-01-01T00:00:00.000Z",
+      "last_observed": "2026-01-11T00:00:00.000Z",
+      "observation_count": 4,
+      "stable_days": 10,
+      "target_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "tree_sha": "cccccccccccccccccccccccccccccccccccccccc"
+    },
+    "observation_window_seconds": 3600,
+    "prev_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "recorded_at": "2026-03-15T12:00:00.000Z",
+    "ref": "refs/tags/v1.0.0",
+    "ref_form": "exact",
+    "ref_type_after": "annotated",
+    "ref_type_before": "annotated",
+    "repo": "acme/widgets",
+    "seq": 1,
+    "severity": "high",
+    "source_observations": [
+      "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+      "01ARZ3NDEKTSV4RRFFQ69G5FAW"
+    ],
+    "to": {
+      "commit_sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "first_observed": "2026-03-15T12:00:00.000Z",
+      "observation_count": 1,
+      "stable_days": 0,
+      "target_sha": "dddddddddddddddddddddddddddddddddddddddd",
+      "tree_sha": "ffffffffffffffffffffffffffffffffffffffff"
+    }
+  }
+}
