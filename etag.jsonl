@@ -148,3 +148,4 @@
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"e8ccb7a0810c23a0f06f18b87f4ffe03a9c4d7c397e472ff251fa2db0cd6ccad\"","stored_at":"2026-09-29T22:07:22.123Z"}
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"edd2609f6a2bcf82b52f479e1a20dceef70e234979e345148712d858ca0e9222\"","stored_at":"2026-09-29T22:12:24.606Z"}
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"70cfedf3823c1836e38e48c4f691655b5a1cfa652e6a4aa5b6671c4a14944162\"","stored_at":"2026-09-29T22:17:22.110Z"}
+{"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"eb59bd1e21ca28a957bb48e4c3f1278f5b7b454ca36f191be19af9edaa1d4c9b\"","stored_at":"2026-09-29T22:32:27.472Z"}
