@@ -132,11 +132,30 @@ impl<T: Transport> CountingTransport<T> {
 
 impl<T: Transport> Transport for CountingTransport<T> {
     fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
-        let n = self.requests.fetch_add(1, Ordering::Relaxed) + 1;
-        if n > self.max {
-            return Err(format!("request budget exhausted ({n} > {})", self.max));
+        // Claim a slot before sending. Never let the counter exceed `max`,
+        // even when a concurrent claim races (compare-exchange loop).
+        loop {
+            let cur = self.requests.load(Ordering::Relaxed);
+            if cur >= self.max {
+                return Err(format!("request budget exhausted ({cur} >= {})", self.max));
+            }
+            if self
+                .requests
+                .compare_exchange_weak(cur, cur + 1, Ordering::Relaxed, Ordering::Relaxed)
+                .is_ok()
+            {
+                break;
+            }
         }
-        let resp = self.inner.send(request)?;
+        let resp = match self.inner.send(request) {
+            Ok(r) => r,
+            Err(e) => {
+                // A failed send still consumed budget: the attempt happened.
+                // Callers that need to distinguish budget-deny from transport
+                // failure inspect the error string.
+                return Err(e);
+            }
+        };
         match resp.status {
             200 => {
                 self.status_200.fetch_add(1, Ordering::Relaxed);
@@ -176,6 +195,7 @@ impl Transport for UreqTransport {
 }
 
 fn read_response(status: u16, resp: ureq::Response) -> Result<RestResponse, String> {
+    let url = resp.get_url().to_owned();
     let mut headers = BTreeMap::new();
     for name in [
         "etag",
@@ -196,14 +216,50 @@ fn read_response(status: u16, resp: ureq::Response) -> Result<RestResponse, Stri
         if text.is_empty() {
             None
         } else {
-            Some(serde_json::from_str(&text).map_err(|e| e.to_string())?)
+            match serde_json::from_str(&text) {
+                Ok(v) => Some(v),
+                Err(e) if (400..600).contains(&status) => {
+                    // Preserve HTTP status for classification; attach a truncated
+                    // body so callers can log the failure cause.
+                    eprintln!(
+                        "github non-json body url={url} status={status} parse={e} body={}",
+                        truncate_chars(&text, 512)
+                    );
+                    Some(serde_json::json!({ "_non_json_body": truncate_chars(&text, 512) }))
+                }
+                Err(e) => {
+                    return Err(format!(
+                        "GET {url} status={status} body parse: {e}; body={}",
+                        truncate_chars(&text, 512)
+                    ));
+                }
+            }
         }
     };
+    if !(200..300).contains(&status) && status != 304 {
+        let snip = body
+            .as_ref()
+            .map(|v| truncate_chars(&v.to_string(), 512))
+            .unwrap_or_default();
+        eprintln!("github response url={url} status={status} body={snip}");
+    }
     Ok(RestResponse {
         status,
         headers,
         body,
     })
+}
+
+fn truncate_chars(s: &str, max: usize) -> String {
+    let mut out = String::new();
+    for (i, ch) in s.chars().enumerate() {
+        if i >= max {
+            out.push('…');
+            break;
+        }
+        out.push(ch);
+    }
+    out
 }
 
 /// Run one full Actions sweep against an injectable transport (tests).
@@ -239,7 +295,12 @@ pub fn run_once_with<T: Transport>(
     let mut observations = 0usize;
     let mut moved: Vec<String> = Vec::new();
 
-    for g in groups {
+    // Rotate which groups are dropped when the budget runs out so no repo is
+    // permanently starved across scheduled runs.
+    let offset = crate::population::fair_skip_offset(scheduled_at, groups.len());
+    let order = crate::population::rotate_groups(groups, offset);
+
+    for g in &order {
         if client.transport().requests() >= args.max_requests {
             let mut obs = skip_observation(&g.repo, actual_start, SkipReason::BudgetExhausted)
                 .map_err(|e| OnceError::Observation(e.to_string()))?;
@@ -314,6 +375,9 @@ pub fn run_once(opts: StoreOptions, args: OnceArgs) -> Result<OnceReport, OnceEr
         load_watched(&args.watched_path).map_err(|e| OnceError::Population(e.to_string()))?;
     let groups = poll_groups(&watched);
     let mut store = Store::open(&args.data_dir, opts)?;
+    // First durable chain rows: Added for every watched key that already has
+    // an observation but no PopulationChange yet (including the canary).
+    store.emit_genesis_population_adds(&watched)?;
     let transport = CountingTransport::new(UreqTransport, args.max_requests);
     run_once_with(&mut store, transport, &groups, &args)
 }

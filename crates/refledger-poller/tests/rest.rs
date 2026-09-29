@@ -274,7 +274,7 @@ fn empty_vs_missing_are_distinct_via_matching_refs() {
             ..
         } => {
             assert_eq!(*http_status, 404);
-            assert_eq!(*error_class, ErrorClass::Upstream);
+            assert_eq!(*error_class, ErrorClass::ApiClient);
         }
         other => panic!("missing repo must be Failed, not empty Ok: {other:?}"),
     }
@@ -815,4 +815,84 @@ fn archived_repo_is_recorded_and_still_polled() {
         "archived repos keep polling: {:?}",
         obs.outcome()
     );
+}
+
+#[test]
+fn matching_refs_422_is_api_client_not_network() {
+    let transport = MockTransport::new();
+    transport
+        .route("/repos/tj-actions/changed-files", "repo_tj_changed_files")
+        .route("matching-refs/tags", "matching_refs_422");
+    let mut h = Harness::new(transport);
+    h.repo = RepoSlug::parse("tj-actions/changed-files").unwrap();
+    let obs = h.resolve(None);
+    match obs.outcome() {
+        Outcome::Failed {
+            http_status,
+            error_class,
+            ..
+        } => {
+            assert_eq!(*http_status, 422);
+            assert_eq!(*error_class, ErrorClass::ApiClient);
+        }
+        other => panic!("expected Failed/ApiClient, got {other:?}"),
+    }
+}
+
+#[test]
+fn matching_refs_503_is_api_server() {
+    let transport = MockTransport::new();
+    transport
+        .route("/repos/acme/widgets", "repo_ok")
+        .route("matching-refs/tags", "matching_refs_503");
+    let mut h = Harness::new(transport);
+    let obs = h.resolve(None);
+    match obs.outcome() {
+        Outcome::Failed {
+            http_status,
+            error_class,
+            ..
+        } => {
+            assert_eq!(*http_status, 503);
+            assert_eq!(*error_class, ErrorClass::ApiServer);
+        }
+        other => panic!("expected Failed/ApiServer, got {other:?}"),
+    }
+}
+
+#[test]
+fn transport_err_is_network_with_status_zero() {
+    #[derive(Clone)]
+    struct Boom;
+    impl Transport for Boom {
+        fn send(&self, _request: &RestRequest) -> Result<RestResponse, String> {
+            Err("dns failure: no such host".into())
+        }
+    }
+    let dir = TempDir::new().unwrap();
+    let mut etags = ETagStore::open(dir.path().join("etags.jsonl"), Duration::hours(24)).unwrap();
+    let mut pages = PageBodyCache::open(dir.path().join("pages.jsonl")).unwrap();
+    let mut objects = ObjectCache::open(dir.path().join("objects.jsonl")).unwrap();
+    let client = Client::new(Boom, AuthToken::new("ghp_test_token").unwrap());
+    let repo = RepoSlug::parse("acme/widgets").unwrap();
+    let obs = resolve_repo(
+        &repo,
+        None,
+        &mut etags,
+        &mut pages,
+        &mut objects,
+        &client,
+        now(),
+    );
+    match obs.outcome() {
+        Outcome::Failed {
+            http_status,
+            error_class,
+            ..
+        } => {
+            assert_eq!(*http_status, 0);
+            assert_eq!(*error_class, ErrorClass::Network);
+        }
+        other => panic!("expected Failed/Network status 0, got {other:?}"),
+    }
 }

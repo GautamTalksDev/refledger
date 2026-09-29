@@ -65,6 +65,8 @@ pub enum Failure {
     HeadSeqMissing { seq: u64 },
     #[error("witness backlog: head seq {seq} has no Rekor log_index after 48h")]
     WitnessBacklog { seq: u64 },
+    #[error("entry seq {seq} is more than 48h older than {relative_to}")]
+    EntryTooOld { seq: u64, relative_to: String },
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -454,6 +456,71 @@ fn key_id_for_hex(public_key_hex: &str) -> Result<String, String> {
 
 const WITNESS_BACKLOG_HOURS: i64 = 48;
 
+/// Fail when any entry is more than 48h older than wall-clock now (no heads yet).
+pub fn verify_entries_not_stale_vs_now(entries: &[Value]) -> Result<(), VerifyError> {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+    verify_entries_not_stale(entries, now, "now")
+}
+
+/// Fail when any entry is more than 48h older than the latest signed head.
+pub fn verify_entries_not_stale_vs_heads(
+    entries: &[Value],
+    heads_raw: &str,
+) -> Result<(), VerifyError> {
+    let mut latest_head_at: Option<i64> = None;
+    for (lineno, line) in heads_raw.lines().enumerate() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let value: Value = serde_json::from_str(line)
+            .map_err(|e| VerifyError::Parse(format!("heads.jsonl:{}: {e}", lineno + 1)))?;
+        let recorded = value
+            .get("head")
+            .and_then(|h| h.get("recorded_at"))
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| {
+                VerifyError::Parse(format!("heads.jsonl:{}: missing recorded_at", lineno + 1))
+            })?;
+        let at = parse_rfc3339(recorded)?;
+        latest_head_at = Some(match latest_head_at {
+            Some(prev) if prev >= at => prev,
+            _ => at,
+        });
+    }
+    let Some(head_at) = latest_head_at else {
+        return verify_entries_not_stale_vs_now(entries);
+    };
+    verify_entries_not_stale(entries, head_at, "latest head")
+}
+
+fn verify_entries_not_stale(
+    entries: &[Value],
+    reference: i64,
+    relative_to: &str,
+) -> Result<(), VerifyError> {
+    let cutoff = reference - (WITNESS_BACKLOG_HOURS * 3600);
+    for entry in entries {
+        let seq = entry.get("seq").and_then(|v| v.as_u64()).unwrap_or(0);
+        let Some(recorded) = entry.get("recorded_at").and_then(|v| v.as_str()) else {
+            continue;
+        };
+        let at = parse_rfc3339(recorded)?;
+        if at < cutoff {
+            return Err(VerifyError::Failed {
+                failure: Failure::EntryTooOld {
+                    seq,
+                    relative_to: relative_to.to_owned(),
+                },
+            });
+        }
+    }
+    Ok(())
+}
+
 /// Strict checks for the seven-day exit condition.
 ///
 /// Requires `heads.jsonl` contents. Fails if any head whose `recorded_at` is
@@ -729,7 +796,9 @@ pub fn failure_report(failure: &Failure) -> FailureReport {
         | Failure::HeadSeqMismatch
         | Failure::HeadPubkeyMismatch
         | Failure::HeadKeyIdMismatch => None,
-        Failure::HeadSeqMissing { seq } | Failure::WitnessBacklog { seq } => Some(*seq),
+        Failure::HeadSeqMissing { seq }
+        | Failure::WitnessBacklog { seq }
+        | Failure::EntryTooOld { seq, .. } => Some(*seq),
     };
     FailureReport {
         seq,

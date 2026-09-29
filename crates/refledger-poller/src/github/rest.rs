@@ -41,8 +41,8 @@ use time::{Duration, OffsetDateTime};
 
 use crate::github::etag::{AuthToken, ConditionalRequest, ETagStore, EndpointKey};
 use crate::observation::{
-    ETag, ErrorClass, Method, Observation, ObservationError, ObservedRef, Outcome, PeeledType,
-    RefType, RepoSlug,
+    error_class_for_http, ETag, ErrorClass, Method, Observation, ObservationError, ObservedRef,
+    Outcome, PeeledType, RefType, RepoSlug,
 };
 
 /// Maximum number of annotated-tag objects followed while peeling to a commit.
@@ -469,8 +469,26 @@ pub fn resolve_repo<T: Transport>(
     let now = refledger_log::normalize_to_utc_millis(now);
     match resolve_repo_inner(repo, path, etags, pages, objects, client, now) {
         Ok(obs) => obs,
+        Err(ResolveFail::BudgetExhausted) => skip_budget(repo, path, now),
         Err(err) => failed_observation(repo, path, now, err),
     }
+}
+
+fn skip_budget(repo: &RepoSlug, path: Option<&str>, now: OffsetDateTime) -> Observation {
+    use crate::observation::SkipReason;
+    let mut b = Observation::builder()
+        .repo(repo.as_str())
+        .expect("repo")
+        .observed_at(now)
+        .expect("time")
+        .method(Method::Rest)
+        .outcome(Outcome::Skipped {
+            reason: SkipReason::BudgetExhausted,
+        });
+    if let Some(p) = path {
+        b = b.action_path(p);
+    }
+    b.build().expect("budget skip observation")
 }
 
 fn resolve_repo_inner<T: Transport>(
@@ -498,7 +516,7 @@ fn resolve_repo_inner<T: Transport>(
             now,
             Outcome::Failed {
                 http_status: repo_resp.status,
-                error_class: ErrorClass::Upstream,
+                error_class: error_class_for_http(repo_resp.status),
                 backoff_applied: Duration::seconds(0),
             },
             None,
@@ -513,7 +531,7 @@ fn resolve_repo_inner<T: Transport>(
             now,
             Outcome::Failed {
                 http_status: 404,
-                error_class: ErrorClass::Upstream,
+                error_class: error_class_for_http(404),
                 backoff_applied: Duration::seconds(0),
             },
             None,
@@ -524,7 +542,7 @@ fn resolve_repo_inner<T: Transport>(
     if repo_resp.status != 200 {
         return Err(ResolveFail::http(
             repo_resp.status,
-            ErrorClass::Upstream,
+            error_class_for_http(repo_resp.status),
             format!("repo metadata status {}", repo_resp.status),
         ));
     }
@@ -555,7 +573,7 @@ fn resolve_repo_inner<T: Transport>(
             now,
             Outcome::Failed {
                 http_status: 404,
-                error_class: ErrorClass::Upstream,
+                error_class: error_class_for_http(404),
                 backoff_applied: Duration::seconds(0),
             },
             None,
@@ -568,7 +586,7 @@ fn resolve_repo_inner<T: Transport>(
             now,
             Outcome::Failed {
                 http_status: status,
-                error_class: ErrorClass::Upstream,
+                error_class: error_class_for_http(status),
                 backoff_applied: Duration::seconds(0),
             },
             None,
@@ -693,7 +711,7 @@ fn list_tag_refs<T: Transport>(
         }
         let target = expand_template(TAGS_TEMPLATE, owner, name, endpoint.query());
         let resp = client
-            .send_raw(target, headers)
+            .send_raw(target.clone(), headers)
             .map_err(ResolveFail::transport)?;
 
         if resp.status == 301 || resp.status == 302 {
@@ -713,12 +731,11 @@ fn list_tag_refs<T: Transport>(
             }
         }
 
-        etags
-            .apply_response(repo, &endpoint, resp.status, response_etag.as_ref(), now)
-            .map_err(ResolveFail::etag)?;
-
         match resp.status {
             304 => {
+                etags
+                    .apply_response(repo, &endpoint, resp.status, response_etag.as_ref(), now)
+                    .map_err(ResolveFail::etag)?;
                 let cached = pages.get(repo, &endpoint).ok_or_else(|| {
                     ResolveFail::protocol(
                         "304 on a tag page with no cached body; cannot merge pages",
@@ -727,6 +744,9 @@ fn list_tag_refs<T: Transport>(
                 merged.extend(cached.iter().cloned());
             }
             200 => {
+                etags
+                    .apply_response(repo, &endpoint, resp.status, response_etag.as_ref(), now)
+                    .map_err(ResolveFail::etag)?;
                 all_304 = false;
                 any_200 = true;
                 let refs = parse_refs_body(resp.body.as_ref())?;
@@ -736,10 +756,22 @@ fn list_tag_refs<T: Transport>(
                 merged.extend(refs);
             }
             other => {
+                let snip = resp
+                    .body
+                    .as_ref()
+                    .map(|v| {
+                        let s = v.to_string();
+                        if s.len() > 512 {
+                            format!("{}…", &s[..512])
+                        } else {
+                            s
+                        }
+                    })
+                    .unwrap_or_default();
                 return Err(ResolveFail::http(
                     other,
-                    ErrorClass::Upstream,
-                    format!("matching-refs status {other}"),
+                    error_class_for_http(other),
+                    format!("GET {target} status={other} body={snip}"),
                 ));
             }
         }
@@ -935,7 +967,7 @@ fn peel_tag_chain<T: Transport>(
     if resp.status != 200 {
         return Err(ResolveFail::http(
             resp.status,
-            ErrorClass::Upstream,
+            error_class_for_http(resp.status),
             format!("git/tags status {}", resp.status),
         ));
     }
@@ -1060,7 +1092,7 @@ fn fetch_commit_tree<T: Transport>(
     if resp.status != 200 {
         return Err(ResolveFail::http(
             resp.status,
-            ErrorClass::Upstream,
+            error_class_for_http(resp.status),
             format!("git/commits status {}", resp.status),
         ));
     }
@@ -1138,7 +1170,7 @@ fn resolve_action_yml<T: Transport>(
             other => {
                 return Err(ResolveFail::http(
                     other,
-                    ErrorClass::Upstream,
+                    error_class_for_http(other),
                     format!("contents status {other}"),
                 ));
             }
@@ -1260,22 +1292,32 @@ fn failed_observation(
     now: OffsetDateTime,
     err: ResolveFail,
 ) -> Observation {
-    let (http_status, error_class) = match &err {
+    let (http_status, error_class, message) = match &err {
         ResolveFail::Fail {
             http_status,
             error_class,
-            ..
-        } => (*http_status, *error_class),
-        _ => (0, ErrorClass::Protocol),
+            message,
+        } => (*http_status, *error_class, message.clone()),
+        ResolveFail::BudgetExhausted => {
+            return skip_budget(repo, path, now);
+        }
+        ResolveFail::Other(e) => (0, ErrorClass::Protocol, e.to_string()),
     };
-    // Depth-limit and protocol failures use status 0 in the wire outcome when
-    // no HTTP status applies; classification still sees ErrorClass::Protocol.
+    // Keep status 0 for transport/protocol failures that never saw HTTP.
+    // Never rewrite Network into a fake 422 — that hid budget exhaustion.
+    eprintln!(
+        "resolve failed repo={} path={:?} status={} class={:?}: {message}",
+        repo.as_str(),
+        path,
+        http_status,
+        error_class
+    );
     build_obs(
         repo,
         path,
         now,
         Outcome::Failed {
-            http_status: if http_status == 0 { 422 } else { http_status },
+            http_status,
             error_class,
             backoff_applied: Duration::seconds(0),
         },
@@ -1284,7 +1326,6 @@ fn failed_observation(
         None,
     )
     .unwrap_or_else(|_| {
-        // Last resort: builder itself failed (bad clock). Construct minimally.
         Observation::builder()
             .repo(repo.as_str())
             .expect("repo")
@@ -1292,8 +1333,8 @@ fn failed_observation(
             .expect("time")
             .method(Method::Rest)
             .outcome(Outcome::Failed {
-                http_status: 422,
-                error_class: ErrorClass::Protocol,
+                http_status,
+                error_class,
                 backoff_applied: Duration::seconds(0),
             })
             .build()
@@ -1306,25 +1347,35 @@ enum ResolveFail {
     Fail {
         http_status: u16,
         error_class: ErrorClass,
-        #[allow(dead_code)]
         message: String,
     },
+    /// Mid-resolve request budget was exhausted; surface as Skipped.
+    BudgetExhausted,
     #[allow(dead_code)]
     Other(RestError),
 }
 
 impl ResolveFail {
     fn http(status: u16, class: ErrorClass, message: impl Into<String>) -> Self {
+        let message = message.into();
+        // Log URL/status/body context carried in the message at construction.
+        eprintln!("github http error status={status} class={class:?}: {message}");
         Self::Fail {
             http_status: status,
             error_class: class,
-            message: message.into(),
+            message,
         }
     }
     fn protocol(message: impl Into<String>) -> Self {
-        Self::http(422, ErrorClass::Protocol, message)
+        // Protocol failures are not HTTP responses; status 0.
+        Self::http(0, ErrorClass::Protocol, message)
     }
     fn transport(message: impl Into<String>) -> Self {
+        let message = message.into();
+        if message.contains("request budget exhausted") {
+            return Self::BudgetExhausted;
+        }
+        eprintln!("github transport error: {message}");
         Self::http(0, ErrorClass::Network, message)
     }
     fn etag(e: impl std::fmt::Display) -> Self {

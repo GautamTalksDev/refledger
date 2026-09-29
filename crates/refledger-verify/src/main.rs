@@ -7,7 +7,8 @@ use std::process::ExitCode;
 
 use clap::Parser;
 use refledger_verify::{
-    failure_report, load_jsonl_dir, verify_chain, verify_heads_jsonl, verify_observation_digests,
+    failure_report, load_jsonl_dir, verify_chain, verify_entries_not_stale_vs_heads,
+    verify_entries_not_stale_vs_now, verify_heads_jsonl, verify_observation_digests,
     verify_signed_head, verify_strict, ChainVerdict, Failure, SignedHeadFile, VerifyError,
 };
 
@@ -165,11 +166,84 @@ fn run(args: Args) -> Result<ExitCode, VerifyError> {
             .head
             .clone()
             .unwrap_or_else(|| args.log_dir.join("heads.jsonl"));
-        let raw = std::fs::read_to_string(&heads_path)
-            .map_err(|e| VerifyError::Io(format!("--strict read {}: {e}", heads_path.display())))?;
-        if args.head.is_none() {
-            match verify_heads_jsonl(&entries, &raw, args.pubkey.as_deref()) {
-                Ok(status) => verdict.head = Some(status),
+        let heads_raw = match std::fs::read_to_string(&heads_path) {
+            Ok(s) => Some(s),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+            Err(e) => {
+                return Err(VerifyError::Io(format!(
+                    "--strict read {}: {e}",
+                    heads_path.display()
+                )));
+            }
+        };
+        let heads_empty = heads_raw
+            .as_deref()
+            .map(|s| s.lines().all(|l| l.trim().is_empty()))
+            .unwrap_or(true);
+
+        // Empty chain / no heads yet (pre-first-seal) is a valid genesis state.
+        if entries.is_empty() {
+            if args.json {
+                print_verdict(&verdict, true);
+            } else {
+                println!("chain: empty");
+                println!("heads: none yet");
+            }
+            return Ok(ExitCode::from(0));
+        }
+
+        if heads_empty {
+            // Entries exist but no signed head yet: fail only when an entry is
+            // more than 48h older than now (stale unsigned history).
+            if let Err(VerifyError::Failed { failure }) = verify_entries_not_stale_vs_now(&entries)
+            {
+                let mut v = fail_verdict(&failure);
+                v.entries = verdict.entries;
+                v.seq_first = verdict.seq_first;
+                v.seq_last = verdict.seq_last;
+                v.span_start = verdict.span_start;
+                v.span_end = verdict.span_end;
+                print_verdict(&v, args.json);
+                return Ok(ExitCode::from(1));
+            }
+            if !args.json {
+                println!("heads: none yet");
+            }
+        } else {
+            let raw = heads_raw.as_deref().unwrap_or("");
+            if args.head.is_none() {
+                match verify_heads_jsonl(&entries, raw, args.pubkey.as_deref()) {
+                    Ok(status) => verdict.head = Some(status),
+                    Err(VerifyError::Failed { failure }) => {
+                        let mut v = fail_verdict(&failure);
+                        v.entries = verdict.entries;
+                        v.seq_first = verdict.seq_first;
+                        v.seq_last = verdict.seq_last;
+                        v.span_start = verdict.span_start;
+                        v.span_end = verdict.span_end;
+                        v.coverage_gaps = verdict.coverage_gaps;
+                        print_verdict(&v, args.json);
+                        return Ok(ExitCode::from(1));
+                    }
+                    Err(e) => return Err(e),
+                }
+            }
+            // Entry older than latest head by >48h is a hard failure.
+            if let Err(VerifyError::Failed { failure }) =
+                verify_entries_not_stale_vs_heads(&entries, raw)
+            {
+                let mut v = fail_verdict(&failure);
+                v.entries = verdict.entries;
+                v.seq_first = verdict.seq_first;
+                v.seq_last = verdict.seq_last;
+                v.span_start = verdict.span_start;
+                v.span_end = verdict.span_end;
+                v.head = verdict.head.clone();
+                print_verdict(&v, args.json);
+                return Ok(ExitCode::from(1));
+            }
+            match verify_strict(&entries, raw) {
+                Ok(()) => {}
                 Err(VerifyError::Failed { failure }) => {
                     let mut v = fail_verdict(&failure);
                     v.entries = verdict.entries;
@@ -178,28 +252,19 @@ fn run(args: Args) -> Result<ExitCode, VerifyError> {
                     v.span_start = verdict.span_start;
                     v.span_end = verdict.span_end;
                     v.coverage_gaps = verdict.coverage_gaps;
+                    v.head = verdict.head;
                     print_verdict(&v, args.json);
                     return Ok(ExitCode::from(1));
                 }
                 Err(e) => return Err(e),
             }
         }
-        match verify_strict(&entries, &raw) {
-            Ok(()) => {}
-            Err(VerifyError::Failed { failure }) => {
-                let mut v = fail_verdict(&failure);
-                v.entries = verdict.entries;
-                v.seq_first = verdict.seq_first;
-                v.seq_last = verdict.seq_last;
-                v.span_start = verdict.span_start;
-                v.span_end = verdict.span_end;
-                v.coverage_gaps = verdict.coverage_gaps;
-                v.head = verdict.head;
-                print_verdict(&v, args.json);
-                return Ok(ExitCode::from(1));
-            }
-            Err(e) => return Err(e),
-        }
+    }
+
+    if entries.is_empty() && !args.json {
+        println!("chain: empty");
+        println!("heads: none yet");
+        return Ok(ExitCode::from(0));
     }
 
     print_verdict(&verdict, args.json);
@@ -240,6 +305,11 @@ fn print_verdict(v: &ChainVerdict, as_json: bool) {
     }
 
     // At most five lines.
+    if v.entries == 0 {
+        println!("chain: empty");
+        println!("heads: none yet");
+        return;
+    }
     println!("chain: OK");
     match (v.seq_first, v.seq_last) {
         (Some(a), Some(b)) => println!("entries: {} (seq {a} .. {b})", v.entries),

@@ -354,6 +354,19 @@ pub fn derive_population_change(
     path: Option<&str>,
     note: Option<&str>,
 ) -> UnhashedEntry {
+    derive_population_change_with_sources(recorded_at, repo, change, reason, path, note, None)
+}
+
+/// Like [`derive_population_change`] but attaches `source_observations`.
+pub fn derive_population_change_with_sources(
+    recorded_at: OffsetDateTime,
+    repo: &str,
+    change: PopulationChangeKind,
+    reason: PopulationReason,
+    path: Option<&str>,
+    note: Option<&str>,
+    source_observations: Option<Vec<String>>,
+) -> UnhashedEntry {
     let mut entry = UnhashedEntry::empty(recorded_at, Event::PopulationChange);
     entry.repo = Some(repo.to_owned());
     entry.population_change = Some(PopulationChange {
@@ -362,7 +375,58 @@ pub fn derive_population_change(
         reason,
         note: note.map(|n| n.to_owned()),
     });
+    entry.source_observations = source_observations;
     entry
+}
+
+/// Earliest observation of a watched key, used for genesis Added rows.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EarliestObservation {
+    pub observed_at: OffsetDateTime,
+    pub observation_id: String,
+}
+
+/// Deterministic genesis Added entries for every watched key that has an
+/// observation on disk but no `PopulationChange::Added` in the chain yet.
+///
+/// Ordered by `(recorded_at, repo, path)`. Replay of the same inputs yields
+/// identical entries.
+pub fn genesis_added_entries(
+    watched: &[WatchedEntry],
+    earliest: &BTreeMap<WatchedKey, EarliestObservation>,
+    already_added: &BTreeSet<WatchedKey>,
+) -> Vec<UnhashedEntry> {
+    let mut rows: Vec<(&WatchedEntry, &EarliestObservation)> = watched
+        .iter()
+        .filter(|e| e.active)
+        .filter(|e| !already_added.contains(&e.key))
+        .filter_map(|e| earliest.get(&e.key).map(|obs| (e, obs)))
+        .collect();
+    rows.sort_by(|(a, ao), (b, bo)| {
+        (
+            ao.observed_at,
+            a.key.repo.as_str(),
+            a.key.path.as_deref().unwrap_or(""),
+        )
+            .cmp(&(
+                bo.observed_at,
+                b.key.repo.as_str(),
+                b.key.path.as_deref().unwrap_or(""),
+            ))
+    });
+    rows.into_iter()
+        .map(|(e, obs)| {
+            derive_population_change_with_sources(
+                obs.observed_at,
+                &e.key.repo,
+                PopulationChangeKind::Added,
+                log_reason(&e.reason),
+                e.key.path.as_deref(),
+                e.note.as_deref(),
+                Some(vec![obs.observation_id.clone()]),
+            )
+        })
+        .collect()
 }
 
 /// Convert a [`WatchedReason`] into the log's [`PopulationReason`].
@@ -383,4 +447,32 @@ pub fn log_reason(r: &WatchedReason) -> PopulationReason {
         WatchedReason::Manual => PopulationReason::Manual,
         WatchedReason::Restored => PopulationReason::Restored,
     }
+}
+
+/// Stable start index for fair budget skipping across runs.
+///
+/// Derived from the run's scheduled UTC slot so consecutive cron ticks
+/// (`:02`, `:07`, …) rotate which poll groups are dropped when the request
+/// budget is exhausted.
+pub fn fair_skip_offset(scheduled: OffsetDateTime, n: usize) -> usize {
+    if n == 0 {
+        return 0;
+    }
+    // Five-minute cron slots: floor minutes-of-day / 5, plus day-of-year so
+    // the rotation keeps moving across midnight.
+    let mins = usize::from(scheduled.hour()) * 60 + usize::from(scheduled.minute());
+    let day = scheduled.date().ordinal() as usize;
+    ((day * 288) + (mins / 5)) % n
+}
+
+/// Rotate `groups` so index `offset` is first; order otherwise preserved.
+pub fn rotate_groups<T: Clone>(groups: &[T], offset: usize) -> Vec<T> {
+    if groups.is_empty() {
+        return Vec::new();
+    }
+    let start = offset % groups.len();
+    let mut out = Vec::with_capacity(groups.len());
+    out.extend_from_slice(&groups[start..]);
+    out.extend_from_slice(&groups[..start]);
+    out
 }

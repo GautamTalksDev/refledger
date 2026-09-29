@@ -250,9 +250,29 @@ impl ETag {
 pub enum ErrorClass {
     SecondaryRateLimit,
     PrimaryRateLimit,
+    /// Legacy HTTP-upstream label kept for deserialising older observations.
     Upstream,
+    /// GitHub returned a 4xx client error (bad request, not found, etc.).
+    ApiClient,
+    /// GitHub returned a 5xx server error.
+    ApiServer,
+    /// Transport failed before a usable HTTP status (DNS, TLS, timeout, budget).
     Network,
     Protocol,
+}
+
+/// Map an HTTP status to the observation error class.
+///
+/// Transport failures (no status) stay [`ErrorClass::Network`]. Rate-limit
+/// statuses keep their dedicated classes when the caller already classified
+/// them; this helper covers ordinary 4xx/5xx responses.
+pub fn error_class_for_http(status: u16) -> ErrorClass {
+    match status {
+        403 | 429 => ErrorClass::SecondaryRateLimit, // callers may refine
+        400..=499 => ErrorClass::ApiClient,
+        500..=599 => ErrorClass::ApiServer,
+        _ => ErrorClass::Upstream,
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, DeserializeDerive)]

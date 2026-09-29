@@ -1,0 +1,10 @@
+{
+  "status": 200,
+  "headers": {},
+  "body": {
+    "id": 1,
+    "name": "changed-files",
+    "full_name": "tj-actions/changed-files",
+    "archived": false
+  }
+}

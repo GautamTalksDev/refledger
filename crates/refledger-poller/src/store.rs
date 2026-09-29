@@ -9,7 +9,7 @@
 //! here reads the wall clock — timestamps come from the caller, and the
 //! digest timestamp is that fixed boundary.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
 use std::os::unix::io::AsRawFd;
@@ -107,6 +107,8 @@ pub struct StoreOptions {
     pub publisher: Box<dyn LedgerPublisher>,
     /// When true, digests note that observation JSONL lives on the `data` branch.
     pub observations_on_data_branch: bool,
+    /// When true, skip acquiring `.store.lock` (Actions concurrency is the lock).
+    pub skip_lock: bool,
 }
 
 impl StoreOptions {
@@ -120,6 +122,7 @@ impl StoreOptions {
             archive: Box::new(NoopArchive),
             publisher: Box::new(NoopPublisher),
             observations_on_data_branch: false,
+            skip_lock: false,
         }
     }
 }
@@ -540,7 +543,9 @@ impl Store<OsVolume> {
 
 impl<V: Volume> Store<V> {
     pub fn open_with(mut vol: V, opts: StoreOptions) -> Result<Self, StoreError> {
-        vol.lock()?;
+        if !opts.skip_lock {
+            vol.lock()?;
+        }
         let (chain, activity, sealed) = load_chain(&mut vol, opts.recovered_at, &opts.log_id)?;
         let pending_archive_failures = load_archive_failures(&mut vol)?;
         let pending_identity_warnings = load_identity_warnings(&mut vol)?;
@@ -837,6 +842,91 @@ impl<V: Volume> Store<V> {
             return Ok(Appended::Buffered);
         }
         self.commit(entry).map(|e| Appended::Written(Box::new(e)))
+    }
+
+    /// Keys that already have a `PopulationChange::Added` entry in the chain.
+    pub fn population_added_keys(&self) -> BTreeSet<crate::population::WatchedKey> {
+        use crate::population::WatchedKey;
+        use refledger_log::entry::PopulationChangeKind;
+        let mut out = BTreeSet::new();
+        for e in self.chain.entries() {
+            if e.event != Event::PopulationChange {
+                continue;
+            }
+            let Some(pc) = &e.population_change else {
+                continue;
+            };
+            if pc.change != PopulationChangeKind::Added {
+                continue;
+            }
+            let Some(repo) = &e.repo else {
+                continue;
+            };
+            out.insert(WatchedKey::new(repo.clone(), pc.path.clone()));
+        }
+        out
+    }
+
+    /// Earliest observation per `(repo, path)` across all observation files.
+    pub fn earliest_observations(
+        &self,
+    ) -> Result<
+        BTreeMap<crate::population::WatchedKey, crate::population::EarliestObservation>,
+        StoreError,
+    > {
+        use crate::population::{EarliestObservation, WatchedKey};
+        let mut best: BTreeMap<WatchedKey, EarliestObservation> = BTreeMap::new();
+        for path in self.vol.list("observations")? {
+            if !path.ends_with(".jsonl") || path.contains(".torn.") {
+                continue;
+            }
+            let bytes = self.vol.read(&path)?.unwrap_or_default();
+            for line in bytes.split(|b| *b == b'\n') {
+                if line.is_empty() {
+                    continue;
+                }
+                let obs: Observation = serde_json::from_slice(line)
+                    .map_err(|e| StoreError::Corrupt(format!("{path}: {e}")))?;
+                let key = WatchedKey::new(
+                    obs.repo().as_str().to_owned(),
+                    obs.action_path().map(|s| s.to_owned()),
+                );
+                let at = obs.observed_at().as_offset_datetime();
+                let id = obs.observation_id().to_string();
+                match best.get(&key) {
+                    Some(prev) if prev.observed_at <= at => {}
+                    _ => {
+                        best.insert(
+                            key,
+                            EarliestObservation {
+                                observed_at: at,
+                                observation_id: id,
+                            },
+                        );
+                    }
+                }
+            }
+        }
+        Ok(best)
+    }
+
+    /// Emit missing genesis `PopulationChange::Added` rows for watched keys.
+    ///
+    /// Entries are written before any other new log activity for this open, in
+    /// `(recorded_at, repo, path)` order. Idempotent under replay.
+    pub fn emit_genesis_population_adds(
+        &mut self,
+        watched: &[crate::population::WatchedEntry],
+    ) -> Result<usize, StoreError> {
+        use crate::population::genesis_added_entries;
+        let earliest = self.earliest_observations()?;
+        let already = self.population_added_keys();
+        let entries = genesis_added_entries(watched, &earliest, &already);
+        let n = entries.len();
+        for entry in entries {
+            self.append_entry(entry)?;
+        }
+        Ok(n)
     }
 
     /// Seal day D. The digest is the first entry of day D+1, then the buffer drains.

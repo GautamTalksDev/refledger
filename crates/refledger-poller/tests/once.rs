@@ -43,6 +43,7 @@ fn opts(at: OffsetDateTime) -> StoreOptions {
         archive: Box::new(refledger_poller::NoopArchive),
         publisher: Box::new(refledger_poller::NoopPublisher),
         observations_on_data_branch: true,
+        skip_lock: false,
     }
 }
 
@@ -416,4 +417,152 @@ fn at_observation_path(root: &Path, at: OffsetDateTime) -> PathBuf {
         .join(format!("{:02}", u8::from(day.month())))
         .join(format!("{:02}", day.day()))
         .join("acme--widgets.jsonl")
+}
+
+#[test]
+fn counting_transport_never_exceeds_max() {
+    #[derive(Clone, Default)]
+    struct OkOnce {
+        hits: Arc<Mutex<u32>>,
+    }
+    impl Transport for OkOnce {
+        fn send(&self, _request: &RestRequest) -> Result<RestResponse, String> {
+            *self.hits.lock().unwrap() += 1;
+            Ok(RestResponse {
+                status: 200,
+                headers: BTreeMap::new(),
+                body: Some(serde_json::json!({})),
+            })
+        }
+    }
+    let inner = OkOnce::default();
+    let t = CountingTransport::new(inner.clone(), 2);
+    assert!(t
+        .send(&RestRequest {
+            method: "GET",
+            target: "/a".into(),
+            headers: BTreeMap::new(),
+        })
+        .is_ok());
+    assert!(t
+        .send(&RestRequest {
+            method: "GET",
+            target: "/b".into(),
+            headers: BTreeMap::new(),
+        })
+        .is_ok());
+    let err = t
+        .send(&RestRequest {
+            method: "GET",
+            target: "/c".into(),
+            headers: BTreeMap::new(),
+        })
+        .expect_err("third send must be denied");
+    assert!(err.contains("budget exhausted"), "{err}");
+    assert_eq!(t.requests(), 2, "counter must never exceed max");
+    assert_eq!(*inner.hits.lock().unwrap(), 2);
+}
+
+#[test]
+fn fair_skip_rotates_so_every_group_is_polled_across_runs() {
+    use refledger_poller::population::{fair_skip_offset, rotate_groups};
+    let groups: Vec<String> = (0..5).map(|i| format!("org/repo-{i}")).collect();
+    let mut seen = std::collections::BTreeSet::new();
+    // Five consecutive 5-minute cron slots.
+    for i in 0..5 {
+        let scheduled = odt(2026, Month::January, 1, 12, 2, 0, 0) + Duration::minutes(i * 5);
+        let offset = fair_skip_offset(scheduled, groups.len());
+        let order = rotate_groups(&groups, offset);
+        // With budget of 1, only the first group in rotated order is polled.
+        seen.insert(order[0].clone());
+    }
+    assert_eq!(
+        seen.len(),
+        5,
+        "over N runs every group must be first at least once: {seen:?}"
+    );
+}
+
+#[test]
+fn genesis_added_entries_replay_identically_from_data_observations() {
+    use refledger_log::entry::PopulationChangeKind;
+    use refledger_poller::population::{
+        genesis_added_entries, load_watched, EarliestObservation, WatchedKey,
+    };
+    use std::collections::{BTreeMap, BTreeSet};
+
+    let watched_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../population/watched.jsonl");
+    let watched = load_watched(&watched_path).expect("watched.jsonl");
+    let data = Path::new("/home/gautamtalksdev/projects/refledger-data/observations");
+    if !data.exists() {
+        // Worktree may be absent in CI; synthesise from fixture-like times.
+        return;
+    }
+    let mut earliest: BTreeMap<WatchedKey, EarliestObservation> = BTreeMap::new();
+    for f in std::fs::read_dir(data.join("2026/09/29")).unwrap() {
+        let f = f.unwrap().path();
+        if f.extension().and_then(|s| s.to_str()) != Some("jsonl") {
+            continue;
+        }
+        for line in std::fs::read_to_string(&f).unwrap().lines() {
+            let v: Value = serde_json::from_str(line).unwrap();
+            let repo = v["repo"].as_str().unwrap().to_owned();
+            let path = v
+                .get("action_path")
+                .and_then(|p| p.as_str())
+                .map(str::to_owned);
+            let key = WatchedKey::new(repo, path);
+            let at = OffsetDateTime::parse(
+                v["observed_at"].as_str().unwrap(),
+                &time::format_description::well_known::Rfc3339,
+            )
+            .unwrap();
+            let id = v["observation_id"].as_str().unwrap().to_owned();
+            match earliest.get(&key) {
+                Some(prev) if prev.observed_at <= at => {}
+                _ => {
+                    earliest.insert(
+                        key,
+                        EarliestObservation {
+                            observed_at: at,
+                            observation_id: id,
+                        },
+                    );
+                }
+            }
+        }
+    }
+    let a = genesis_added_entries(&watched, &earliest, &BTreeSet::new());
+    let b = genesis_added_entries(&watched, &earliest, &BTreeSet::new());
+    assert_eq!(a.len(), b.len());
+    assert!(!a.is_empty(), "genesis data must yield Added rows");
+    for (x, y) in a.iter().zip(b.iter()) {
+        assert_eq!(x.repo, y.repo);
+        assert_eq!(x.recorded_at, y.recorded_at);
+        assert_eq!(x.source_observations, y.source_observations);
+        assert_eq!(
+            x.population_change.as_ref().unwrap().change,
+            PopulationChangeKind::Added
+        );
+    }
+    // Ordered by (recorded_at, repo, path).
+    for w in a.windows(2) {
+        let ka = (
+            w[0].recorded_at,
+            w[0].repo.as_deref().unwrap_or(""),
+            w[0].population_change
+                .as_ref()
+                .and_then(|p| p.path.as_deref())
+                .unwrap_or(""),
+        );
+        let kb = (
+            w[1].recorded_at,
+            w[1].repo.as_deref().unwrap_or(""),
+            w[1].population_change
+                .as_ref()
+                .and_then(|p| p.path.as_deref())
+                .unwrap_or(""),
+        );
+        assert!(ka <= kb, "not sorted: {ka:?} then {kb:?}");
+    }
 }

@@ -283,3 +283,46 @@ fn fixture_population_file_is_loadable() {
         }
     }
 }
+
+#[test]
+fn fair_skip_offset_is_stable_and_covers_all_slots() {
+    use refledger_poller::population::{fair_skip_offset, rotate_groups};
+    let n = 7usize;
+    let mut offsets = std::collections::BTreeSet::new();
+    for i in 0..n {
+        let t = odt(2026, Month::January, 1, 0, 2, 0) + time::Duration::minutes((i * 5) as i64);
+        offsets.insert(fair_skip_offset(t, n));
+    }
+    assert_eq!(offsets.len(), n);
+    let groups: Vec<_> = (0..n).collect();
+    let rotated = rotate_groups(&groups, 3);
+    assert_eq!(rotated.first(), Some(&3));
+    assert_eq!(rotated.last(), Some(&2));
+}
+
+#[test]
+fn genesis_added_skips_keys_already_in_chain() {
+    use refledger_poller::population::{
+        genesis_added_entries, EarliestObservation, WatchedEntry, WatchedKey, WatchedReason,
+    };
+    use std::collections::{BTreeMap, BTreeSet};
+    let key = WatchedKey::new("acme/widgets", None);
+    let watched = vec![WatchedEntry {
+        key: key.clone(),
+        added_at: odt(2026, Month::January, 1, 0, 0, 0),
+        reason: WatchedReason::Manual,
+        active: true,
+        note: None,
+    }];
+    let mut earliest = BTreeMap::new();
+    earliest.insert(
+        key.clone(),
+        EarliestObservation {
+            observed_at: odt(2026, Month::January, 1, 12, 0, 0),
+            observation_id: "01TEST".into(),
+        },
+    );
+    let mut already = BTreeSet::new();
+    already.insert(key);
+    assert!(genesis_added_entries(&watched, &earliest, &already).is_empty());
+}

@@ -1,0 +1,10 @@
+{
+  "status": 422,
+  "headers": {
+    "etag": "W/\"unprocessable\""
+  },
+  "body": {
+    "message": "Validation Failed",
+    "documentation_url": "https://docs.github.com/rest"
+  }
+}

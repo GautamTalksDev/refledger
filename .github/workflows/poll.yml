@@ -21,12 +21,12 @@ permissions:
 jobs:
   poll:
     name: once
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     if: ${{ vars.REFLEDGER_ENABLED == 'true' }}
     steps:
       - name: checkout main
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: main
           fetch-depth: 0
@@ -47,6 +47,7 @@ jobs:
             git rm -rf . >/dev/null 2>&1 || true
             mkdir -p observations log
             touch observations/.gitkeep log/.gitkeep
+            printf '%s\n' '.store.lock' > .gitignore
             git add -A
             git -c user.email=refledger-poller@users.noreply.github.com \
                 -c user.name=refledger-poller \
@@ -55,15 +56,19 @@ jobs:
             git checkout main
             git worktree add --force "$STATE" origin/data
           fi
+          # Ensure the lock file is never published even on older data tips.
+          if [[ ! -f "$STATE/.gitignore" ]] || ! grep -qxF '.store.lock' "$STATE/.gitignore"; then
+            echo '.store.lock' >> "$STATE/.gitignore"
+          fi
 
       - name: rust toolchain
-        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # master
         with:
           toolchain: "1.98.1"
 
       - name: restore poller binary cache
         id: cache-poller
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: main/target/release/refledger-poller
           key: poller-${{ runner.os }}-${{ hashFiles('main/crates/**', 'main/Cargo.lock') }}
@@ -82,6 +87,8 @@ jobs:
           REFLEDGER_PUBLISH_CLONE: ${{ github.workspace }}/main
           REFLEDGER_REQUIRE_ENABLED: "1"
           REFLEDGER_ENABLED: ${{ vars.REFLEDGER_ENABLED }}
+          # Concurrency group is the writer lock on Actions.
+          REFLEDGER_SKIP_STORE_LOCK: "1"
         run: |
           set -euo pipefail
           # Infer scheduled slot locally; never echo secrets.
@@ -109,7 +116,13 @@ jobs:
           fi
           git config user.email refledger-poller@users.noreply.github.com
           git config user.name refledger-poller
+          # Never publish the process-local lock file.
+          if [[ ! -f .gitignore ]] || ! grep -qxF '.store.lock' .gitignore; then
+            echo '.store.lock' >> .gitignore
+          fi
           git add -A
+          git reset HEAD -- .store.lock 2>/dev/null || true
+          rm -f .store.lock
           if git diff --cached --quiet; then
             echo "no state changes"
             exit 0

@@ -146,6 +146,10 @@ fn cmd_once(args: &[String]) -> ExitCode {
 
     let mut opts = StoreOptions::new(signing_key, actual_start);
     opts.observations_on_data_branch = true;
+    // Actions concurrency group is the writer lock; do not create .store.lock.
+    if std::env::var("REFLEDGER_SKIP_STORE_LOCK").ok().as_deref() == Some("1") {
+        opts.skip_lock = true;
+    }
     if let Ok(publisher) = GitLedgerPublisher::from_env() {
         opts.publisher = Box::new(publisher);
     } else if let Ok(clone) = env::var("REFLEDGER_PUBLISH_CLONE") {

@@ -42,7 +42,8 @@ pub use publish::{
 pub use derive::{derive, derive_observation_digest, ChainTip, DeriveError, ObservationDayStats};
 pub use observation::*;
 pub use population::{
-    derive_population_change, expand_closure, extract_external_uses, load_watched, poll_groups,
-    save_watched, ActionRef, ClosureInput, ClosureResult, PopulationError, SeedSource,
-    WatchedEntry, WatchedKey, WatchedReason, CLOSURE_DEPTH_CAP,
+    derive_population_change, derive_population_change_with_sources, expand_closure,
+    extract_external_uses, fair_skip_offset, genesis_added_entries, load_watched, poll_groups,
+    rotate_groups, save_watched, ActionRef, ClosureInput, ClosureResult, EarliestObservation,
+    PopulationError, SeedSource, WatchedEntry, WatchedKey, WatchedReason, CLOSURE_DEPTH_CAP,
 };

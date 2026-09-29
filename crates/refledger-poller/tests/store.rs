@@ -58,6 +58,7 @@ fn opts(rekor: Box<dyn RekorClient>) -> StoreOptions {
         archive: Box::new(refledger_poller::NoopArchive),
         publisher: Box::new(refledger_poller::NoopPublisher),
         observations_on_data_branch: false,
+        skip_lock: false,
     }
 }
 
