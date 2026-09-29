@@ -186,3 +186,49 @@ fn vectors_dir_exists() {
         .join("tests/vectors");
     assert!(dir.is_dir(), "{}", dir.display());
 }
+
+#[test]
+fn non_chain_files_under_log_dir_are_ignored_not_loaded() {
+    let dir = TempDir::new().unwrap();
+    let day = dir.path().join("2026/01/01");
+    fs::create_dir_all(&day).unwrap();
+    let entry = hashed(serde_json::json!({
+        "format_version": 1,
+        "seq": 0,
+        "prev_hash": genesis_prev(),
+        "recorded_at": "2026-01-01T00:00:00.000Z",
+        "event": "correction",
+        "corrects_seq": 0,
+        "reason": "genesis"
+    }));
+    fs::write(dir.path().join("2026/01/01.jsonl"), format!("{}\n", entry)).unwrap();
+    fs::write(dir.path().join("heads.jsonl"), b"").unwrap();
+    fs::write(
+        dir.path().join("identity_warnings.jsonl"),
+        b"{\"warning\":\"not a chain entry\"}\n",
+    )
+    .unwrap();
+    fs::write(dir.path().join(".gitkeep"), b"").unwrap();
+
+    let loaded = refledger_verify::load_jsonl_dir(dir.path()).expect("load");
+    assert_eq!(loaded.entries.len(), 1);
+    assert_eq!(loaded.entries[0]["seq"], 0);
+    assert!(
+        loaded
+            .ignored
+            .iter()
+            .any(|p| p == "identity_warnings.jsonl"),
+        "ignored={:?}",
+        loaded.ignored
+    );
+    assert!(
+        loaded.ignored.iter().any(|p| p == ".gitkeep"),
+        "ignored={:?}",
+        loaded.ignored
+    );
+    assert!(
+        !loaded.ignored.iter().any(|p| p == "heads.jsonl"),
+        "heads.jsonl must not be listed as ignored"
+    );
+    verify_chain(&loaded.entries).expect("chain ok despite sidecars");
+}

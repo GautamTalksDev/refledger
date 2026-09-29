@@ -201,7 +201,7 @@ The **ObservationDigest** is the clever bit. Observations are far too numerous t
 
 A day with zero observations still gets a digest, with zeros in it. A missing day and a quiet day must never look the same.
 
-Until the first seal lands, the public `main` clone has no `data/log/` yet. The in-progress chain is on the `data` branch. See [`VERIFY.md`](VERIFY.md).
+Until the first seal lands, the public `main` clone has no `data/log/` yet. The in-progress chain is on the `data` branch under `log/`. Poller state (warnings, publish failures) lives under `state/` on that branch, not under `log/`. See [`VERIFY.md`](VERIFY.md).
 
 ---
 

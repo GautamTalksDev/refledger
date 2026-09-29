@@ -124,13 +124,24 @@ pub fn entry_hash(entry: &Value) -> Result<String, VerifyError> {
     Ok(format!("sha256:{}", hex::encode(digest)))
 }
 
-/// Load all `*.jsonl` files under `log_dir` (recursively), sorted by path.
-pub fn load_jsonl_dir(log_dir: &Path) -> Result<Vec<Value>, VerifyError> {
-    let mut files = list_jsonl_files(log_dir)?;
-    files.sort();
+/// Result of scanning a log directory for chain day files.
+#[derive(Debug, Default)]
+pub struct LogDirLoad {
+    pub entries: Vec<Value>,
+    /// Paths relative to the log dir that were not loaded as chain entries.
+    /// `heads.jsonl` is expected and omitted from this list.
+    pub ignored: Vec<String>,
+}
+
+/// Load chain day files (`YYYY/MM/DD.jsonl`) under `log_dir`, sorted by path.
+///
+/// Documented layout: only those day files and `heads.jsonl`. Any other file
+/// is listed in [`LogDirLoad::ignored`] and is not parsed.
+pub fn load_jsonl_dir(log_dir: &Path) -> Result<LogDirLoad, VerifyError> {
+    let scanned = scan_log_dir(log_dir)?;
     let mut entries = Vec::new();
-    for path in files {
-        let file = File::open(&path).map_err(|e| VerifyError::Io(format!("{path:?}: {e}")))?;
+    for path in &scanned.day_files {
+        let file = File::open(path).map_err(|e| VerifyError::Io(format!("{path:?}: {e}")))?;
         let reader = BufReader::new(file);
         for (lineno, line) in reader.lines().enumerate() {
             let line = line.map_err(|e| VerifyError::Io(format!("{path:?}:{lineno}: {e}")))?;
@@ -143,35 +154,77 @@ pub fn load_jsonl_dir(log_dir: &Path) -> Result<Vec<Value>, VerifyError> {
             entries.push(value);
         }
     }
-    Ok(entries)
+    Ok(LogDirLoad {
+        entries,
+        ignored: scanned.ignored,
+    })
 }
 
-fn list_jsonl_files(dir: &Path) -> Result<Vec<PathBuf>, VerifyError> {
-    let mut out = Vec::new();
-    if !dir.is_dir() {
+struct ScannedLogDir {
+    day_files: Vec<PathBuf>,
+    ignored: Vec<String>,
+}
+
+fn scan_log_dir(log_dir: &Path) -> Result<ScannedLogDir, VerifyError> {
+    if !log_dir.is_dir() {
         return Err(VerifyError::Io(format!(
-            "log dir is not a directory: {dir:?}"
+            "log dir is not a directory: {log_dir:?}"
         )));
     }
-    fn walk(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), VerifyError> {
+    let mut day_files = Vec::new();
+    let mut ignored = Vec::new();
+    fn walk(
+        root: &Path,
+        dir: &Path,
+        day_files: &mut Vec<PathBuf>,
+        ignored: &mut Vec<String>,
+    ) -> Result<(), VerifyError> {
         for ent in fs::read_dir(dir).map_err(|e| VerifyError::Io(e.to_string()))? {
             let ent = ent.map_err(|e| VerifyError::Io(e.to_string()))?;
             let path = ent.path();
             if path.is_dir() {
-                walk(&path, out)?;
-            } else if path.extension().and_then(|s| s.to_str()) == Some("jsonl") {
-                // heads.jsonl is the signed-head publication, not chain entries.
-                // Torn tails live beside the day file and are not entries either.
-                let name = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
-                if name != "heads.jsonl" && !name.contains(".torn.") {
-                    out.push(path);
-                }
+                walk(root, &path, day_files, ignored)?;
+                continue;
+            }
+            let rel = path
+                .strip_prefix(root)
+                .map(|p| p.to_string_lossy().replace('\\', "/"))
+                .unwrap_or_else(|_| path.display().to_string());
+            if is_chain_day_rel(&rel) {
+                day_files.push(path);
+            } else if rel == "heads.jsonl" {
+                // Documented companion file; not a chain entry.
+            } else {
+                ignored.push(rel);
             }
         }
         Ok(())
     }
-    walk(dir, &mut out)?;
-    Ok(out)
+    walk(log_dir, log_dir, &mut day_files, &mut ignored)?;
+    day_files.sort();
+    ignored.sort();
+    Ok(ScannedLogDir { day_files, ignored })
+}
+
+/// Relative path under the log dir matching `YYYY/MM/DD.jsonl`.
+fn is_chain_day_rel(rel: &str) -> bool {
+    if rel.contains(".torn.") {
+        return false;
+    }
+    let parts: Vec<&str> = rel.split('/').collect();
+    if parts.len() != 3 {
+        return false;
+    }
+    let (y, m, file) = (parts[0], parts[1], parts[2]);
+    let Some(d) = file.strip_suffix(".jsonl") else {
+        return false;
+    };
+    if y.len() != 4 || m.len() != 2 || d.len() != 2 {
+        return false;
+    }
+    y.chars().all(|c| c.is_ascii_digit())
+        && m.chars().all(|c| c.is_ascii_digit())
+        && d.chars().all(|c| c.is_ascii_digit())
 }
 
 /// Verify chain linkage and hashes for `entries` (already filtered by seq range).

@@ -79,7 +79,11 @@ fn main() -> ExitCode {
 }
 
 fn run(args: Args) -> Result<ExitCode, VerifyError> {
-    let mut entries = load_jsonl_dir(&args.log_dir)?;
+    let loaded = load_jsonl_dir(&args.log_dir)?;
+    for path in &loaded.ignored {
+        eprintln!("ignored non-chain file: {path}");
+    }
+    let mut entries = loaded.entries;
     entries.sort_by_key(|e| e.get("seq").and_then(|v| v.as_u64()).unwrap_or(u64::MAX));
 
     if let Some(from) = args.from {

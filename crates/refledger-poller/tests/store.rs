@@ -702,6 +702,14 @@ fn post_genesis_identity_warning_lands_in_next_digest_note() {
     store
         .record_identity_warning("contact URL unreachable: https://example.test: HTTP 503")
         .unwrap();
+    assert!(
+        dir.path().join("state/identity_warnings.jsonl").is_file(),
+        "warnings live under state/, not log/"
+    );
+    assert!(
+        !dir.path().join("log/identity_warnings.jsonl").exists(),
+        "log/ must not hold warning sidecars"
+    );
     store
         .append_observation(&obs_at(odt(2026, Month::January, 1, 12, 0, 0, 0)))
         .unwrap();
@@ -712,6 +720,44 @@ fn post_genesis_identity_warning_lands_in_next_digest_note() {
         .and_then(|d| d.note.as_ref())
         .expect("warning must appear in digest note");
     assert!(note.contains("contact URL unreachable"), "note={note}");
+}
+
+#[test]
+fn legacy_log_identity_warnings_migrate_into_digest_note() {
+    let dir = TempDir::new().unwrap();
+    fs::create_dir_all(dir.path().join("log")).unwrap();
+    // Simulate pre-fix data branch: warning still under log/.
+    fs::write(
+        dir.path().join("log/identity_warnings.jsonl"),
+        br#"{"warning":"observation 01M3Q896RH64XBABMKK8AXKNJ1 (tj-actions/changed-files at 2026-09-29T18:53:44.590Z): recorded http_status 422 was fabricated by a poller bug (budget exhaustion misreported as network/422); fixed in e30f6c7"}
+"#,
+    )
+    .unwrap();
+    let mut store = Store::open(dir.path(), opts(static_rekor())).unwrap();
+    assert!(
+        !dir.path().join("log/identity_warnings.jsonl").exists(),
+        "legacy sidecar must be removed from log/"
+    );
+    assert!(
+        dir.path().join("state/identity_warnings.jsonl").is_file(),
+        "legacy sidecar must land under state/"
+    );
+    store
+        .append_entry(correction(odt(2026, Month::January, 1, 0, 0, 0, 0), 0))
+        .unwrap();
+    store
+        .append_observation(&obs_at(odt(2026, Month::January, 1, 12, 0, 0, 0)))
+        .unwrap();
+    let digest = store.seal_day(day(2026, Month::January, 1)).unwrap();
+    let note = digest
+        .observation_digest
+        .as_ref()
+        .and_then(|d| d.note.as_ref())
+        .expect("migrated warning must appear in digest note");
+    assert!(
+        note.contains("fabricated by a poller bug"),
+        "false-422 note must survive migration: {note}"
+    );
 }
 
 /// Build a bare remote + publishing clone under `root` for FF-only publish tests.
@@ -808,8 +854,86 @@ fn seal_publishes_data_log_to_dedicated_clone() {
         tree.contains("data/log/2026/01/02.jsonl"),
         "digest lands on D+1: {tree}"
     );
+    assert!(
+        !tree.contains("identity_warnings"),
+        "sidecars must never publish: {tree}"
+    );
     // Live data dir is not the clone.
     assert_ne!(data.path(), clone.as_path());
+}
+
+#[test]
+fn readme_verify_command_passes_on_published_layout_with_stray_sidecar() {
+    use refledger_poller::GitLedgerPublisher;
+
+    let root = TempDir::new().unwrap();
+    let (_bare, clone) = setup_publish_clone(root.path());
+    let data = TempDir::new().unwrap();
+    // Leave a legacy warning under log/ so migration + publish filtering are both exercised.
+    fs::create_dir_all(data.path().join("log")).unwrap();
+    fs::write(
+        data.path().join("log/identity_warnings.jsonl"),
+        br#"{"warning":"observation 01M3Q896RH64XBABMKK8AXKNJ1: fabricated 422; fixed in e30f6c7"}
+"#,
+    )
+    .unwrap();
+    let mut options = opts(static_rekor());
+    options.publisher = Box::new(GitLedgerPublisher::new(&clone, None));
+    let mut store = Store::open(data.path(), options).unwrap();
+    assert!(!data.path().join("log/identity_warnings.jsonl").exists());
+    let jan1 = day(2026, Month::January, 1);
+    store.stop_dispatch(jan1);
+    store.seal_day(jan1).unwrap();
+
+    // Reproduce main's published tree: data/log from the publish clone.
+    let published = root.path().join("main-tree");
+    fs::create_dir_all(published.join("data/log")).unwrap();
+    for ent in fs::read_dir(clone.join("data/log")).unwrap() {
+        let ent = ent.unwrap();
+        let dest = published.join("data/log").join(ent.file_name());
+        if ent.path().is_dir() {
+            copy_dir(&ent.path(), &dest);
+        } else {
+            fs::copy(ent.path(), &dest).unwrap();
+        }
+    }
+    // A skeptic's clone should still pass even if someone drops a sidecar next to the chain.
+    fs::write(
+        published.join("data/log/identity_warnings.jsonl"),
+        b"{\"warning\":\"should be ignored\"}\n",
+    )
+    .unwrap();
+
+    let pk = hex::encode(key().verifying_key_bytes());
+    let output = Command::new(verify_bin())
+        .current_dir(&published)
+        .args(["data/log", "--strict", "--pubkey", &pk])
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        output.status.success(),
+        "README verify must pass on published layout\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    );
+    assert!(
+        stderr.contains("ignored non-chain file: identity_warnings.jsonl"),
+        "sidecar must warn, not fail: {stderr}"
+    );
+    assert!(stdout.contains("chain: OK"), "{stdout}");
+}
+
+fn copy_dir(src: &std::path::Path, dst: &std::path::Path) {
+    fs::create_dir_all(dst).unwrap();
+    for ent in fs::read_dir(src).unwrap() {
+        let ent = ent.unwrap();
+        let to = dst.join(ent.file_name());
+        if ent.path().is_dir() {
+            copy_dir(&ent.path(), &to);
+        } else {
+            fs::copy(ent.path(), to).unwrap();
+        }
+    }
 }
 
 #[test]
@@ -932,7 +1056,7 @@ fn dirty_publish_clone_outside_data_log_refuses() {
     store.seal_day(jan1).unwrap();
 
     let failures = store
-        .read_rel("log/publish_failures.jsonl")
+        .read_rel("state/publish_failures.jsonl")
         .unwrap()
         .unwrap();
     let text = String::from_utf8_lossy(&failures);

@@ -6,14 +6,14 @@ The verifier is an independent implementation of [`LOG-FORMAT.md`](LOG-FORMAT.md
 
 | When | Where | What you can check |
 |---|---|---|
-| **Before the first daily seal** | `data` branch, directory `log/` (day JSONL only; no `heads.jsonl` yet) | Chain linkage over day files. Not `--strict` (no signed heads). |
+| **Before the first daily seal** | `data` branch, directory `log/` (day JSONL; no `heads.jsonl` yet) | Chain linkage. Not `--strict` (no signed heads). |
 | **After the first seal** | `main` branch, directory `data/log/` (day JSONL plus `heads.jsonl`) | Full `--strict` check with the pinned public key. |
 
-On a fresh clone of `main` **tonight's first seal has not landed yet**, so `data/log/` is not present and the README one-liner cannot succeed. Use the pre-seal path below, or wait until after 00:00 UTC when the seal publishes.
+On a fresh clone of `main` **tonight's first seal has not landed yet**, so `data/log/` is not present and the command below cannot succeed until after 00:00 UTC. Before then, verify the in-progress chain on the `data` branch (same layout under `log/`, without `--strict`).
 
-The live `data` branch also keeps operational sidecars next to the day files (for example `log/identity_warnings.jsonl`). Those are not chain entries. Pointing `refledger-verify` at the whole `log/` tree will fail. Copy or sparse-checkout **only** the day files (`log/YYYY/MM/DD.jsonl`).
+`log/` holds only chain day files (`YYYY/MM/DD.jsonl`) and `heads.jsonl`. Poller state (identity warnings, publish failures) lives under `state/` on the `data` branch, not under `log/`. If any other file appears under the log directory, the verifier prints `ignored non-chain file: <path>` and continues; it does not fail.
 
-## Quick check (after the first seal, on `main`)
+## Quick check
 
 ```bash
 git clone https://github.com/GautamTalksDev/refledger.git
@@ -26,17 +26,14 @@ Pin the key from [`PUBLIC-KEY.md`](PUBLIC-KEY.md). On success the tool prints at
 
 Exit code `0` means the verdict is OK. Exit code `1` means a verification failure. Exit code `2` means I/O, parse, or usage error.
 
-## Before the first seal (chain only, from the `data` branch)
+### Before the first seal
 
 ```bash
 git clone https://github.com/GautamTalksDev/refledger.git
 cd refledger
 git fetch origin data
 git checkout origin/data -- log
-# Day files only; skip operational sidecars beside log/.
-mkdir -p /tmp/refledger-daylog
-cp -a log/20* /tmp/refledger-daylog/
-cargo run --locked --release -p refledger-verify -- /tmp/refledger-daylog
+cargo run --locked --release -p refledger-verify -- log
 ```
 
 Do not pass `--strict` or `--pubkey` until `heads.jsonl` exists after the first seal.

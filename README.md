@@ -69,9 +69,7 @@ The population is deliberately small and honestly defined: a set of cited seed a
 
 ## Check our work
 
-You should not have to take our word for anything. Pin the published signing key (`docs/PUBLIC-KEY.md`).
-
-**After the first daily seal** (00:00 UTC), a fresh clone of `main` has `data/log/` with day files and `heads.jsonl`:
+You should not have to take our word for anything. Pin the published signing key (`docs/PUBLIC-KEY.md`):
 
 ```bash
 git clone https://github.com/GautamTalksDev/refledger.git
@@ -80,7 +78,7 @@ cargo run --locked --release -p refledger-verify -- data/log --strict \
   --pubkey b3e7e795c35dee53731e039b76da930fc54e87e2edc632449a8a2e55252e276a
 ```
 
-**Before that seal**, `data/log/` is not on `main` yet. The in-progress chain is on the `data` branch under `log/`. See [`docs/VERIFY.md`](docs/VERIFY.md) for the day-file-only check (no `--strict` until heads exist).
+After the first daily seal (00:00 UTC), a fresh clone of `main` has `data/log/` with day files and `heads.jsonl`. Until then that path is absent; see [`docs/VERIFY.md`](docs/VERIFY.md) for verifying the in-progress chain on the `data` branch (no `--strict` until heads exist).
 
 The verifier shares no code with the signer, on purpose.
 

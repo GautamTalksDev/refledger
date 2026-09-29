@@ -49,6 +49,15 @@ const REKOR_PRODUCTION: &str = "https://rekor.sigstore.dev";
 /// Recorded in the next digest's note and fails `refledger-verify --strict`.
 pub const WITNESS_BACKLOG_HOURS: i64 = 48;
 
+/// Non-chain poller state lives under `state/`, never under `log/`.
+/// `log/` holds only day files (`YYYY/MM/DD.jsonl`) and `heads.jsonl`.
+const IDENTITY_WARNINGS_PATH: &str = "state/identity_warnings.jsonl";
+const PUBLISH_FAILURES_PATH: &str = "state/publish_failures.jsonl";
+const ARCHIVE_FAILURES_PATH: &str = "state/archive_upload_failures.jsonl";
+const LEGACY_IDENTITY_WARNINGS: &str = "log/identity_warnings.jsonl";
+const LEGACY_PUBLISH_FAILURES: &str = "log/publish_failures.jsonl";
+const LEGACY_ARCHIVE_FAILURES: &str = "log/archive_upload_failures.jsonl";
+
 #[derive(Debug, Error)]
 pub enum StoreError {
     #[error("data directory is already locked")]
@@ -568,6 +577,7 @@ impl<V: Volume> Store<V> {
         if !opts.skip_lock {
             vol.lock()?;
         }
+        migrate_log_sidecars(&mut vol)?;
         let (chain, activity, sealed) = load_chain(&mut vol, opts.recovered_at, &opts.log_id)?;
         let pending_archive_failures = load_archive_failures(&mut vol)?;
         let pending_identity_warnings = load_identity_warnings(&mut vol)?;
@@ -784,8 +794,7 @@ impl<V: Volume> Store<V> {
     pub fn record_identity_warning(&mut self, warning: &str) -> Result<(), StoreError> {
         let line = serde_json::json!({ "warning": warning });
         let bytes = serde_json::to_vec(&line).map_err(|e| StoreError::Message(e.to_string()))?;
-        self.vol
-            .append_record("log/identity_warnings.jsonl", &bytes)?;
+        self.vol.append_record(IDENTITY_WARNINGS_PATH, &bytes)?;
         self.pending_identity_warnings.push(warning.to_owned());
         Ok(())
     }
@@ -1065,8 +1074,7 @@ impl<V: Volume> Store<V> {
             "error": failure.error,
         });
         let bytes = serde_json::to_vec(&line).map_err(|e| StoreError::Message(e.to_string()))?;
-        self.vol
-            .append_record("log/publish_failures.jsonl", &bytes)?;
+        self.vol.append_record(PUBLISH_FAILURES_PATH, &bytes)?;
         self.pending_publish_failures.push(failure.clone());
         Ok(())
     }
@@ -1076,7 +1084,7 @@ impl<V: Volume> Store<V> {
             return Ok(());
         }
         self.pending_publish_failures.clear();
-        self.vol.write_exact("log/publish_failures.jsonl", b"")?;
+        self.vol.write_exact(PUBLISH_FAILURES_PATH, b"")?;
         Ok(())
     }
 
@@ -1237,8 +1245,7 @@ impl<V: Volume> Store<V> {
             "error": failure.error,
         });
         let bytes = serde_json::to_vec(&line).map_err(|e| StoreError::Message(e.to_string()))?;
-        self.vol
-            .append_record("log/archive_upload_failures.jsonl", &bytes)?;
+        self.vol.append_record(ARCHIVE_FAILURES_PATH, &bytes)?;
         self.pending_archive_failures.push(failure.clone());
         Ok(())
     }
@@ -1252,8 +1259,7 @@ impl<V: Volume> Store<V> {
         // Anything recorded during upload_sealed_day this call must remain.
         // clear_consumed runs *before* upload, so the whole vec is consumed.
         self.pending_archive_failures.clear();
-        self.vol
-            .write_exact("log/archive_upload_failures.jsonl", b"")?;
+        self.vol.write_exact(ARCHIVE_FAILURES_PATH, b"")?;
         Ok(())
     }
 
@@ -1262,7 +1268,7 @@ impl<V: Volume> Store<V> {
             return Ok(());
         }
         self.pending_identity_warnings.clear();
-        self.vol.write_exact("log/identity_warnings.jsonl", b"")?;
+        self.vol.write_exact(IDENTITY_WARNINGS_PATH, b"")?;
         Ok(())
     }
 
@@ -1478,7 +1484,7 @@ impl Store<FaultVolume> {
 }
 
 fn load_archive_failures<V: Volume>(vol: &mut V) -> Result<Vec<ArchiveFailure>, StoreError> {
-    let Some(bytes) = vol.read("log/archive_upload_failures.jsonl")? else {
+    let Some(bytes) = vol.read(ARCHIVE_FAILURES_PATH)? else {
         return Ok(Vec::new());
     };
     let mut out = Vec::new();
@@ -1515,7 +1521,7 @@ fn load_archive_failures<V: Volume>(vol: &mut V) -> Result<Vec<ArchiveFailure>, 
 }
 
 fn load_identity_warnings<V: Volume>(vol: &mut V) -> Result<Vec<String>, StoreError> {
-    let Some(bytes) = vol.read("log/identity_warnings.jsonl")? else {
+    let Some(bytes) = vol.read(IDENTITY_WARNINGS_PATH)? else {
         return Ok(Vec::new());
     };
     let mut out = Vec::new();
@@ -1541,7 +1547,7 @@ fn load_identity_warnings<V: Volume>(vol: &mut V) -> Result<Vec<String>, StoreEr
 }
 
 fn load_publish_failures<V: Volume>(vol: &mut V) -> Result<Vec<PublishFailure>, StoreError> {
-    let Some(bytes) = vol.read("log/publish_failures.jsonl")? else {
+    let Some(bytes) = vol.read(PUBLISH_FAILURES_PATH)? else {
         return Ok(Vec::new());
     };
     let mut out = Vec::new();
@@ -1568,6 +1574,37 @@ fn load_publish_failures<V: Volume>(vol: &mut V) -> Result<Vec<PublishFailure>, 
         out.push(PublishFailure { day, error });
     }
     Ok(out)
+}
+
+/// Move legacy `log/*.jsonl` sidecars into `state/` so `log/` holds only the
+/// chain. Preserves pending digest notes (for example the false-422 warning).
+fn migrate_log_sidecars<V: Volume>(vol: &mut V) -> Result<(), StoreError> {
+    migrate_one_sidecar(vol, LEGACY_IDENTITY_WARNINGS, IDENTITY_WARNINGS_PATH)?;
+    migrate_one_sidecar(vol, LEGACY_PUBLISH_FAILURES, PUBLISH_FAILURES_PATH)?;
+    migrate_one_sidecar(vol, LEGACY_ARCHIVE_FAILURES, ARCHIVE_FAILURES_PATH)?;
+    Ok(())
+}
+
+fn migrate_one_sidecar<V: Volume>(vol: &mut V, legacy: &str, dest: &str) -> Result<(), StoreError> {
+    let Some(legacy_bytes) = vol.read(legacy)? else {
+        return Ok(());
+    };
+    if legacy_bytes.is_empty() {
+        vol.remove(legacy)?;
+        return Ok(());
+    }
+    let existing = vol.read(dest)?.unwrap_or_default();
+    let mut merged = existing;
+    if !merged.is_empty() && !merged.ends_with(b"\n") {
+        merged.push(b'\n');
+    }
+    merged.extend_from_slice(&legacy_bytes);
+    if !merged.ends_with(b"\n") {
+        merged.push(b'\n');
+    }
+    vol.write_exact(dest, &merged)?;
+    vol.remove(legacy)?;
+    Ok(())
 }
 
 fn load_chain<V: Volume>(
