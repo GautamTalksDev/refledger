@@ -146,3 +146,4 @@
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"d84975b99a3a493deb156c7d210da6e30ca4944232f4fb2d3faa9732f0dbd998\"","stored_at":"2026-09-29T21:52:23.532Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"7809e9dd78378f820f057f1febbb86e3d5683bbf5f1551a52abeaeccaac61640\"","stored_at":"2026-09-29T22:02:24.215Z"}
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"e8ccb7a0810c23a0f06f18b87f4ffe03a9c4d7c397e472ff251fa2db0cd6ccad\"","stored_at":"2026-09-29T22:07:22.123Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"edd2609f6a2bcf82b52f479e1a20dceef70e234979e345148712d858ca0e9222\"","stored_at":"2026-09-29T22:12:24.606Z"}
