@@ -48,8 +48,10 @@ use crate::observation::{
 /// Maximum number of annotated-tag objects followed while peeling to a commit.
 pub const MAX_TAG_DEPTH: u32 = 8;
 
+const REPO_TEMPLATE: &str = "/repos/{owner}/{repo}";
 const TAGS_TEMPLATE: &str = "/repos/{owner}/{repo}/git/matching-refs/tags";
 const PER_PAGE: u32 = 100;
+const REPO_META_QUERY: &str = "";
 
 /// One outbound REST request as the resolver sees it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -189,6 +191,21 @@ impl PageBodyCache {
             .map(|v| v.as_slice())
     }
 
+    /// Merge every cached tag-listing page for `repo` (detection / warm-up input).
+    pub(crate) fn merged_tag_refs(&self, repo: &RepoSlug) -> Vec<RawRef> {
+        let mut pages: Vec<_> = self
+            .entries
+            .iter()
+            .filter(|(k, _)| k.repo == repo.as_str() && k.template == TAGS_TEMPLATE)
+            .collect();
+        pages.sort_by(|(a, _), (b, _)| a.query.cmp(&b.query));
+        let mut out = Vec::new();
+        for (_, refs) in pages {
+            out.extend(refs.iter().cloned());
+        }
+        out
+    }
+
     fn put(
         &mut self,
         repo: &RepoSlug,
@@ -238,6 +255,93 @@ impl PageBodyCache {
     }
 
     fn append(&self, record: &PageRecord) -> Result<(), RestError> {
+        let mut line = serde_json::to_vec(record).map_err(|e| RestError::Serde(e.to_string()))?;
+        line.push(b'\n');
+        let mut file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&self.path)
+            .map_err(|e| RestError::Io(e.to_string()))?;
+        file.write_all(&line)
+            .map_err(|e| RestError::Io(e.to_string()))?;
+        file.sync_all().map_err(|e| RestError::Io(e.to_string()))?;
+        Ok(())
+    }
+}
+
+/// Last successful repository metadata body fields needed after a 304.
+#[derive(Debug)]
+pub struct RepoMetaCache {
+    path: PathBuf,
+    entries: BTreeMap<String, RepoMetaBody>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+struct RepoMetaBody {
+    archived: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct RepoMetaRecord {
+    repo: String,
+    archived: Option<bool>,
+}
+
+impl RepoMetaCache {
+    pub fn open(path: impl AsRef<Path>) -> Result<Self, RestError> {
+        let path = path.as_ref().to_path_buf();
+        if let Some(parent) = path.parent() {
+            if !parent.as_os_str().is_empty() {
+                fs::create_dir_all(parent).map_err(|e| RestError::Io(e.to_string()))?;
+            }
+        }
+        let mut cache = Self {
+            path,
+            entries: BTreeMap::new(),
+        };
+        cache.load()?;
+        Ok(cache)
+    }
+
+    fn get(&self, repo: &RepoSlug) -> Option<&RepoMetaBody> {
+        self.entries.get(repo.as_str())
+    }
+
+    fn put(&mut self, repo: &RepoSlug, archived: Option<bool>) -> Result<(), RestError> {
+        let record = RepoMetaRecord {
+            repo: repo.as_str().to_owned(),
+            archived,
+        };
+        self.append(&record)?;
+        self.entries
+            .insert(record.repo.clone(), RepoMetaBody { archived });
+        Ok(())
+    }
+
+    fn load(&mut self) -> Result<(), RestError> {
+        let text = match fs::read_to_string(&self.path) {
+            Ok(text) => text,
+            Err(err) if err.kind() == ErrorKind::NotFound => return Ok(()),
+            Err(err) => return Err(RestError::Io(err.to_string())),
+        };
+        for (idx, line) in text.lines().enumerate() {
+            if line.is_empty() {
+                continue;
+            }
+            let record: RepoMetaRecord = serde_json::from_str(line).map_err(|e| {
+                RestError::Corrupt(format!("repo meta cache line {}: {e}", idx + 1))
+            })?;
+            self.entries.insert(
+                record.repo,
+                RepoMetaBody {
+                    archived: record.archived,
+                },
+            );
+        }
+        Ok(())
+    }
+
+    fn append(&self, record: &RepoMetaRecord) -> Result<(), RestError> {
         let mut line = serde_json::to_vec(record).map_err(|e| RestError::Serde(e.to_string()))?;
         line.push(b'\n');
         let mut file = OpenOptions::new()
@@ -430,7 +534,7 @@ pub enum RestError {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-struct RawRef {
+pub(crate) struct RawRef {
     name: String,
     object_type: String,
     object_sha: String,
@@ -455,23 +559,112 @@ enum Peeled {
     },
 }
 
+/// Phase-1 output: an observation that is already complete, and/or warm-up work
+/// deferred to phase 2 (peels and action.yml only).
+#[derive(Debug)]
+pub(crate) struct ListingPass {
+    /// Tag-movement state from listing alone (304, failures, empty repo, …).
+    pub early_observation: Option<Observation>,
+    pub warm: Option<WarmUpContext>,
+}
+
+/// Inputs for phase-2 warm-up (never repeats listing or repo metadata).
+#[derive(Debug, Clone)]
+pub(crate) struct WarmUpContext {
+    pub repo: RepoSlug,
+    pub path: Option<String>,
+    pub refs: Vec<RawRef>,
+}
+
 /// Resolve one repository (and optional subdirectory action path) into an
 /// [`Observation`]. Failures are `Outcome::Failed`, not panics.
+#[allow(clippy::too_many_arguments)]
 pub fn resolve_repo<T: Transport>(
     repo: &RepoSlug,
     path: Option<&str>,
     etags: &mut ETagStore,
     pages: &mut PageBodyCache,
+    repo_meta: &mut RepoMetaCache,
     objects: &mut ObjectCache,
     client: &Client<T>,
     now: OffsetDateTime,
 ) -> Observation {
     let now = refledger_log::normalize_to_utc_millis(now);
-    match resolve_repo_inner(repo, path, etags, pages, objects, client, now) {
-        Ok(obs) => obs,
+    match resolve_repo_listing(repo, path, etags, pages, repo_meta, client, now) {
+        Ok(pass) => {
+            let early = pass.early_observation;
+            if let Some(w) = pass.warm {
+                match resolve_repo_warm_up(&w, pages, objects, client) {
+                    Ok((observed, peel_budget_hit)) => {
+                        if let Some(obs) = early {
+                            if let Outcome::Ok {
+                                http_status, etag, ..
+                            } = obs.outcome()
+                            {
+                                let etag = if peel_budget_hit { None } else { etag.clone() };
+                                return build_obs(
+                                    repo,
+                                    path,
+                                    now,
+                                    Outcome::Ok {
+                                        http_status: *http_status,
+                                        etag,
+                                        refs: observed,
+                                    },
+                                    None,
+                                    None,
+                                    obs.archived(),
+                                )
+                                .unwrap_or(obs);
+                            }
+                            return obs;
+                        }
+                    }
+                    Err(ResolveFail::BudgetExhausted) => {
+                        if let Some(obs) = early {
+                            return obs;
+                        }
+                        return skip_budget(repo, path, now);
+                    }
+                    Err(e) => return failed_observation(repo, path, now, e),
+                }
+            }
+            early.unwrap_or_else(|| skip_budget(repo, path, now))
+        }
         Err(ResolveFail::BudgetExhausted) => skip_budget(repo, path, now),
         Err(err) => failed_observation(repo, path, now, err),
     }
+}
+
+/// Phase 1 only: repository metadata (conditional) and tag listing (conditional).
+pub(crate) fn resolve_repo_listing<T: Transport>(
+    repo: &RepoSlug,
+    path: Option<&str>,
+    etags: &mut ETagStore,
+    pages: &mut PageBodyCache,
+    repo_meta: &mut RepoMetaCache,
+    client: &Client<T>,
+    now: OffsetDateTime,
+) -> Result<ListingPass, ResolveFail> {
+    let now = refledger_log::normalize_to_utc_millis(now);
+    resolve_repo_listing_inner(repo, path, etags, pages, repo_meta, client, now)
+}
+
+/// Phase 2 only: peels and action.yml using the remaining request budget.
+pub(crate) fn resolve_repo_warm_up<T: Transport>(
+    ctx: &WarmUpContext,
+    pages: &PageBodyCache,
+    objects: &mut ObjectCache,
+    client: &Client<T>,
+) -> Result<(Vec<ObservedRef>, bool), ResolveFail> {
+    let (owner, name) = split_slug(&ctx.repo)?;
+    let path = ctx.path.as_deref();
+    let refs = if ctx.refs.is_empty() {
+        pages.merged_tag_refs(&ctx.repo)
+    } else {
+        ctx.refs.clone()
+    };
+    warm_up_refs(&owner, &name, path, &refs, objects, client)
 }
 
 fn skip_budget(repo: &RepoSlug, path: Option<&str>, now: OffsetDateTime) -> Observation {
@@ -491,173 +684,295 @@ fn skip_budget(repo: &RepoSlug, path: Option<&str>, now: OffsetDateTime) -> Obse
     b.build().expect("budget skip observation")
 }
 
-fn resolve_repo_inner<T: Transport>(
+#[allow(clippy::too_many_arguments)]
+fn fetch_repo_metadata<T: Transport>(
+    repo: &RepoSlug,
+    path: Option<&str>,
+    owner: &str,
+    name: &str,
+    etags: &mut ETagStore,
+    repo_meta: &mut RepoMetaCache,
+    client: &Client<T>,
+    now: OffsetDateTime,
+) -> Result<(Option<bool>, Option<Observation>), ResolveFail> {
+    let endpoint =
+        ConditionalRequest::endpoint(REPO_TEMPLATE, REPO_META_QUERY).map_err(ResolveFail::etag)?;
+    let cond = ConditionalRequest::at(repo.clone(), now);
+    let request = cond
+        .build(&endpoint, Some(client.token()), etags)
+        .map_err(ResolveFail::etag)?;
+    let mut headers = BTreeMap::new();
+    if let Some(inm) = request.if_none_match_header() {
+        headers.insert("if-none-match".into(), inm.to_owned());
+    }
+    let target = expand_template(REPO_TEMPLATE, owner, name, REPO_META_QUERY);
+    let resp = client
+        .send_raw(target, headers)
+        .map_err(ResolveFail::transport)?;
+
+    if resp.status == 301 || resp.status == 302 {
+        let location = resp.header("location").unwrap_or("").to_owned();
+        let obs = build_obs(
+            repo,
+            path,
+            now,
+            Outcome::Failed {
+                http_status: resp.status,
+                error_class: error_class_for_http(resp.status),
+                backoff_applied: Duration::seconds(0),
+            },
+            None,
+            Some(location),
+            None,
+        )?;
+        return Ok((None, Some(obs)));
+    }
+    if resp.status == 404 {
+        let obs = build_obs(
+            repo,
+            path,
+            now,
+            Outcome::Failed {
+                http_status: 404,
+                error_class: error_class_for_http(404),
+                backoff_applied: Duration::seconds(0),
+            },
+            None,
+            None,
+            None,
+        )?;
+        return Ok((None, Some(obs)));
+    }
+
+    let response_etag = resp.header("etag").map(|s| ETag::new(s.to_owned()));
+    match resp.status {
+        304 => {
+            etags
+                .apply_response(repo, &endpoint, resp.status, response_etag.as_ref(), now)
+                .map_err(ResolveFail::etag)?;
+            let cached = repo_meta
+                .get(repo)
+                .ok_or_else(|| ResolveFail::protocol("304 on repo metadata with no cached body"))?;
+            Ok((cached.archived, None))
+        }
+        200 => {
+            etags
+                .apply_response(repo, &endpoint, resp.status, response_etag.as_ref(), now)
+                .map_err(ResolveFail::etag)?;
+            let archived = resp
+                .body
+                .as_ref()
+                .and_then(|b| b.get("archived"))
+                .and_then(|v| v.as_bool());
+            repo_meta.put(repo, archived).map_err(ResolveFail::from)?;
+            Ok((archived, None))
+        }
+        other => Err(ResolveFail::http(
+            other,
+            error_class_for_http(other),
+            format!("repo metadata status {other}"),
+        )),
+    }
+}
+
+fn warm_up_refs<T: Transport>(
+    owner: &str,
+    name: &str,
+    path: Option<&str>,
+    refs: &[RawRef],
+    objects: &mut ObjectCache,
+    client: &Client<T>,
+) -> Result<(Vec<ObservedRef>, bool), ResolveFail> {
+    let mut observed = Vec::with_capacity(refs.len());
+    let mut peel_budget_hit = false;
+    for raw in refs {
+        if !objects.contains(&raw.object_sha) && !objects.try_consume_peel_budget() {
+            peel_budget_hit = true;
+            break;
+        }
+        let peel = peel_ref(owner, name, raw, objects, client)?;
+        let observed_ref = match peel.peeled {
+            Peeled::Commit {
+                commit_sha,
+                tree_sha,
+            } => {
+                let action = resolve_action_yml(owner, name, &commit_sha, path, objects, client)?;
+                let mut r = if peel.ref_type == RefType::Annotated {
+                    ObservedRef::new_annotated(&raw.name, &peel.target_sha, &commit_sha, &tree_sha)
+                } else {
+                    ObservedRef::new_lightweight(&raw.name, &commit_sha, &tree_sha)
+                }
+                .map_err(ResolveFail::obs)?;
+                if let Some(sha) = action {
+                    r = r.with_action_yml_sha(sha).map_err(ResolveFail::obs)?;
+                }
+                r
+            }
+            Peeled::NonCommit {
+                object_type,
+                object_sha,
+            } => ObservedRef::new_non_commit(
+                &raw.name,
+                peel.ref_type,
+                &peel.target_sha,
+                object_type,
+                &object_sha,
+            )
+            .map_err(ResolveFail::obs)?,
+        };
+        observed.push(observed_ref);
+    }
+    Ok((observed, peel_budget_hit))
+}
+
+fn warm_job(repo: &RepoSlug, path: Option<&str>, refs: Vec<RawRef>) -> Option<WarmUpContext> {
+    if refs.is_empty() {
+        return None;
+    }
+    Some(WarmUpContext {
+        repo: repo.clone(),
+        path: path.map(|p| p.to_owned()),
+        refs,
+    })
+}
+
+/// Tag-list observation for movement detection before peels complete (phase 1).
+fn build_listing_ok_observation(
+    repo: &RepoSlug,
+    path: Option<&str>,
+    now: OffsetDateTime,
+    refs: &[RawRef],
+    etag: Option<crate::observation::ETag>,
+    archived: Option<bool>,
+) -> Result<Observation, ResolveFail> {
+    let mut observed = Vec::with_capacity(refs.len());
+    for raw in refs {
+        let r = match raw.object_type.as_str() {
+            "commit" => ObservedRef::new_lightweight(&raw.name, &raw.object_sha, &raw.object_sha),
+            "tag" => ObservedRef::new_annotated(
+                &raw.name,
+                &raw.object_sha,
+                "0000000000000000000000000000000000000001",
+                "0000000000000000000000000000000000000002",
+            ),
+            "tree" => ObservedRef::new_non_commit(
+                &raw.name,
+                RefType::Lightweight,
+                &raw.object_sha,
+                PeeledType::Tree,
+                &raw.object_sha,
+            ),
+            "blob" => ObservedRef::new_non_commit(
+                &raw.name,
+                RefType::Lightweight,
+                &raw.object_sha,
+                PeeledType::Blob,
+                &raw.object_sha,
+            ),
+            other => {
+                return Err(ResolveFail::protocol(format!(
+                    "unsupported ref object type {other}"
+                )));
+            }
+        }
+        .map_err(ResolveFail::obs)?;
+        observed.push(r);
+    }
+    build_obs(
+        repo,
+        path,
+        now,
+        Outcome::Ok {
+            http_status: 200,
+            etag,
+            refs: observed,
+        },
+        None,
+        None,
+        archived,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn resolve_repo_listing_inner<T: Transport>(
     repo: &RepoSlug,
     path: Option<&str>,
     etags: &mut ETagStore,
     pages: &mut PageBodyCache,
-    objects: &mut ObjectCache,
+    repo_meta: &mut RepoMetaCache,
     client: &Client<T>,
     now: OffsetDateTime,
-) -> Result<Observation, ResolveFail> {
+) -> Result<ListingPass, ResolveFail> {
     let (owner, name) = split_slug(repo)?;
 
-    // --- repository identity -------------------------------------------------
-    let repo_target = format!("/repos/{owner}/{name}");
-    let repo_resp = client
-        .send_raw(repo_target, BTreeMap::new())
-        .map_err(ResolveFail::transport)?;
+    let (archived, terminal) =
+        fetch_repo_metadata(repo, path, &owner, &name, etags, repo_meta, client, now)?;
+    if let Some(obs) = terminal {
+        return Ok(ListingPass {
+            early_observation: Some(obs),
+            warm: None,
+        });
+    }
 
-    if repo_resp.status == 301 || repo_resp.status == 302 {
-        let location = repo_resp.header("location").unwrap_or("").to_owned();
-        return build_obs(
-            repo,
-            path,
-            now,
-            Outcome::Failed {
-                http_status: repo_resp.status,
-                error_class: error_class_for_http(repo_resp.status),
-                backoff_applied: Duration::seconds(0),
-            },
-            None,
-            Some(location),
-            None,
-        );
-    }
-    if repo_resp.status == 404 {
-        return build_obs(
-            repo,
-            path,
-            now,
-            Outcome::Failed {
-                http_status: 404,
-                error_class: error_class_for_http(404),
-                backoff_applied: Duration::seconds(0),
-            },
-            None,
-            None,
-            None,
-        );
-    }
-    if repo_resp.status != 200 {
-        return Err(ResolveFail::http(
-            repo_resp.status,
-            error_class_for_http(repo_resp.status),
-            format!("repo metadata status {}", repo_resp.status),
-        ));
-    }
-    let archived = repo_resp
-        .body
-        .as_ref()
-        .and_then(|b| b.get("archived"))
-        .and_then(|v| v.as_bool());
-
-    // --- list tags (matching-refs) with conditional pagination ---------------
     let list = list_tag_refs(repo, &owner, &name, etags, pages, client, now)?;
     match list {
-        ListResult::NotModified { etag } => build_obs(
-            repo,
-            path,
-            now,
-            Outcome::NotModified {
-                http_status: 304,
-                etag,
-            },
-            None,
-            None,
-            archived,
-        ),
-        ListResult::Missing => build_obs(
-            repo,
-            path,
-            now,
-            Outcome::Failed {
-                http_status: 404,
-                error_class: error_class_for_http(404),
-                backoff_applied: Duration::seconds(0),
-            },
-            None,
-            None,
-            archived,
-        ),
-        ListResult::Redirect { status, location } => build_obs(
-            repo,
-            path,
-            now,
-            Outcome::Failed {
-                http_status: status,
-                error_class: error_class_for_http(status),
-                backoff_applied: Duration::seconds(0),
-            },
-            None,
-            Some(location),
-            archived,
-        ),
-        ListResult::Refs { refs, etag } => {
-            let mut observed = Vec::with_capacity(refs.len());
-            let mut peel_budget_hit = false;
-            for raw in &refs {
-                if !objects.contains(&raw.object_sha) && !objects.try_consume_peel_budget() {
-                    peel_budget_hit = true;
-                    break;
-                }
-                let peel = peel_ref(&owner, &name, raw, objects, client)?;
-                let mut observed_ref = match peel.peeled {
-                    Peeled::Commit {
-                        commit_sha,
-                        tree_sha,
-                    } => {
-                        let action =
-                            resolve_action_yml(&owner, &name, &commit_sha, path, objects, client)?;
-                        let mut r = if peel.ref_type == RefType::Annotated {
-                            ObservedRef::new_annotated(
-                                &raw.name,
-                                &peel.target_sha,
-                                &commit_sha,
-                                &tree_sha,
-                            )
-                        } else {
-                            ObservedRef::new_lightweight(&raw.name, &commit_sha, &tree_sha)
-                        }
-                        .map_err(ResolveFail::obs)?;
-                        if let Some(sha) = action {
-                            r = r.with_action_yml_sha(sha).map_err(ResolveFail::obs)?;
-                        }
-                        r
-                    }
-                    Peeled::NonCommit {
-                        object_type,
-                        object_sha,
-                    } => ObservedRef::new_non_commit(
-                        &raw.name,
-                        peel.ref_type,
-                        &peel.target_sha,
-                        object_type,
-                        &object_sha,
-                    )
-                    .map_err(ResolveFail::obs)?,
-                };
-                let _ = &mut observed_ref;
-                observed.push(observed_ref);
-            }
-
-            // Partial peel: omit ETag so the next run re-lists and continues
-            // warm-up from the content-addressed cache.
-            let etag = if peel_budget_hit { None } else { etag };
-
-            build_obs(
+        ListResult::NotModified { etag } => {
+            let refs = pages.merged_tag_refs(repo);
+            let obs = build_obs(
                 repo,
                 path,
                 now,
-                Outcome::Ok {
-                    http_status: 200,
+                Outcome::NotModified {
+                    http_status: 304,
                     etag,
-                    refs: observed,
                 },
                 None,
                 None,
                 archived,
-            )
+            )?;
+            Ok(ListingPass {
+                early_observation: Some(obs),
+                warm: warm_job(repo, path, refs),
+            })
+        }
+        ListResult::Missing => Ok(ListingPass {
+            early_observation: Some(build_obs(
+                repo,
+                path,
+                now,
+                Outcome::Failed {
+                    http_status: 404,
+                    error_class: error_class_for_http(404),
+                    backoff_applied: Duration::seconds(0),
+                },
+                None,
+                None,
+                archived,
+            )?),
+            warm: None,
+        }),
+        ListResult::Redirect { status, location } => Ok(ListingPass {
+            early_observation: Some(build_obs(
+                repo,
+                path,
+                now,
+                Outcome::Failed {
+                    http_status: status,
+                    error_class: error_class_for_http(status),
+                    backoff_applied: Duration::seconds(0),
+                },
+                None,
+                Some(location),
+                archived,
+            )?),
+            warm: None,
+        }),
+        ListResult::Refs { refs, etag } => {
+            let obs = build_listing_ok_observation(repo, path, now, &refs, etag, archived)?;
+            Ok(ListingPass {
+                early_observation: Some(obs),
+                warm: warm_job(repo, path, refs),
+            })
         }
     }
 }
@@ -1343,7 +1658,7 @@ fn failed_observation(
 }
 
 #[derive(Debug)]
-enum ResolveFail {
+pub(crate) enum ResolveFail {
     Fail {
         http_status: u16,
         error_class: ErrorClass,

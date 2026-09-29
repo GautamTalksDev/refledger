@@ -54,6 +54,41 @@ At 300 requests/run the primary budget is the binding constraint only if almost
 every call is a 200. With a surviving ETag and a quiet population, most polls
 are 304 and the peel budget dominates warm-up time instead.
 
+### 2026-09-29 — two-phase budget (detection before backfill)
+
+Each `once` run is split:
+
+| Phase | Work | Budget |
+|---|---|---|
+| **1** | Conditional repo metadata + conditional tag listing for **every** poll group (all pages) | Always runs first; a group is `Skipped` for budget only if phase 1 alone would exceed the 300 cap (not expected at 36 groups) |
+| **2** | Object peels, `action.yml` / compare | Whatever remains of 300 requests and the 120 new-peel cap |
+
+Negative `action.yml` results are cached on the commit SHA forever; absent files are never re-fetched.
+
+**Steady-state request estimate** (current 36 poll groups, one tag-listing page each, validators warm):
+
+| Item | Requests / run |
+|---|---:|
+| Repo metadata (conditional) | 36 |
+| Tag listing pages (conditional) | 36 |
+| **Phase 1 total** | **72** |
+| Phase 2 (fully warm, no tag movement) | 0 |
+| **Typical total once warm** | **~72**, nearly all **304** |
+
+If a repository grows past 100 tags, add one conditional listing request per extra page (still phase 1).
+
+**Warm-up completion estimate** (2026-09-29 data branch snapshot):
+
+| Quantity | Value |
+|---|---:|
+| Tag tips listed | 2,983 |
+| Tag tips with a cached peel | 325 |
+| Remaining peel work | ~2,658 |
+| New peels per run (cap) | 120 |
+| Runs to finish peels alone | **~23** at 5 min cadence ≈ **~2 hours** |
+
+Peels for annotated tags can cost more than one HTTP call each; action.yml fetches only happen on newly peeled commits. With phase 2 receiving ~228 requests after phase 1 (~72), warm-up should finish within a few hours rather than starving listings.
+
 **Required before the watched population passes ~200 repositories** (and again
 before any high-frequency tier). Until then a live Mode A/B run is useful but
 not blocking.

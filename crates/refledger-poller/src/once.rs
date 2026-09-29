@@ -17,7 +17,8 @@ use refledger_log::normalize_to_utc_millis;
 
 use crate::github::etag::{AuthToken, ETagStore};
 use crate::github::rest::{
-    resolve_repo, Client, ObjectCache, PageBodyCache, RestRequest, RestResponse, Transport,
+    resolve_repo, resolve_repo_listing, resolve_repo_warm_up, Client, ObjectCache, PageBodyCache,
+    RepoMetaCache, ResolveFail, RestRequest, RestResponse, Transport, WarmUpContext,
 };
 use crate::observation::{Observation, Outcome, RepoSlug, SkipReason, Timestamp};
 use crate::population::{load_watched, poll_groups, PollGroup};
@@ -93,6 +94,7 @@ pub struct OnceReport {
     pub requests: u32,
     pub status_200: u32,
     pub status_304: u32,
+    pub conditional_requests: u32,
     pub tip_seq: u64,
 }
 
@@ -105,6 +107,7 @@ pub struct CountingTransport<T: Transport> {
     requests: AtomicU32,
     status_200: AtomicU32,
     status_304: AtomicU32,
+    conditional_requests: AtomicU32,
 }
 
 impl<T: Transport> CountingTransport<T> {
@@ -115,6 +118,7 @@ impl<T: Transport> CountingTransport<T> {
             requests: AtomicU32::new(0),
             status_200: AtomicU32::new(0),
             status_304: AtomicU32::new(0),
+            conditional_requests: AtomicU32::new(0),
         }
     }
 
@@ -129,12 +133,23 @@ impl<T: Transport> CountingTransport<T> {
     pub fn status_304(&self) -> u32 {
         self.status_304.load(Ordering::Relaxed)
     }
+
+    pub fn conditional_requests(&self) -> u32 {
+        self.conditional_requests.load(Ordering::Relaxed)
+    }
 }
 
 impl<T: Transport> Transport for CountingTransport<T> {
     fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
         // Claim a slot before sending. Never let the counter exceed `max`,
         // even when a concurrent claim races (compare-exchange loop).
+        if request
+            .headers
+            .keys()
+            .any(|k| k.eq_ignore_ascii_case("if-none-match"))
+        {
+            self.conditional_requests.fetch_add(1, Ordering::Relaxed);
+        }
         loop {
             let cur = self.requests.load(Ordering::Relaxed);
             if cur >= self.max {
@@ -289,45 +304,70 @@ pub fn run_once_with<T: Transport>(
         .map_err(|e| OnceError::Rest(e.to_string()))?;
     let mut pages = PageBodyCache::open(data.join("page_bodies.jsonl"))
         .map_err(|e| OnceError::Rest(e.to_string()))?;
+    let mut repo_meta = RepoMetaCache::open(data.join("repo_meta.jsonl"))
+        .map_err(|e| OnceError::Rest(e.to_string()))?;
     let mut objects = ObjectCache::open(data.join("objects.jsonl"))
         .map_err(|e| OnceError::Rest(e.to_string()))?;
     objects.set_peel_budget(args.max_new_peels);
 
     let mut observations = 0usize;
     let mut moved: Vec<String> = Vec::new();
+    let mut warm_jobs: Vec<WarmUpContext> = Vec::new();
 
-    // Rotate which groups are dropped when the budget runs out so no repo is
-    // permanently starved across scheduled runs.
-    let offset = crate::population::fair_skip_offset(scheduled_at, groups.len());
-    let order = crate::population::rotate_groups(groups, offset);
-
-    for g in &order {
-        if client.transport().requests() >= args.max_requests {
-            let mut obs = skip_observation(&g.repo, actual_start, SkipReason::BudgetExhausted)
-                .map_err(|e| OnceError::Observation(e.to_string()))?;
-            obs.stamp_schedule(scheduled_ts, actual_ts);
-            store.append_observation(&obs)?;
-            observations += 1;
-            continue;
-        }
+    // Phase 1: every poll group gets a conditional listing (and repo metadata)
+    // before any peel or action.yml work consumes the shared budget.
+    for g in groups {
         let slug = RepoSlug::parse(&g.repo).map_err(|e| OnceError::Observation(e.to_string()))?;
         let path = g.paths.first().and_then(|p| p.clone());
-        let prior_targets = store.latest_ok_targets(&g.repo)?;
-        let mut obs = resolve_repo(
+        let pass = match resolve_repo_listing(
             &slug,
             path.as_deref(),
             &mut etags,
             &mut pages,
-            &mut objects,
+            &mut repo_meta,
             &client,
             actual_start,
-        );
-        obs.stamp_schedule(scheduled_ts, actual_ts);
-        if movement_detected(&obs, &prior_targets) {
-            moved.push(g.repo.clone());
+        ) {
+            Ok(p) => p,
+            Err(e) => {
+                let obs = match e {
+                    ResolveFail::BudgetExhausted => {
+                        skip_observation(&g.repo, actual_start, SkipReason::BudgetExhausted)
+                            .map_err(|e| OnceError::Observation(e.to_string()))?
+                    }
+                    _ => {
+                        return Err(OnceError::Rest(format!("listing: {e:?}")));
+                    }
+                };
+                let mut obs = obs;
+                obs.stamp_schedule(scheduled_ts, actual_ts);
+                store.append_observation(&obs)?;
+                observations += 1;
+                continue;
+            }
+        };
+        if let Some(obs) = pass.early_observation {
+            let prior_targets = store.latest_ok_targets(&g.repo)?;
+            let mut obs = obs;
+            obs.stamp_schedule(scheduled_ts, actual_ts);
+            if movement_detected(&obs, &prior_targets) {
+                moved.push(g.repo.clone());
+            }
+            store.append_observation(&obs)?;
+            observations += 1;
         }
-        store.append_observation(&obs)?;
-        observations += 1;
+        if let Some(w) = pass.warm {
+            warm_jobs.push(w);
+        }
+    }
+
+    // Phase 2: warm-up peels and action.yml fetches with whatever budget remains.
+    for w in warm_jobs {
+        if let Err(e) = resolve_repo_warm_up(&w, &pages, &mut objects, &client) {
+            if !matches!(e, ResolveFail::BudgetExhausted) {
+                return Err(OnceError::Rest(format!("warm-up: {e:?}")));
+            }
+        }
     }
 
     let confirmations = if !moved.is_empty() {
@@ -344,6 +384,7 @@ pub fn run_once_with<T: Transport>(
                 None,
                 &mut etags,
                 &mut pages,
+                &mut repo_meta,
                 &mut objects,
                 &client,
                 confirm_at,
@@ -366,6 +407,7 @@ pub fn run_once_with<T: Transport>(
         requests: client.transport().requests(),
         status_200: client.transport().status_200(),
         status_304: client.transport().status_304(),
+        conditional_requests: client.transport().conditional_requests(),
         tip_seq: store.tip_seq(),
     })
 }

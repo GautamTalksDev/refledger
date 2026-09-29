@@ -11,7 +11,8 @@ use std::sync::{Arc, Mutex};
 
 use refledger_poller::github::etag::{AuthToken, ConditionalRequest, ETagStore};
 use refledger_poller::github::rest::{
-    resolve_repo, Client, ObjectCache, PageBodyCache, RestRequest, RestResponse, Transport,
+    resolve_repo, Client, ObjectCache, PageBodyCache, RepoMetaCache, RestRequest, RestResponse,
+    Transport,
 };
 use refledger_poller::observation::{ErrorClass, Method, Outcome, PeeledType, RefType, RepoSlug};
 use serde_json::Value;
@@ -161,6 +162,7 @@ struct Harness {
     _dir: TempDir,
     etags: ETagStore,
     pages: PageBodyCache,
+    repo_meta: RepoMetaCache,
     objects: ObjectCache,
     client: Client<MockTransport>,
     repo: RepoSlug,
@@ -172,12 +174,14 @@ impl Harness {
         let etags =
             ETagStore::open(dir.path().join("etags.jsonl"), Duration::hours(24)).expect("etags");
         let pages = PageBodyCache::open(dir.path().join("pages.jsonl")).expect("pages");
+        let repo_meta = RepoMetaCache::open(dir.path().join("repo_meta.jsonl")).expect("repo_meta");
         let objects = ObjectCache::open(dir.path().join("objects.jsonl")).expect("objects");
         let client = Client::new(transport, AuthToken::new("ghp_test_token").unwrap());
         Self {
             _dir: dir,
             etags,
             pages,
+            repo_meta,
             objects,
             client,
             repo: RepoSlug::parse("acme/widgets").unwrap(),
@@ -198,6 +202,7 @@ impl Harness {
             path,
             &mut self.etags,
             &mut self.pages,
+            &mut self.repo_meta,
             &mut self.objects,
             &self.client,
             at,
@@ -739,6 +744,30 @@ fn missing_action_yml_and_yaml_records_none_not_failure() {
 }
 
 #[test]
+fn absent_action_yml_at_commit_is_cached_and_never_re_fetched() {
+    let transport = MockTransport::new();
+    transport
+        .route("/repos/acme/widgets", "repo_ok")
+        .route("matching-refs/tags", "tags_lightweight")
+        .route(&format!("/git/commits/{COMMIT_1}"), "git_commit_1")
+        .route("contents/action.yml", "contents_neither_yml")
+        .route("contents/action.yaml", "contents_neither_yaml");
+
+    let mut h = Harness::new(transport.clone());
+    let _ = h.resolve(None);
+    transport.clear_log();
+    transport
+        .route("/repos/acme/widgets", "repo_ok")
+        .route("matching-refs/tags", "tags_lightweight");
+    let _ = h.resolve(None);
+    assert!(
+        transport.requested_containing("/contents/").is_empty(),
+        "negative action.yml result must be cached by commit sha: {:?}",
+        transport.requested_targets()
+    );
+}
+
+#[test]
 fn subdirectory_action_path_resolves_metadata_under_path() {
     let transport = MockTransport::new();
     transport
@@ -872,6 +901,7 @@ fn transport_err_is_network_with_status_zero() {
     let dir = TempDir::new().unwrap();
     let mut etags = ETagStore::open(dir.path().join("etags.jsonl"), Duration::hours(24)).unwrap();
     let mut pages = PageBodyCache::open(dir.path().join("pages.jsonl")).unwrap();
+    let mut repo_meta = RepoMetaCache::open(dir.path().join("repo_meta.jsonl")).unwrap();
     let mut objects = ObjectCache::open(dir.path().join("objects.jsonl")).unwrap();
     let client = Client::new(Boom, AuthToken::new("ghp_test_token").unwrap());
     let repo = RepoSlug::parse("acme/widgets").unwrap();
@@ -880,6 +910,7 @@ fn transport_err_is_network_with_status_zero() {
         None,
         &mut etags,
         &mut pages,
+        &mut repo_meta,
         &mut objects,
         &client,
         now(),

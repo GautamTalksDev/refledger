@@ -464,6 +464,141 @@ fn counting_transport_never_exceeds_max() {
 }
 
 #[test]
+fn phase1_lists_every_group_while_peel_backlog_exceeds_budget() {
+    use refledger_poller::github::rest::{RestRequest, RestResponse, Transport};
+    use refledger_poller::once::{run_once_with, CountingTransport, OnceArgs};
+    use refledger_poller::population::PollGroup;
+    use refledger_poller::store::Store;
+    use serde_json::json;
+    use std::collections::BTreeMap;
+
+    const N_GROUPS: usize = 10;
+    const REFS_PER_GROUP: usize = 300;
+
+    #[derive(Clone, Default)]
+    struct HugeBacklog {
+        log: Arc<Mutex<Vec<RestRequest>>>,
+    }
+    impl Transport for HugeBacklog {
+        fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
+            self.log.lock().unwrap().push(request.clone());
+            let t = &request.target;
+            if t.contains("/repos/") && !t.contains("/git/") && !t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"repo\"".into())]),
+                    body: Some(json!({"archived": false})),
+                });
+            }
+            if t.contains("matching-refs/tags") {
+                let refs: Vec<_> = (0..REFS_PER_GROUP)
+                    .map(|i| {
+                        json!({
+                            "ref": format!("refs/tags/v{i}"),
+                            "object": {
+                                "type": "commit",
+                                "sha": format!("{:040x}", i + 1)
+                            }
+                        })
+                    })
+                    .collect();
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"tags\"".into())]),
+                    body: Some(json!(refs)),
+                });
+            }
+            if t.contains("/git/commits/") {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({
+                        "sha": "1111111111111111111111111111111111111111",
+                        "tree": {"sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+                    })),
+                });
+            }
+            if t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 404,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({"message": "Not Found"})),
+                });
+            }
+            Err(format!("unexpected target {t}"))
+        }
+    }
+
+    let dir = TempDir::new().unwrap();
+    let at = odt(2026, Month::January, 1, 12, 2, 0, 0);
+    let groups: Vec<PollGroup> = (0..N_GROUPS)
+        .map(|i| PollGroup {
+            repo: format!("org/repo-{i}"),
+            paths: vec![None],
+        })
+        .collect();
+    {
+        let mut store = Store::open(dir.path(), opts(at)).unwrap();
+        for g in &groups {
+            store
+                .append_observation(&ok_obs(&g.repo, at - Duration::minutes(5)))
+                .unwrap();
+        }
+    }
+
+    let inner = HugeBacklog::default();
+    let transport = CountingTransport::new(inner.clone(), 300);
+    let mut store = Store::open(dir.path(), opts(at + Duration::minutes(5))).unwrap();
+    let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+    args.token = "ghp_test".into();
+    args.scheduled_at = at + Duration::minutes(5);
+    args.actual_start = at + Duration::minutes(5);
+    args.sleep = Box::new(|_| {});
+    args.max_requests = 300;
+    args.max_new_peels = 120;
+    args.confirm_delay = Duration::seconds(0);
+
+    let report = run_once_with(&mut store, transport, &groups, &args).unwrap();
+    assert_eq!(report.observations, N_GROUPS);
+    let listings = inner
+        .log
+        .lock()
+        .unwrap()
+        .iter()
+        .filter(|r| r.target.contains("matching-refs/tags"))
+        .count();
+    assert!(
+        listings >= N_GROUPS,
+        "phase 1 must list every group before warm-up: {listings} listings for {N_GROUPS} groups"
+    );
+    fn obs_lines(root: &Path, out: &mut Vec<String>) {
+        if root.extension().and_then(|s| s.to_str()) == Some("jsonl") {
+            if let Ok(text) = std::fs::read_to_string(root) {
+                out.extend(text.lines().map(str::to_owned));
+            }
+            return;
+        }
+        if root.is_dir() {
+            if let Ok(rd) = std::fs::read_dir(root) {
+                for e in rd.flatten() {
+                    obs_lines(&e.path(), out);
+                }
+            }
+        }
+    }
+    let mut lines = Vec::new();
+    obs_lines(&dir.path().join("observations"), &mut lines);
+    let budget_skips = lines
+        .iter()
+        .filter(|l| l.contains("budget_exhausted"))
+        .count();
+    assert_eq!(
+        budget_skips, 0,
+        "listing must not be skipped for warm-up backlog"
+    );
+}
+
+#[test]
 fn fair_skip_rotates_so_every_group_is_polled_across_runs() {
     use refledger_poller::population::{fair_skip_offset, rotate_groups};
     let groups: Vec<String> = (0..5).map(|i| format!("org/repo-{i}")).collect();

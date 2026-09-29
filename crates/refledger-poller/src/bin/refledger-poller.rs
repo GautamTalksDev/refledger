@@ -182,7 +182,7 @@ fn cmd_once(args: &[String]) -> ExitCode {
     match run_once(opts, once) {
         Ok(report) => {
             eprintln!(
-                "once ok: obs={} gaps={} sealed={} confirm={} req={} 200={} 304={} tip_seq={}",
+                "once ok: obs={} gaps={} sealed={} confirm={} req={} 200={} 304={} cond={} tip_seq={}",
                 report.observations,
                 report.gaps,
                 report.days_sealed.len(),
@@ -190,6 +190,7 @@ fn cmd_once(args: &[String]) -> ExitCode {
                 report.requests,
                 report.status_200,
                 report.status_304,
+                report.conditional_requests,
                 report.tip_seq
             );
             // Machine-readable line for the workflow commit message.
