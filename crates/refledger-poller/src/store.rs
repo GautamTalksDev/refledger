@@ -914,19 +914,51 @@ impl<V: Volume> Store<V> {
     ///
     /// Entries are written before any other new log activity for this open, in
     /// `(recorded_at, repo, path)` order. Idempotent under replay.
+    ///
+    /// `run_now` is used as `recorded_at` for late registrations (keys missed
+    /// by an earlier per-group derivation bug) so the chain stays monotonic.
     pub fn emit_genesis_population_adds(
         &mut self,
         watched: &[crate::population::WatchedEntry],
+        run_now: OffsetDateTime,
     ) -> Result<usize, StoreError> {
         use crate::population::genesis_added_entries;
         let earliest = self.earliest_observations()?;
         let already = self.population_added_keys();
-        let entries = genesis_added_entries(watched, &earliest, &already);
+        let entries = genesis_added_entries(watched, &earliest, &already, run_now);
         let n = entries.len();
         for entry in entries {
             self.append_entry(entry)?;
         }
         Ok(n)
+    }
+
+    /// Queue a digest note about the fabricated 422 on run #2 before day
+    /// 2026-09-29 seals. Idempotent: skips if the note is already pending or
+    /// already present in a sealed ObservationDigest.
+    pub fn ensure_false_422_digest_note(&mut self) -> Result<(), StoreError> {
+        const NOTE: &str = "observation 01M3Q896RH64XBABMKK8AXKNJ1 (tj-actions/changed-files at 2026-09-29T18:53:44.590Z): recorded http_status 422 was fabricated by a poller bug (budget exhaustion misreported as network/422); fixed in e30f6c7";
+        if self
+            .pending_identity_warnings
+            .iter()
+            .any(|w| w.contains("01M3Q896RH64XBABMKK8AXKNJ1"))
+        {
+            return Ok(());
+        }
+        for entry in self.chain.entries() {
+            if entry.event != Event::ObservationDigest {
+                continue;
+            }
+            if let Some(d) = &entry.observation_digest {
+                if d.note
+                    .as_deref()
+                    .is_some_and(|n| n.contains("01M3Q896RH64XBABMKK8AXKNJ1"))
+                {
+                    return Ok(());
+                }
+            }
+        }
+        self.record_identity_warning(NOTE)
     }
 
     /// Seal day D. The digest is the first entry of day D+1, then the buffer drains.

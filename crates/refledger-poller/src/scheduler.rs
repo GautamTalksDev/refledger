@@ -6,7 +6,7 @@
 //! - global secondary-points governor at 300/minute (one third of the
 //!   documented 900 ceiling), applied to every request
 //! - refusals pause globally; due groups get one Skipped observation each
-//! - `once` runs also cap requests (150) and new peels (40) per job
+//! - `once` runs also cap requests (300) and new peels (120) per job
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
@@ -20,10 +20,10 @@ use crate::population::PollGroup;
 
 /// Poll interval for M1 on GitHub Actions (one sweep per scheduled run).
 pub const M1_INTERVAL: Duration = Duration::seconds(300);
-/// Hard cap on GitHub API requests in a single `once` run (GITHUB_TOKEN budget).
-pub const MAX_REQUESTS_PER_RUN: u32 = 150;
+/// Hard cap on GitHub API requests in a single `once` run (stable PAT budget).
+pub const MAX_REQUESTS_PER_RUN: u32 = 300;
 /// Cap on first-seen object peels per run so large tag sets warm across runs.
-pub const MAX_NEW_PEELS_PER_RUN: u32 = 40;
+pub const MAX_NEW_PEELS_PER_RUN: u32 = 120;
 /// Confirmation re-poll delay after a detected movement (same run).
 pub const CONFIRM_DELAY: Duration = Duration::seconds(60);
 /// Global secondary-points ceiling used by the governor.

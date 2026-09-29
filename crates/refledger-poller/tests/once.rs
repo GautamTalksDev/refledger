@@ -532,18 +532,42 @@ fn genesis_added_entries_replay_identically_from_data_observations() {
             }
         }
     }
-    let a = genesis_added_entries(&watched, &earliest, &BTreeSet::new());
-    let b = genesis_added_entries(&watched, &earliest, &BTreeSet::new());
-    assert_eq!(a.len(), b.len());
-    assert!(!a.is_empty(), "genesis data must yield Added rows");
+    let run_now = OffsetDateTime::parse(
+        "2026-09-29T20:00:00.000Z",
+        &time::format_description::well_known::Rfc3339,
+    )
+    .unwrap();
+    let a = genesis_added_entries(&watched, &earliest, &BTreeSet::new(), run_now);
+    let b = genesis_added_entries(&watched, &earliest, &BTreeSet::new(), run_now);
+    assert_eq!(a, b, "true-genesis Added rows must be replay-deterministic");
+    assert_eq!(
+        a.len(),
+        watched.iter().filter(|e| e.active).count(),
+        "every active watched key must get an Added row"
+    );
+    // Late registration path (already_added non-empty) is also deterministic.
+    let already: BTreeSet<_> = a
+        .iter()
+        .filter_map(|e| {
+            let repo = e.repo.as_ref()?.clone();
+            let path = e.population_change.as_ref()?.path.clone();
+            Some(WatchedKey::new(repo, path))
+        })
+        .take(a.len().saturating_sub(3))
+        .collect();
+    let late_a = genesis_added_entries(&watched, &earliest, &already, run_now);
+    let late_b = genesis_added_entries(&watched, &earliest, &already, run_now);
+    assert_eq!(
+        late_a, late_b,
+        "late-registration Added rows must be replay-deterministic"
+    );
+    assert_eq!(late_a.len(), 3);
     for (x, y) in a.iter().zip(b.iter()) {
-        assert_eq!(x.repo, y.repo);
-        assert_eq!(x.recorded_at, y.recorded_at);
-        assert_eq!(x.source_observations, y.source_observations);
         assert_eq!(
             x.population_change.as_ref().unwrap().change,
             PopulationChangeKind::Added
         );
+        let _ = y;
     }
     // Ordered by (recorded_at, repo, path).
     for w in a.windows(2) {

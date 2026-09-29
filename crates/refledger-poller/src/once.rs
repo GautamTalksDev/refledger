@@ -97,7 +97,8 @@ pub struct OnceReport {
 }
 
 /// Counting transport wrapper: enforces the per-run request budget and tallies
-/// 200 vs 304 responses (GITHUB_TOKEN rotates every run; ETags may not survive).
+/// 200 vs 304 responses. API reads use a stable `REFLEDGER_GITHUB_TOKEN` so
+/// ETags can survive across runs; `GITHUB_TOKEN` is push-only.
 pub struct CountingTransport<T: Transport> {
     inner: T,
     max: u32,
@@ -375,9 +376,12 @@ pub fn run_once(opts: StoreOptions, args: OnceArgs) -> Result<OnceReport, OnceEr
         load_watched(&args.watched_path).map_err(|e| OnceError::Population(e.to_string()))?;
     let groups = poll_groups(&watched);
     let mut store = Store::open(&args.data_dir, opts)?;
+    // Queue the false-422 digest note before any seal of 2026-09-29.
+    store.ensure_false_422_digest_note()?;
     // First durable chain rows: Added for every watched key that already has
-    // an observation but no PopulationChange yet (including the canary).
-    store.emit_genesis_population_adds(&watched)?;
+    // an observation but no PopulationChange yet (including the canary and
+    // subdirectory keys that share a poll group).
+    store.emit_genesis_population_adds(&watched, args.actual_start)?;
     let transport = CountingTransport::new(UreqTransport, args.max_requests);
     run_once_with(&mut store, transport, &groups, &args)
 }

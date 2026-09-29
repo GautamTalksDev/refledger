@@ -136,12 +136,26 @@ fn cmd_once(args: &[String]) -> ExitCode {
         }
     };
 
-    let token = match env::var("GITHUB_TOKEN").or_else(|_| env::var("REFLEDGER_GITHUB_TOKEN")) {
+    // Read-only PAT for GitHub API. Never fall back to GITHUB_TOKEN for reads
+    // when Actions requires a dedicated token; never log the value.
+    let read_token = match env::var("REFLEDGER_GITHUB_TOKEN") {
         Ok(t) if !t.is_empty() => t,
-        _ => {
-            eprintln!("GITHUB_TOKEN is not set");
+        _ if env::var("REFLEDGER_REQUIRE_ENABLED").ok().as_deref() == Some("1") => {
+            eprintln!("REFLEDGER_GITHUB_TOKEN is not set (required for GitHub reads)");
             return ExitCode::from(1);
         }
+        _ => match env::var("GITHUB_TOKEN") {
+            Ok(t) if !t.is_empty() => t,
+            _ => {
+                eprintln!("REFLEDGER_GITHUB_TOKEN is not set");
+                return ExitCode::from(1);
+            }
+        },
+    };
+    // Push credential only — never used for API reads.
+    let push_token = match env::var("GITHUB_TOKEN") {
+        Ok(t) if !t.is_empty() => t,
+        _ => String::new(),
     };
 
     let mut opts = StoreOptions::new(signing_key, actual_start);
@@ -153,12 +167,15 @@ fn cmd_once(args: &[String]) -> ExitCode {
     if let Ok(publisher) = GitLedgerPublisher::from_env() {
         opts.publisher = Box::new(publisher);
     } else if let Ok(clone) = env::var("REFLEDGER_PUBLISH_CLONE") {
-        let pub_ = GitLedgerPublisher::new(clone, None).with_github_token(token.clone());
+        let mut pub_ = GitLedgerPublisher::new(clone, None);
+        if !push_token.is_empty() {
+            pub_ = pub_.with_github_token(push_token);
+        }
         opts.publisher = Box::new(pub_);
     }
 
     let mut once = OnceArgs::production(data_dir, watched);
-    once.token = token;
+    once.token = read_token;
     once.scheduled_at = scheduled_at;
     once.actual_start = actual_start;
 

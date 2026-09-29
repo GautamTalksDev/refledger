@@ -83,6 +83,7 @@ jobs:
         working-directory: main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REFLEDGER_GITHUB_TOKEN: ${{ secrets.REFLEDGER_GITHUB_TOKEN }}
           REFLEDGER_SIGNING_KEY: ${{ secrets.REFLEDGER_SIGNING_KEY }}
           REFLEDGER_PUBLISH_CLONE: ${{ github.workspace }}/main
           REFLEDGER_REQUIRE_ENABLED: "1"

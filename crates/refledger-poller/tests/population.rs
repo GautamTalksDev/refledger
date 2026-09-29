@@ -324,5 +324,91 @@ fn genesis_added_skips_keys_already_in_chain() {
     );
     let mut already = BTreeSet::new();
     already.insert(key);
-    assert!(genesis_added_entries(&watched, &earliest, &already).is_empty());
+    assert!(genesis_added_entries(
+        &watched,
+        &earliest,
+        &already,
+        odt(2026, Month::January, 2, 0, 0, 0)
+    )
+    .is_empty());
+}
+
+#[test]
+fn genesis_added_covers_subdirectory_keys_via_repo_observation() {
+    use refledger_poller::population::{
+        earliest_for_key, genesis_added_entries, EarliestObservation, WatchedEntry, WatchedKey,
+        WatchedReason,
+    };
+    use std::collections::{BTreeMap, BTreeSet};
+    let root = WatchedKey::new("actions/cache", None);
+    let restore = WatchedKey::new("actions/cache", Some("restore".into()));
+    let save = WatchedKey::new("actions/cache", Some("save".into()));
+    let watched = vec![
+        WatchedEntry {
+            key: root.clone(),
+            added_at: odt(2026, Month::January, 1, 0, 0, 0),
+            reason: WatchedReason::Manual,
+            active: true,
+            note: None,
+        },
+        WatchedEntry {
+            key: restore.clone(),
+            added_at: odt(2026, Month::January, 1, 0, 0, 0),
+            reason: WatchedReason::Manual,
+            active: true,
+            note: None,
+        },
+        WatchedEntry {
+            key: save.clone(),
+            added_at: odt(2026, Month::January, 1, 0, 0, 0),
+            reason: WatchedReason::Manual,
+            active: true,
+            note: None,
+        },
+    ];
+    let mut earliest = BTreeMap::new();
+    // Only the repo-root observation exists (per-group poll).
+    earliest.insert(
+        root.clone(),
+        EarliestObservation {
+            observed_at: odt(2026, Month::January, 1, 12, 0, 0),
+            observation_id: "01ROOT".into(),
+        },
+    );
+    assert!(earliest_for_key(&earliest, &restore).is_some());
+    let now = odt(2026, Month::January, 1, 12, 0, 0);
+    let entries = genesis_added_entries(&watched, &earliest, &BTreeSet::new(), now);
+    assert_eq!(entries.len(), 3, "every key including subdirectory paths");
+    let paths: Vec<_> = entries
+        .iter()
+        .map(|e| e.population_change.as_ref().and_then(|p| p.path.clone()))
+        .collect();
+    assert!(paths.contains(&None));
+    assert!(paths.contains(&Some("restore".into())));
+    assert!(paths.contains(&Some("save".into())));
+
+    // Late registration: root already Added, subdirectory keys get run_now + note.
+    let mut already = BTreeSet::new();
+    already.insert(root);
+    let late_now = odt(2026, Month::January, 2, 15, 0, 0);
+    let late = genesis_added_entries(&watched, &earliest, &already, late_now);
+    assert_eq!(late.len(), 2);
+    for e in &late {
+        assert_eq!(e.recorded_at, late_now);
+        let note = e
+            .population_change
+            .as_ref()
+            .unwrap()
+            .note
+            .as_deref()
+            .unwrap();
+        assert!(note.contains("late registration"));
+        assert!(note.contains("01ROOT"));
+        assert!(note.contains("per-group derivation bug"));
+    }
+    let again = genesis_added_entries(&watched, &earliest, &already, late_now);
+    assert_eq!(
+        late, again,
+        "late registration must be replay-deterministic"
+    );
 }

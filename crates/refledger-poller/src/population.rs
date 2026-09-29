@@ -386,47 +386,107 @@ pub struct EarliestObservation {
     pub observation_id: String,
 }
 
-/// Deterministic genesis Added entries for every watched key that has an
-/// observation on disk but no `PopulationChange::Added` in the chain yet.
+/// Resolve the earliest observation for a watched key.
 ///
-/// Ordered by `(recorded_at, repo, path)`. Replay of the same inputs yields
-/// identical entries.
+/// Exact `(repo, path)` match wins. Otherwise fall back to the earliest
+/// observation of the same repo (any path) — subdirectory keys share one
+/// poll group's observation until they have a dedicated path poll.
+pub fn earliest_for_key<'a>(
+    earliest: &'a BTreeMap<WatchedKey, EarliestObservation>,
+    key: &WatchedKey,
+) -> Option<&'a EarliestObservation> {
+    if let Some(obs) = earliest.get(key) {
+        return Some(obs);
+    }
+    earliest
+        .iter()
+        .filter(|(k, _)| k.repo == key.repo)
+        .map(|(_, obs)| obs)
+        .min_by_key(|obs| (obs.observed_at, obs.observation_id.as_str()))
+}
+
+/// Commit that fixed per-group genesis skipping subdirectory keys.
+/// Filled when this change lands on `main`.
+pub const PER_KEY_ADDED_FIX_COMMIT: &str = "PENDING_PER_KEY_ADDED";
+
+/// Deterministic Added entries for every watched key that still lacks one.
+///
+/// - True genesis (`already_added` empty): `recorded_at` = earliest observation.
+/// - Late registration (chain already has some Added rows): `recorded_at` =
+///   `run_now` (monotonic) with a `note` explaining the miss.
+///
+/// Ordered by `(recorded_at, repo, path)`. Same inputs → identical entries.
 pub fn genesis_added_entries(
     watched: &[WatchedEntry],
     earliest: &BTreeMap<WatchedKey, EarliestObservation>,
     already_added: &BTreeSet<WatchedKey>,
+    run_now: OffsetDateTime,
 ) -> Vec<UnhashedEntry> {
-    let mut rows: Vec<(&WatchedEntry, &EarliestObservation)> = watched
-        .iter()
-        .filter(|e| e.active)
-        .filter(|e| !already_added.contains(&e.key))
-        .filter_map(|e| earliest.get(&e.key).map(|obs| (e, obs)))
-        .collect();
-    rows.sort_by(|(a, ao), (b, bo)| {
+    let late = !already_added.is_empty();
+    let mut rows: Vec<(
+        OffsetDateTime,
+        &WatchedEntry,
+        &EarliestObservation,
+        Option<String>,
+    )> = Vec::new();
+    for e in watched.iter().filter(|e| e.active) {
+        if already_added.contains(&e.key) {
+            continue;
+        }
+        let Some(obs) = earliest_for_key(earliest, &e.key) else {
+            continue;
+        };
+        let (recorded_at, note) = if late {
+            let note = format!(
+                "late registration; first observed {}, observation {}, missing due to per-group derivation bug fixed in {}",
+                format_obs_ts(obs.observed_at),
+                obs.observation_id,
+                PER_KEY_ADDED_FIX_COMMIT
+            );
+            (run_now, Some(note))
+        } else {
+            (obs.observed_at, e.note.clone())
+        };
+        rows.push((recorded_at, e, obs, note));
+    }
+    rows.sort_by(|(at_a, a, _, _), (at_b, b, _, _)| {
         (
-            ao.observed_at,
+            *at_a,
             a.key.repo.as_str(),
             a.key.path.as_deref().unwrap_or(""),
         )
             .cmp(&(
-                bo.observed_at,
+                *at_b,
                 b.key.repo.as_str(),
                 b.key.path.as_deref().unwrap_or(""),
             ))
     });
     rows.into_iter()
-        .map(|(e, obs)| {
+        .map(|(recorded_at, e, obs, note)| {
             derive_population_change_with_sources(
-                obs.observed_at,
+                recorded_at,
                 &e.key.repo,
                 PopulationChangeKind::Added,
                 log_reason(&e.reason),
                 e.key.path.as_deref(),
-                e.note.as_deref(),
+                note.as_deref(),
                 Some(vec![obs.observation_id.clone()]),
             )
         })
         .collect()
+}
+
+fn format_obs_ts(t: OffsetDateTime) -> String {
+    format!(
+        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}.{:03}Z",
+        t.year(),
+        u8::from(t.month()),
+        t.day(),
+        t.hour(),
+        t.minute(),
+        t.second(),
+        t.nanosecond() / 1_000_000
+    )
 }
 
 /// Convert a [`WatchedReason`] into the log's [`PopulationReason`].
