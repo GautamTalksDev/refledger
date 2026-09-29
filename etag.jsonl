@@ -147,3 +147,4 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"7809e9dd78378f820f057f1febbb86e3d5683bbf5f1551a52abeaeccaac61640\"","stored_at":"2026-09-29T22:02:24.215Z"}
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"e8ccb7a0810c23a0f06f18b87f4ffe03a9c4d7c397e472ff251fa2db0cd6ccad\"","stored_at":"2026-09-29T22:07:22.123Z"}
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"edd2609f6a2bcf82b52f479e1a20dceef70e234979e345148712d858ca0e9222\"","stored_at":"2026-09-29T22:12:24.606Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"70cfedf3823c1836e38e48c4f691655b5a1cfa652e6a4aa5b6671c4a14944162\"","stored_at":"2026-09-29T22:17:22.110Z"}
