@@ -135,8 +135,10 @@ fn run(args: Args) -> Result<ExitCode, VerifyError> {
             }
             Err(e) => return Err(e),
         }
-    } else if args.pubkey.is_some() {
-        return Err(VerifyError::Io("--pubkey requires --head".into()));
+    } else if args.pubkey.is_some() && !args.strict {
+        return Err(VerifyError::Io(
+            "--pubkey requires --head, or --strict (which reads heads.jsonl beside the log)".into(),
+        ));
     }
 
     if let Some(obs) = &args.observations {

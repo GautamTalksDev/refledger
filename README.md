@@ -69,12 +69,13 @@ The population is deliberately small and honestly defined: a set of cited seed a
 
 ## Check our work in 60 seconds
 
-You shouldn't have to take our word for anything. Clone the repo and run the verifier:
+You shouldn't have to take our word for anything. Clone the repo and run the verifier, pinning the published signing key (`docs/PUBLIC-KEY.md`):
 
 ```bash
 git clone https://github.com/GautamTalksDev/refledger.git
 cd refledger
-cargo run --release -p refledger-verify -- data/log --strict
+cargo run --release -p refledger-verify -- data/log --strict \
+  --pubkey b3e7e795c35dee53731e039b76da930fc54e87e2edc632449a8a2e55252e276a
 ```
 
 It replays the whole chain, checks every signed head, and tells you in five lines whether the record is intact. The verifier shares no code with the signer, on purpose. Full walkthrough in [`docs/VERIFY.md`](docs/VERIFY.md).

@@ -5,10 +5,11 @@ The verifier is an independent implementation of [`LOG-FORMAT.md`](LOG-FORMAT.md
 ## Quick check
 
 ```bash
-cargo run --release -p refledger-verify -- data/log --strict
+cargo run --release -p refledger-verify -- data/log --strict \
+  --pubkey b3e7e795c35dee53731e039b76da930fc54e87e2edc632449a8a2e55252e276a
 ```
 
-On success the tool prints at most five lines: chain status, entry count and sequence range, time span, signed head status, and how many coverage gaps were recorded. On failure it names the check and, when possible, the sequence number.
+Pin the key from [`PUBLIC-KEY.md`](PUBLIC-KEY.md). On success the tool prints at most five lines: chain status, entry count and sequence range, time span, signed head status, and how many coverage gaps were recorded. On failure it names the check and, when possible, the sequence number.
 
 Exit code `0` means the verdict is OK. Exit code `1` means a verification failure. Exit code `2` means I/O, parse, or usage error.
 
@@ -36,7 +37,7 @@ Exit code `0` means the verdict is OK. Exit code `1` means a verification failur
 | `<LOG_DIR>` | Directory of day JSONL files (for example `data/log`) |
 | `--from` / `--to` | Inclusive sequence range |
 | `--head` | A single signed head JSON file, or a `heads.jsonl` path |
-| `--pubkey` | Expected public key (64 lowercase hex chars); requires `--head` |
+| `--pubkey` | Expected public key (64 lowercase hex chars); requires `--head`, or `--strict` which reads `heads.jsonl` |
 | `--observations` | Root of observation JSONL archives for digest checks |
 | `--json` | Machine readable verdict |
 | `--strict` | Fail on a 48 hour Rekor witness backlog |
