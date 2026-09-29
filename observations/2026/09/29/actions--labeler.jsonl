@@ -1,0 +1,1 @@
+{"observation_id":"01M3Q88SY7GC79D6KFAA3FD317","repo":"actions/labeler","observed_at":"2026-09-29T18:53:44.590Z","poller_version":"0.1.0","method":"rest","outcome":{"type":"ok","http_status":200,"refs":[]},"archived":false,"scheduled_at":"2026-09-29T18:53:44.000Z","actual_start":"2026-09-29T18:53:44.590Z"}
