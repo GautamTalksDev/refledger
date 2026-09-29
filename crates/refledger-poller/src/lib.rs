@@ -22,7 +22,7 @@ pub mod store;
 
 pub use archive::{
     format_archive_failure_note, ArchiveFailure, DayArchive, MirrorArchive, NoopArchive,
-    ObservationArchive, R2Archive,
+    ObservationArchive,
 };
 pub use identity::{
     apply_contact_reachability, contact_url_from_ua, ensure_contact_resolves,

@@ -100,7 +100,8 @@ pub struct StoreOptions {
     /// When a torn tail is moved aside, the sidecar name uses this timestamp.
     pub recovered_at: OffsetDateTime,
     pub rekor: Box<dyn RekorClient>,
-    /// Off-VM destination for sealed observation files. Defaults to [`NoopArchive`].
+    /// Optional extra mirror of sealed observation files. Defaults to [`NoopArchive`]
+    /// (observations are published on the data branch).
     pub archive: Box<dyn ObservationArchive>,
     /// Dedicated publishing clone for `data/log/` on the public repo.
     /// Defaults to [`NoopPublisher`].
@@ -276,6 +277,21 @@ impl OsVolume {
         file.sync_all()
             .map_err(|e| StoreError::Durability(format!("directory fsync: {e}")))
     }
+
+    /// Release `.store.lock` with an explicit `LOCK_UN` before closing the fd.
+    ///
+    /// Under parallel `cargo test` threads, relying on close-alone to drop an
+    /// `flock` was nondeterministic: a reopen of the same store root could see
+    /// `AlreadyLocked` after the previous `Store` had been dropped. Explicit
+    /// unlock makes release synchronous with `Drop`/`unlock`.
+    fn release_lock(&mut self) {
+        if let Some(file) = self.lock.take() {
+            let fd = file.as_raw_fd();
+            // SAFETY: `fd` is still open; LOCK_UN is best-effort before close.
+            let _ = unsafe { libc::flock(fd, libc::LOCK_UN) };
+            drop(file);
+        }
+    }
 }
 
 impl Volume for OsVolume {
@@ -306,7 +322,7 @@ impl Volume for OsVolume {
     }
 
     fn unlock(&mut self) {
-        self.lock.take();
+        self.release_lock();
     }
 
     fn read(&self, rel: &str) -> Result<Option<Vec<u8>>, StoreError> {
@@ -404,6 +420,12 @@ fn walk_files(root: &Path, dir: &Path, out: &mut Vec<String>) -> Result<(), Stor
         }
     }
     Ok(())
+}
+
+impl Drop for OsVolume {
+    fn drop(&mut self) {
+        self.release_lock();
+    }
 }
 
 /// Fault-injecting volume. Counts fsyncs and can fail a directory fsync or
@@ -963,10 +985,11 @@ impl<V: Volume> Store<V> {
 
     /// Seal day D. The digest is the first entry of day D+1, then the buffer drains.
     ///
-    /// After the digest is committed, that day's observation files are uploaded
-    /// off-VM and the sealed `log/` is copied into a dedicated publishing clone
-    /// and fast-forward pushed. Archive or publish failures are queued and
-    /// appear in the *next* ObservationDigest note — never fatal to the seal.
+    /// After the digest is committed, an optional extra observation mirror may
+    /// run, then the sealed `log/` (and observations when configured) is copied
+    /// into a dedicated publishing clone and fast-forward pushed onto the data
+    /// branch. Mirror or publish failures are queued and appear in the *next*
+    /// ObservationDigest note — never fatal to the seal.
     pub fn seal_day(&mut self, day: Date) -> Result<Entry, StoreError> {
         let label = fmt_day(day);
         if self.sealed.contains(&day) {
@@ -999,7 +1022,7 @@ impl<V: Volume> Store<V> {
         self.clear_consumed_archive_failures()?;
         self.clear_consumed_identity_warnings()?;
         self.clear_consumed_publish_failures()?;
-        // Ship this day's observations off-VM. Failure is non-fatal to the seal
+        // Optional extra observation mirror. Failure is non-fatal to the seal
         // but must surface in the next digest's note.
         self.upload_sealed_day(day, &day_files)?;
         // Copy sealed log bytes into the publishing clone and FF-push. Never

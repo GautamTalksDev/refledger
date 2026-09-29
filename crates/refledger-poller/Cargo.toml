@@ -22,7 +22,6 @@ base64 = "0.22"
 libc = "0.2"
 ureq = { version = "2", default-features = false, features = ["tls"] }
 url = "2"
-hmac = "0.12"
 refledger-log = { path = "../refledger-log" }
 
 [dev-dependencies]

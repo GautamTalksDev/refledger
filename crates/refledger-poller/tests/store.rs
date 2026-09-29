@@ -446,7 +446,7 @@ fn archive_upload_failure_appears_in_the_next_digest_note() {
     struct Boom;
     impl ObservationArchive for Boom {
         fn upload_day(&self, archive: &DayArchive) -> Result<(), String> {
-            Err(format!("r2 unavailable for {}", archive.day))
+            Err(format!("mirror unavailable for {}", archive.day))
         }
     }
 

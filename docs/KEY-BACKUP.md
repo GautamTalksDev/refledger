@@ -38,4 +38,4 @@ encrypted, off the VM**, before genesis.
 ## What this does not do
 
 - It does not rotate keys. Rotation remains unspecified in v1.
-- It does not replace Rekor witnessing or observation off-VM upload.
+- It does not replace Rekor witnessing or publishing observations on the data branch.
