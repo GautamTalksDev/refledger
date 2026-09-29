@@ -13,6 +13,8 @@ use std::time::Duration as StdDuration;
 use thiserror::Error;
 use time::{Date, Duration, OffsetDateTime};
 
+use refledger_log::normalize_to_utc_millis;
+
 use crate::github::etag::{AuthToken, ETagStore};
 use crate::github::rest::{
     resolve_repo, Client, ObjectCache, PageBodyCache, RestRequest, RestResponse, Transport,
@@ -62,12 +64,13 @@ pub struct OnceArgs {
 
 impl OnceArgs {
     pub fn production(data_dir: impl Into<PathBuf>, watched_path: impl Into<PathBuf>) -> Self {
+        let now = normalize_to_utc_millis(OffsetDateTime::now_utc());
         Self {
             data_dir: data_dir.into(),
             watched_path: watched_path.into(),
             token: String::new(),
-            scheduled_at: OffsetDateTime::now_utc(),
-            actual_start: OffsetDateTime::now_utc(),
+            scheduled_at: now,
+            actual_start: now,
             sleep: Box::new(|d| {
                 let secs = d.whole_seconds().max(0) as u64;
                 let nanos = d.subsec_nanoseconds().max(0) as u32;
@@ -210,14 +213,17 @@ pub fn run_once_with<T: Transport>(
     groups: &[PollGroup],
     args: &OnceArgs,
 ) -> Result<OnceReport, OnceError> {
-    let scheduled_ts = Timestamp::from_offset_datetime(args.scheduled_at)
+    // Boundary: callers may pass a raw clock or env time; never let those
+    // reach Timestamp / observation builders unnormalised.
+    let scheduled_at = normalize_to_utc_millis(args.scheduled_at);
+    let actual_start = normalize_to_utc_millis(args.actual_start);
+    let scheduled_ts = Timestamp::from_offset_datetime(scheduled_at)
         .map_err(|e| OnceError::Observation(e.to_string()))?;
-    let actual_ts = Timestamp::from_offset_datetime(args.actual_start)
+    let actual_ts = Timestamp::from_offset_datetime(actual_start)
         .map_err(|e| OnceError::Observation(e.to_string()))?;
 
-    let gaps =
-        store.record_schedule_gaps(groups, M1_INTERVAL, args.scheduled_at, args.actual_start)?;
-    let days_sealed = store.seal_missed_days_before(args.actual_start)?;
+    let gaps = store.record_schedule_gaps(groups, M1_INTERVAL, scheduled_at, actual_start)?;
+    let days_sealed = store.seal_missed_days_before(actual_start)?;
 
     let token = AuthToken::new(&args.token).map_err(|e| OnceError::Message(e.to_string()))?;
     let client = Client::new(transport, token);
@@ -235,7 +241,7 @@ pub fn run_once_with<T: Transport>(
 
     for g in groups {
         if client.transport().requests() >= args.max_requests {
-            let mut obs = skip_observation(&g.repo, args.actual_start, SkipReason::BudgetExhausted)
+            let mut obs = skip_observation(&g.repo, actual_start, SkipReason::BudgetExhausted)
                 .map_err(|e| OnceError::Observation(e.to_string()))?;
             obs.stamp_schedule(scheduled_ts, actual_ts);
             store.append_observation(&obs)?;
@@ -252,7 +258,7 @@ pub fn run_once_with<T: Transport>(
             &mut pages,
             &mut objects,
             &client,
-            args.actual_start,
+            actual_start,
         );
         obs.stamp_schedule(scheduled_ts, actual_ts);
         if movement_detected(&obs, &prior_targets) {
@@ -264,7 +270,7 @@ pub fn run_once_with<T: Transport>(
 
     let confirmations = if !moved.is_empty() {
         (args.sleep)(args.confirm_delay);
-        let confirm_at = args.actual_start + args.confirm_delay;
+        let confirm_at = actual_start + args.confirm_delay;
         let mut n = 0usize;
         for repo in &moved {
             if client.transport().requests() >= args.max_requests {
@@ -332,27 +338,31 @@ fn movement_detected(obs: &Observation, prior: &BTreeSet<String>) -> bool {
 pub fn scheduled_time_from_env(actual: OffsetDateTime) -> OffsetDateTime {
     if let Ok(s) = std::env::var("REFLEDGER_SCHEDULED_AT") {
         if let Ok(t) = OffsetDateTime::parse(&s, &time::format_description::well_known::Rfc3339) {
-            return t;
+            return normalize_to_utc_millis(t);
         }
     }
-    infer_scheduled_slot(actual)
+    normalize_to_utc_millis(infer_scheduled_slot(actual))
 }
 
 /// Floor `actual` to the preceding cron slot at :02, :07, :12, … :57.
 pub fn infer_scheduled_slot(actual: OffsetDateTime) -> OffsetDateTime {
+    let actual = normalize_to_utc_millis(actual);
     let minute = actual.minute();
     if minute < 2 {
         let prev = actual - Duration::minutes(i64::from(minute) + 3);
-        return prev
-            .replace_second(0)
-            .and_then(|t| t.replace_nanosecond(0))
-            .unwrap_or(prev);
+        return normalize_to_utc_millis(
+            prev.replace_second(0)
+                .and_then(|t| t.replace_nanosecond(0))
+                .unwrap_or(prev),
+        );
     }
     let offset = (minute - 2) % 5;
     let floored = minute - offset;
-    actual
-        .replace_minute(floored)
-        .and_then(|t| t.replace_second(0))
-        .and_then(|t| t.replace_nanosecond(0))
-        .unwrap_or(actual)
+    normalize_to_utc_millis(
+        actual
+            .replace_minute(floored)
+            .and_then(|t| t.replace_second(0))
+            .and_then(|t| t.replace_nanosecond(0))
+            .unwrap_or(actual),
+    )
 }

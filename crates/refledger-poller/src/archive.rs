@@ -145,7 +145,7 @@ fn env_required(name: &str) -> Result<String, String> {
 fn put_object(cfg: &R2Archive, key: &str, body: &[u8]) -> Result<(), String> {
     let host = format!("{}.r2.cloudflarestorage.com", cfg.account_id);
     let url = format!("{}/{}/{}", cfg.endpoint(), cfg.bucket, key);
-    let now = time::OffsetDateTime::now_utc();
+    let now = refledger_log::normalize_to_utc_millis(time::OffsetDateTime::now_utc());
     let date = format!(
         "{:04}{:02}{:02}",
         now.year(),

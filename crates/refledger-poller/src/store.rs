@@ -24,7 +24,10 @@ use time::{Date, Duration, OffsetDateTime, PrimitiveDateTime, Time};
 use refledger_log::canonical_json;
 use refledger_log::chain::{Chain, UnhashedEntry};
 use refledger_log::entry::{Entry, Event};
-use refledger_log::{key_id, public_key_pkix_pem, sign_ed25519ph, sign_head, Head, SigningKey};
+use refledger_log::{
+    key_id, normalize_to_utc_millis, public_key_pkix_pem, sign_ed25519ph, sign_head, Head,
+    SigningKey,
+};
 
 use crate::archive::{
     format_archive_failure_note, ArchiveFailure, DayArchive, NoopArchive, ObservationArchive,
@@ -112,7 +115,7 @@ impl StoreOptions {
         Self {
             log_id: DEFAULT_LOG_ID.to_owned(),
             signing_key,
-            recovered_at,
+            recovered_at: normalize_to_utc_millis(recovered_at),
             rekor: Box::new(HttpRekor::production()),
             archive: Box::new(NoopArchive),
             publisher: Box::new(NoopPublisher),
@@ -640,6 +643,7 @@ impl<V: Volume> Store<V> {
         interval: Duration,
         now: OffsetDateTime,
     ) -> Result<Vec<Observation>, StoreError> {
+        let now = normalize_to_utc_millis(now);
         let threshold = interval * 2;
         let mut written = Vec::new();
         for g in groups {
@@ -671,6 +675,8 @@ impl<V: Volume> Store<V> {
     ) -> Result<Vec<Observation>, StoreError> {
         let threshold = interval * 2;
         let mut written = Vec::new();
+        let scheduled = normalize_to_utc_millis(scheduled);
+        let actual = normalize_to_utc_millis(actual);
         let scheduled_ts = Timestamp::from_offset_datetime(scheduled)?;
         let actual_ts = Timestamp::from_offset_datetime(actual)?;
         for g in groups {

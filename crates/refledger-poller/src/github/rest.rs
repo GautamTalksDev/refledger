@@ -466,6 +466,7 @@ pub fn resolve_repo<T: Transport>(
     client: &Client<T>,
     now: OffsetDateTime,
 ) -> Observation {
+    let now = refledger_log::normalize_to_utc_millis(now);
     match resolve_repo_inner(repo, path, etags, pages, objects, client, now) {
         Ok(obs) => obs,
         Err(err) => failed_observation(repo, path, now, err),

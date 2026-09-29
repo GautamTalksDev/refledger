@@ -4,7 +4,9 @@ use std::env;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use refledger_log::{generate_signing_key_file, load_signing_key, KeySource};
+use refledger_log::{
+    generate_signing_key_file, load_signing_key, normalize_to_utc_millis, KeySource,
+};
 use refledger_poller::once::{run_once, scheduled_time_from_env, OnceArgs, ENABLED_VAR};
 use refledger_poller::publish::GitLedgerPublisher;
 use refledger_poller::store::StoreOptions;
@@ -115,7 +117,7 @@ fn cmd_once(args: &[String]) -> ExitCode {
         }
     }
 
-    let actual_start = OffsetDateTime::now_utc();
+    let actual_start = normalize_to_utc_millis(OffsetDateTime::now_utc());
     let scheduled_at = scheduled_time_from_env(actual_start);
 
     let key_hex = match env::var("REFLEDGER_SIGNING_KEY") {

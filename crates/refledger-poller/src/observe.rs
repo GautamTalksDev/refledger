@@ -28,6 +28,8 @@ use thiserror::Error;
 use time::{Duration, OffsetDateTime};
 use ulid::Ulid;
 
+use refledger_log::normalize_to_utc_millis;
+
 /// Errors from constructing or persisting observations.
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum ObservationError {
@@ -118,6 +120,12 @@ impl Timestamp {
             return Err(ObservationError::Timestamp);
         }
         Ok(Self(t))
+    }
+
+    /// Normalise an external instant then wrap. Prefer this at clock/env/HTTP
+    /// boundaries; keep [`Self::from_offset_datetime`] strict for wire forms.
+    pub fn from_external(t: OffsetDateTime) -> Result<Self, ObservationError> {
+        Self::from_offset_datetime(normalize_to_utc_millis(t))
     }
 
     pub fn as_offset_datetime(self) -> OffsetDateTime {
@@ -853,7 +861,7 @@ impl<R, M, Oc> ObservationBuilder<R, MissingObservedAt, M, Oc> {
     ) -> Result<ObservationBuilder<R, HasObservedAt, M, Oc>, ObservationError> {
         Ok(ObservationBuilder {
             repo: self.repo,
-            observed_at: Some(Timestamp::from_offset_datetime(t)?),
+            observed_at: Some(Timestamp::from_external(t)?),
             method: self.method,
             outcome: self.outcome,
             refresh_reason: self.refresh_reason,

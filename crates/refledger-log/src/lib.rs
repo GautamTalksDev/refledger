@@ -6,8 +6,8 @@ pub mod entry;
 pub mod sign;
 
 pub use canonical::{
-    canonical_json, canonicalise, format_timestamp, parse_canonical, CanonError, CanonicalError,
-    CanonicalValue,
+    canonical_json, canonicalise, format_timestamp, normalize_to_utc_millis, parse_canonical,
+    CanonError, CanonicalError, CanonicalValue,
 };
 pub use chain::{verify, Chain, ChainError, MoveDraft, UnhashedEntry};
 pub use entry::{

@@ -80,6 +80,29 @@ fn distinct_query_strings_do_not_share_an_etag() {
     assert_ne!(per_100.request_target(), per_50.request_target());
 }
 
+/// Prior ETag tests stamp with tidy milliseond odt(). A live clock reading
+/// must also round-trip through put/get after boundary normalisation.
+#[test]
+fn etag_put_accepts_nanosecond_system_clock() {
+    let dir = TempDir::new().expect("tempdir");
+    let mut store = open_store(&dir, Duration::hours(24));
+    let raw = OffsetDateTime::now_utc()
+        .replace_nanosecond(
+            (OffsetDateTime::now_utc().nanosecond() / 1_000_000) * 1_000_000 + 777_777,
+        )
+        .unwrap();
+    assert_ne!(raw.nanosecond() % 1_000_000, 0);
+    let slug = repo();
+    let page = endpoint("per_page=100");
+    store
+        .put(&slug, &page, &ETag::new("W/\"live\""), raw)
+        .expect("put with nanosecond clock");
+    assert_eq!(
+        store.get(&slug, &page, raw).map(|e| e.as_str().to_owned()),
+        Some("W/\"live\"".into())
+    );
+}
+
 #[test]
 fn etags_are_stored_per_page_not_per_collection() {
     let dir = TempDir::new().expect("tempdir");

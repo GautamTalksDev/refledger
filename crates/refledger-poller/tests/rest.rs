@@ -45,6 +45,14 @@ fn now() -> OffsetDateTime {
     odt(2026, Month::September, 28, 12, 0, 0, 0)
 }
 
+/// Variant of the tidy `now()` helper: a real clock reading that still
+/// produces a valid observation after boundary normalisation in resolve_repo.
+fn live_now() -> OffsetDateTime {
+    let raw = OffsetDateTime::now_utc();
+    raw.replace_nanosecond((raw.nanosecond() / 1_000_000) * 1_000_000 + 42_001)
+        .unwrap_or(raw)
+}
+
 fn fixtures_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/rest")
 }
@@ -177,6 +185,14 @@ impl Harness {
     }
 
     fn resolve(&mut self, path: Option<&str>) -> refledger_poller::observation::Observation {
+        self.resolve_at(path, now())
+    }
+
+    fn resolve_at(
+        &mut self,
+        path: Option<&str>,
+        at: OffsetDateTime,
+    ) -> refledger_poller::observation::Observation {
         resolve_repo(
             &self.repo,
             path,
@@ -184,7 +200,7 @@ impl Harness {
             &mut self.pages,
             &mut self.objects,
             &self.client,
-            now(),
+            at,
         )
     }
 }
@@ -453,6 +469,35 @@ fn lightweight_tag_is_one_hop_no_git_tags_request() {
             .all(|t| t.contains("/git/commits/")),
         "the heavier /commits/{{sha}} endpoint must not be called"
     );
+}
+
+/// Same resolve path as `lightweight_tag_resolves_commit_and_tree`, but with a
+/// real system-clock reading (sub-millisecond). Only passes if the REST
+/// boundary normalises before building the observation.
+#[test]
+fn lightweight_tag_resolves_with_live_system_clock() {
+    let transport = MockTransport::new();
+    transport
+        .route("/repos/acme/widgets", "repo_ok")
+        .route("matching-refs/tags", "tags_lightweight")
+        .route(&format!("/git/commits/{COMMIT_1}"), "git_commit_1")
+        .route("contents/action.yml", "contents_neither_yml")
+        .route("contents/action.yaml", "contents_neither_yaml");
+
+    let messy = live_now();
+    assert_ne!(messy.nanosecond() % 1_000_000, 0);
+    let mut h = Harness::new(transport);
+    let obs = h.resolve_at(None, messy);
+    assert!(
+        matches!(obs.outcome(), Outcome::Ok { .. }),
+        "{:?}",
+        obs.outcome()
+    );
+    let wire = serde_json::to_string(&obs).unwrap();
+    let v: Value = serde_json::from_str(&wire).unwrap();
+    let at = v["observed_at"].as_str().unwrap();
+    assert_eq!(at.len(), "YYYY-MM-DDTHH:MM:SS.sssZ".len());
+    assert!(at.ends_with('Z'));
 }
 
 #[test]

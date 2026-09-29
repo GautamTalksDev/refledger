@@ -6,10 +6,11 @@ use proptest::prelude::*;
 use refledger_poller::observation::SkipReason;
 use refledger_poller::population::PollGroup;
 use refledger_poller::scheduler::{
-    Clock, FakeClock, PointsGovernor, RequestKind, Scheduler, Step, DOCUMENTED_SECONDARY_RPM,
-    M1_CONCURRENCY, M1_INTERVAL, M1_POINTS_PER_MINUTE, MIN_REFUSAL_PAUSE, RECOVERY_WINDOW,
+    Clock, FakeClock, PointsGovernor, RequestKind, Scheduler, Step, SystemClock,
+    DOCUMENTED_SECONDARY_RPM, M1_CONCURRENCY, M1_INTERVAL, M1_POINTS_PER_MINUTE, MIN_REFUSAL_PAUSE,
+    RECOVERY_WINDOW,
 };
-use time::{Duration, Month, OffsetDateTime, PrimitiveDateTime, Time};
+use time::{Duration, Month, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset};
 
 fn odt(
     year: i32,
@@ -329,4 +330,51 @@ fn sigterm_records_shutdown_for_undispatched_groups() {
         }
     }
     assert!(shutdowns >= 1);
+}
+
+#[test]
+fn system_clock_returns_utc_millisecond_precision() {
+    let t = SystemClock.now();
+    assert_eq!(t.offset(), UtcOffset::UTC);
+    assert_eq!(
+        t.nanosecond() % 1_000_000,
+        0,
+        "SystemClock must floor to milliseconds, got {} ns",
+        t.nanosecond()
+    );
+    refledger_poller::observation::Timestamp::from_offset_datetime(t)
+        .expect("SystemClock output must satisfy observation Timestamp");
+}
+
+/// `missed_window_records_scheduler_lag` above uses a tidy FakeClock. Drive the
+/// same lag path with SystemClock and prove the SkipReason timestamps (and a
+/// built observation) accept the live clock.
+#[test]
+fn scheduler_lag_with_system_clock_builds_valid_observation() {
+    let now = SystemClock.now();
+    let epoch = now - M1_INTERVAL * 3;
+    let mut sched = Scheduler::m1(SystemClock, &groups_n(1), epoch);
+    match sched.poll().unwrap() {
+        Step::Skip {
+            reason: SkipReason::SchedulerLag { scheduled, actual },
+            at,
+            ..
+        } => {
+            assert_eq!(at.nanosecond() % 1_000_000, 0);
+            assert_eq!(scheduled.as_offset_datetime().nanosecond() % 1_000_000, 0);
+            assert_eq!(actual.as_offset_datetime().nanosecond() % 1_000_000, 0);
+            let obs = refledger_poller::scheduler::skip_observation(
+                "org/action-0",
+                at,
+                SkipReason::SchedulerLag { scheduled, actual },
+            )
+            .expect("skip observation from SystemClock must build");
+            let wire = serde_json::to_string(&obs).unwrap();
+            let v: serde_json::Value = serde_json::from_str(&wire).unwrap();
+            let observed = v["observed_at"].as_str().unwrap();
+            assert_eq!(observed.len(), "YYYY-MM-DDTHH:MM:SS.sssZ".len());
+            assert!(observed.ends_with('Z'));
+        }
+        other => panic!("expected SchedulerLag from overdue group, got {other:?}"),
+    }
 }

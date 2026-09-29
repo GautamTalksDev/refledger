@@ -56,6 +56,23 @@ pub fn parse_canonical(bytes: &[u8]) -> Result<CanonicalValue, CanonError> {
     CanonicalValue::from_serde_json(&value)
 }
 
+/// Convert an external instant to UTC and floor it to whole milliseconds.
+///
+/// Call this at every boundary where a time enters from outside the process
+/// (system clock, env vars, HTTP/GitHub schedule strings, wall-clock APIs).
+/// Flooring never rounds up: sub-millisecond remainder is discarded.
+/// Whole-second inputs keep nanosecond `0`, which formats as `.000Z`.
+///
+/// Downstream validators ([`format_timestamp`], observation/`entry` timestamps)
+/// stay strict — they still reject unnormalised values. This function is the
+/// only place that absorbs messy real-world precision.
+pub fn normalize_to_utc_millis(t: OffsetDateTime) -> OffsetDateTime {
+    let utc = t.to_offset(UtcOffset::UTC);
+    let floored = (utc.nanosecond() / 1_000_000) * 1_000_000;
+    utc.replace_nanosecond(floored)
+        .expect("millisecond-aligned nanosecond is always a valid OffsetDateTime")
+}
+
 /// Format an instant as `YYYY-MM-DDTHH:MM:SS.sssZ`.
 ///
 /// Zero milliseconds become `.000Z` (never truncated). Sub-millisecond

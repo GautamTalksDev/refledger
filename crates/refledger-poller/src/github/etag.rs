@@ -22,6 +22,8 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use time::{Duration, OffsetDateTime};
 
+use refledger_log::normalize_to_utc_millis;
+
 use crate::observation::{
     ETag, Observation, ObservationError, Outcome, RefreshReason, RepoSlug, SecondaryLimitEvent,
     Timestamp,
@@ -416,11 +418,8 @@ impl ETagStore {
 }
 
 fn stamp(now: OffsetDateTime) -> Result<Timestamp, ETagError> {
-    let millis = now.nanosecond() / 1_000_000;
-    let truncated = now
-        .replace_nanosecond(millis * 1_000_000)
-        .map_err(|err| ETagError::Timestamp(err.to_string()))?;
-    Timestamp::from_offset_datetime(truncated).map_err(|err| ETagError::Timestamp(err.to_string()))
+    Timestamp::from_offset_datetime(normalize_to_utc_millis(now))
+        .map_err(|err| ETagError::Timestamp(err.to_string()))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]

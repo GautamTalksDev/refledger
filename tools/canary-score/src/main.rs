@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::Parser;
-use time::OffsetDateTime;
+use time::{OffsetDateTime, UtcOffset};
 use refledger_canary_score::{load_entries, load_gaps, load_ledger, render_markdown, score};
 
 #[derive(Debug, Parser)]
@@ -47,7 +47,7 @@ fn main() -> Result<()> {
         &entries,
         &gaps,
         &args.canary_repo,
-        OffsetDateTime::now_utc(),
+        normalize_wall_clock(OffsetDateTime::now_utc()),
     );
     let md = render_markdown(&report);
     if let Some(parent) = args.out.parent() {
@@ -63,4 +63,12 @@ fn main() -> Result<()> {
         report.detected
     );
     Ok(())
+}
+
+/// Same contract as `refledger_log::normalize_to_utc_millis` (standalone tool).
+fn normalize_wall_clock(t: OffsetDateTime) -> OffsetDateTime {
+    let utc = t.to_offset(UtcOffset::UTC);
+    let floored = (utc.nanosecond() / 1_000_000) * 1_000_000;
+    utc.replace_nanosecond(floored)
+        .expect("millisecond-aligned nanosecond is always valid")
 }

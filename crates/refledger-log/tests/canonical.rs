@@ -6,11 +6,12 @@
 
 use proptest::prelude::*;
 use refledger_log::canonical::{
-    canonicalise, format_timestamp, parse_canonical, CanonError, CanonicalValue,
+    canonicalise, format_timestamp, normalize_to_utc_millis, parse_canonical, CanonError,
+    CanonicalValue,
 };
 use refledger_log::Entry;
 use serde_json::json;
-use time::{Duration, Month, OffsetDateTime, PrimitiveDateTime, Time};
+use time::{Duration, Month, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset};
 
 fn odt(
     year: i32,
@@ -210,6 +211,72 @@ fn timestamp_sub_millisecond_returns_error_not_rounding() {
         matches!(err, CanonError::SubMillisecondTimestamp),
         "expected SubMillisecondTimestamp, got {err:?}"
     );
+}
+
+#[test]
+fn normalize_floors_nanosecond_clock_reading() {
+    // Real clocks expose sub-ms; floor, never round.
+    let raw = odt(2026, Month::September, 29, 14, 40, 0, 123) + Duration::nanoseconds(456_789);
+    assert_eq!(raw.nanosecond(), 123_456_789);
+    let n = normalize_to_utc_millis(raw);
+    assert_eq!(n.offset(), UtcOffset::UTC);
+    assert_eq!(n.nanosecond(), 123_000_000);
+    assert_eq!(format_timestamp(n).unwrap(), "2026-09-29T14:40:00.123Z");
+    // Rounding up would have produced .124 — prove we floored.
+    assert_ne!(n.nanosecond(), 124_000_000);
+}
+
+#[test]
+fn normalize_whole_second_string_gains_dot_000() {
+    let raw = OffsetDateTime::parse(
+        "2026-09-29T14:40:00Z",
+        &time::format_description::well_known::Rfc3339,
+    )
+    .expect("second-precision RFC 3339");
+    assert_eq!(raw.nanosecond(), 0);
+    let n = normalize_to_utc_millis(raw);
+    assert_eq!(format_timestamp(n).unwrap(), "2026-09-29T14:40:00.000Z");
+}
+
+#[test]
+fn normalize_non_utc_offset_converts_then_floors() {
+    let offset = UtcOffset::from_hms(-4, 0, 0).unwrap();
+    let local = PrimitiveDateTime::new(
+        time::Date::from_calendar_date(2026, Month::September, 29).unwrap(),
+        Time::from_hms_nano(10, 40, 0, 999_999_999).unwrap(),
+    )
+    .assume_offset(offset);
+    let n = normalize_to_utc_millis(local);
+    assert_eq!(n.offset(), UtcOffset::UTC);
+    // 10:40:00.999999999-04:00 → 14:40:00.999Z (floor, not round to 15:00)
+    assert_eq!(format_timestamp(n).unwrap(), "2026-09-29T14:40:00.999Z");
+}
+
+#[test]
+fn normalize_exact_millisecond_boundary_unchanged() {
+    let exact = odt(2026, Month::September, 29, 14, 40, 0, 500);
+    assert_eq!(exact.nanosecond(), 500_000_000);
+    let n = normalize_to_utc_millis(exact);
+    assert_eq!(n, exact);
+    assert_eq!(format_timestamp(n).unwrap(), "2026-09-29T14:40:00.500Z");
+}
+
+#[test]
+fn normalize_is_idempotent_on_messy_and_tidy_inputs() {
+    let messy = odt(2026, Month::September, 29, 14, 40, 0, 1) + Duration::nanoseconds(1);
+    let once = normalize_to_utc_millis(messy);
+    let twice = normalize_to_utc_millis(once);
+    assert_eq!(once, twice);
+    let tidy = odt(2026, Month::September, 29, 14, 40, 0, 0);
+    assert_eq!(normalize_to_utc_millis(tidy), tidy);
+}
+
+#[test]
+fn normalize_then_format_accepts_live_system_clock() {
+    let raw = OffsetDateTime::now_utc();
+    let n = normalize_to_utc_millis(raw);
+    assert_eq!(n.nanosecond() % 1_000_000, 0);
+    format_timestamp(n).expect("normalised system clock must format");
 }
 
 #[test]

@@ -334,7 +334,7 @@ fn one_request(
     let sample = Sample {
         mode: mode.to_owned(),
         ramp_rpm,
-        timestamp: OffsetDateTime::now_utc()
+        timestamp: normalize_wall_clock(OffsetDateTime::now_utc())
             .format(&Rfc3339)
             .unwrap_or_else(|_| "unknown".into()),
         repo: repo.to_owned(),
@@ -360,7 +360,7 @@ fn write_report(args: &Args, repos: &[String], results: &[ModeResult]) -> Result
         fs::create_dir_all(parent)?;
     }
 
-    let date = OffsetDateTime::now_utc()
+    let date = normalize_wall_clock(OffsetDateTime::now_utc())
         .format(&Rfc3339)
         .unwrap_or_else(|_| "unknown".into());
 
@@ -454,4 +454,13 @@ fn write_report(args: &Args, repos: &[String], results: &[ModeResult]) -> Result
     let mut f = File::create(&args.report)?;
     f.write_all(md.as_bytes())?;
     Ok(())
+}
+
+/// Same contract as `refledger_log::normalize_to_utc_millis` (standalone tool).
+fn normalize_wall_clock(t: OffsetDateTime) -> OffsetDateTime {
+    use time::UtcOffset;
+    let utc = t.to_offset(UtcOffset::UTC);
+    let floored = (utc.nanosecond() / 1_000_000) * 1_000_000;
+    utc.replace_nanosecond(floored)
+        .expect("millisecond-aligned nanosecond is always valid")
 }

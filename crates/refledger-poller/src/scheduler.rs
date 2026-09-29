@@ -13,6 +13,8 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use thiserror::Error;
 use time::{Duration, OffsetDateTime};
 
+use refledger_log::normalize_to_utc_millis;
+
 use crate::observation::{Method, Observation, ObservationError, Outcome, SkipReason};
 use crate::population::PollGroup;
 
@@ -52,7 +54,7 @@ pub struct SystemClock;
 
 impl Clock for SystemClock {
     fn now(&self) -> OffsetDateTime {
-        OffsetDateTime::now_utc()
+        normalize_to_utc_millis(OffsetDateTime::now_utc())
     }
 }
 
@@ -204,6 +206,7 @@ pub struct Scheduler<C: Clock> {
 
 impl<C: Clock> Scheduler<C> {
     pub fn m1(clock: C, poll_groups: &[PollGroup], epoch: OffsetDateTime) -> Self {
+        let epoch = normalize_to_utc_millis(epoch);
         let mut groups = BTreeMap::new();
         let n = poll_groups.len().max(1) as u64;
         for (i, g) in poll_groups.iter().enumerate() {
@@ -253,7 +256,7 @@ impl<C: Clock> Scheduler<C> {
 
     /// Charge the shared governor for any request (listing, peel, compare, yml).
     pub fn charge(&mut self, _kind: RequestKind) -> bool {
-        let now = self.clock.now();
+        let now = normalize_to_utc_millis(self.clock.now());
         self.effective_try_charge(now)
     }
 
@@ -288,7 +291,7 @@ impl<C: Clock> Scheduler<C> {
         &mut self,
         retry_after: Option<Duration>,
     ) -> Result<Vec<Observation>, SchedulerError> {
-        let now = self.clock.now();
+        let now = normalize_to_utc_millis(self.clock.now());
         let pause = retry_after
             .filter(|d| *d >= MIN_REFUSAL_PAUSE)
             .unwrap_or(MIN_REFUSAL_PAUSE);
@@ -317,7 +320,7 @@ impl<C: Clock> Scheduler<C> {
 
     /// Advance the schedule. Pure given the clock and prior state.
     pub fn poll(&mut self) -> Result<Step, SchedulerError> {
-        let now = self.clock.now();
+        let now = normalize_to_utc_millis(self.clock.now());
 
         if self.shutting_down {
             // Drain: skip every group that still has a due we never started.

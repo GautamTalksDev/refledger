@@ -333,3 +333,87 @@ fn schedule_stamps_survive_round_trip() {
     assert_eq!(back.scheduled_at(), Some(scheduled));
     assert_eq!(back.actual_start(), Some(actual));
 }
+
+/// The tidy-clock confirmation test above can hide the live failure mode:
+/// `OffsetDateTime::now_utc()` carries nanoseconds. Drive `once` with the
+/// real system clock against the fake transport end to end.
+#[test]
+fn once_with_real_system_clock_against_fake_transport() {
+    let dir = TempDir::new().unwrap();
+    let raw_now = OffsetDateTime::now_utc();
+    // Force a sub-millisecond remainder when the OS happened to land on a
+    // millisecond boundary (rare but possible).
+    let messy = raw_now
+        .replace_nanosecond((raw_now.nanosecond() / 1_000_000) * 1_000_000 + 123_456)
+        .unwrap_or(raw_now);
+    assert_ne!(
+        messy.nanosecond() % 1_000_000,
+        0,
+        "test setup must use a non-ms clock reading"
+    );
+
+    let mock = MockTransport::new();
+    mock.route("/repos/acme/widgets", "repo_ok")
+        .route(
+            "/repos/acme/widgets/git/matching-refs/tags",
+            "tags_lightweight",
+        )
+        .route(
+            "/repos/acme/widgets/git/commits/1111111111111111111111111111111111111111",
+            "git_commit_1",
+        )
+        .route(
+            "/repos/acme/widgets/contents/action.yml",
+            "contents_action_yml",
+        );
+
+    let groups = vec![PollGroup {
+        repo: "acme/widgets".into(),
+        paths: vec![None],
+    }];
+
+    let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+    args.token = "ghp_test_token".into();
+    // Deliberately unnormalised — run_once_with must floor at the boundary.
+    args.scheduled_at = messy;
+    args.actual_start = messy;
+    args.confirm_delay = Duration::seconds(0);
+    args.sleep = Box::new(|_| {});
+    args.max_requests = 150;
+    args.max_new_peels = 40;
+
+    let mut store = Store::open(dir.path(), opts(messy)).unwrap();
+    let transport = CountingTransport::new(mock, 150);
+    let report = run_once_with(&mut store, transport, &groups, &args)
+        .expect("once must accept a real (nanosecond) clock after normalisation");
+    assert!(report.observations >= 1);
+    assert!(report.requests > 0);
+
+    // Persisted observations must carry canonical …sssZ stamps.
+    let day = at_observation_path(dir.path(), messy);
+    let text = std::fs::read_to_string(&day).expect("observation file");
+    for line in text.lines().filter(|l| !l.is_empty()) {
+        let v: Value = serde_json::from_str(line).unwrap();
+        let at = v["observed_at"].as_str().expect("observed_at");
+        assert_eq!(
+            at.len(),
+            "YYYY-MM-DDTHH:MM:SS.sssZ".len(),
+            "non-canonical observed_at length: {at}"
+        );
+        assert!(at.ends_with('Z'), "observed_at must end with Z: {at}");
+        assert_eq!(
+            at.as_bytes()[at.len() - 5],
+            b'.',
+            "observed_at must include .sss before Z: {at}"
+        );
+    }
+}
+
+fn at_observation_path(root: &Path, at: OffsetDateTime) -> PathBuf {
+    let day = at.date();
+    root.join("observations")
+        .join(format!("{:04}", day.year()))
+        .join(format!("{:02}", u8::from(day.month())))
+        .join(format!("{:02}", day.day()))
+        .join("acme--widgets.jsonl")
+}
