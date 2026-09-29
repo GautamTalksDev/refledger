@@ -163,18 +163,16 @@ fn put_object(cfg: &R2Archive, key: &str, body: &[u8]) -> Result<(), String> {
     let region = "auto";
     let service = "s3";
     let credential_scope = format!("{date}/{region}/{service}/aws4_request");
-    let canonical_headers = format!(
-        "host:{host}\nx-amz-content-sha256:{payload_hash}\nx-amz-date:{amz_date}\n"
-    );
+    let canonical_headers =
+        format!("host:{host}\nx-amz-content-sha256:{payload_hash}\nx-amz-date:{amz_date}\n");
     let signed_headers = "host;x-amz-content-sha256;x-amz-date";
     let canonical_request = format!(
         "PUT\n/{}/{}\n\n{canonical_headers}\n{signed_headers}\n{payload_hash}",
         cfg.bucket, key
     );
     let canonical_hash = hex::encode(Sha256::digest(canonical_request.as_bytes()));
-    let string_to_sign = format!(
-        "AWS4-HMAC-SHA256\n{amz_date}\n{credential_scope}\n{canonical_hash}"
-    );
+    let string_to_sign =
+        format!("AWS4-HMAC-SHA256\n{amz_date}\n{credential_scope}\n{canonical_hash}");
     let signing_key = aws4_signing_key(&cfg.secret_access_key, &date, region, service)?;
     let signature = hex::encode(hmac_sha256(&signing_key, string_to_sign.as_bytes())?);
     let authorization = format!(
@@ -216,8 +214,7 @@ fn aws4_signing_key(
 }
 
 fn hmac_sha256(key: &[u8], data: &[u8]) -> Result<Vec<u8>, String> {
-    let mut mac =
-        HmacSha256::new_from_slice(key).map_err(|e| format!("hmac key error: {e}"))?;
+    let mut mac = HmacSha256::new_from_slice(key).map_err(|e| format!("hmac key error: {e}"))?;
     mac.update(data);
     Ok(mac.finalize().into_bytes().to_vec())
 }

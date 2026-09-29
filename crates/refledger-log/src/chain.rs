@@ -134,34 +134,40 @@ impl UnhashedEntry {
         s
     }
 
-    pub fn move_event(
-        recorded_at: OffsetDateTime,
-        classification: Classification,
-        severity: Severity,
-        repo: impl Into<String>,
-        ref_name: impl Into<String>,
-        ref_type_before: RefType,
-        ref_type_after: RefType,
-        from: Binding,
-        to: Binding,
-        observation_window_seconds: u64,
-        source_observations: Vec<String>,
-        diff: Option<Diff>,
-    ) -> Self {
-        let mut s = Self::empty(recorded_at, Event::Move);
-        s.classification = Some(classification);
-        s.severity = Some(severity);
-        s.repo = Some(repo.into());
-        s.r#ref = Some(ref_name.into());
-        s.ref_type_before = Some(ref_type_before);
-        s.ref_type_after = Some(ref_type_after);
-        s.from = Some(from);
-        s.to = Some(to);
-        s.diff = diff;
-        s.source_observations = Some(source_observations);
-        s.observation_window_seconds = Some(observation_window_seconds);
+    /// Build a Move draft from a grouped field set (keeps the required Move
+    /// fields together without a 12-argument constructor).
+    pub fn move_event(draft: MoveDraft) -> Self {
+        let mut s = Self::empty(draft.recorded_at, Event::Move);
+        s.classification = Some(draft.classification);
+        s.severity = Some(draft.severity);
+        s.repo = Some(draft.repo);
+        s.r#ref = Some(draft.ref_name);
+        s.ref_type_before = Some(draft.ref_type_before);
+        s.ref_type_after = Some(draft.ref_type_after);
+        s.from = Some(draft.from);
+        s.to = Some(draft.to);
+        s.diff = draft.diff;
+        s.source_observations = Some(draft.source_observations);
+        s.observation_window_seconds = Some(draft.observation_window_seconds);
         s
     }
+}
+
+/// Required fields for [`UnhashedEntry::move_event`].
+#[derive(Debug, Clone)]
+pub struct MoveDraft {
+    pub recorded_at: OffsetDateTime,
+    pub classification: Classification,
+    pub severity: Severity,
+    pub repo: String,
+    pub ref_name: String,
+    pub ref_type_before: RefType,
+    pub ref_type_after: RefType,
+    pub from: Binding,
+    pub to: Binding,
+    pub observation_window_seconds: u64,
+    pub source_observations: Vec<String>,
+    pub diff: Option<Diff>,
 }
 
 /// In-memory chain with JSONL durability under `data/log/YYYY/MM/DD.jsonl`.

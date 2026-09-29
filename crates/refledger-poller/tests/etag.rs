@@ -4,7 +4,9 @@
 //! A 304 still costs one secondary point, and that budget is not in any header.
 
 use proptest::prelude::*;
-use refledger_poller::github::etag::{AuthToken, ConditionalRequest, ETagError, ETagStore, Request};
+use refledger_poller::github::etag::{
+    AuthToken, ConditionalRequest, ETagError, ETagStore, Request,
+};
 use refledger_poller::github::ratelimit::{
     backoff_delay, classify_refusal, parse_rate_limit_headers, ConcurrencyCap, InFlight,
     PointLedger, PrimaryPoints, RateLimitError, SecondaryBudget, SecondaryPoints,

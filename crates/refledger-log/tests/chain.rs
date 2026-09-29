@@ -1,9 +1,9 @@
 //! Hash-chain tests (LOG-FORMAT.md §§2–3, 5).
 
 use proptest::prelude::*;
-use serde_json::Value;
 use refledger_log::chain::{verify, Chain, ChainError, UnhashedEntry};
 use refledger_log::entry::{Binding, Classification, Diff, Event, HashRef, RefType, Severity};
+use serde_json::Value;
 use tempfile::tempdir;
 use time::{Duration, Month, OffsetDateTime, PrimitiveDateTime, Time};
 
@@ -54,22 +54,22 @@ fn draft_correction(corrects_seq: u64, reason: &str) -> UnhashedEntry {
 }
 
 fn draft_move(repo: &str) -> UnhashedEntry {
-    UnhashedEntry::move_event(
-        odt(2026, Month::June, 2, 0, 0, 0, 0),
-        Classification::ContentChange,
-        Severity::High,
-        repo,
-        "refs/tags/v1",
-        RefType::Annotated,
-        RefType::Annotated,
-        sample_from(),
-        sample_to(),
-        3600,
-        vec![
+    UnhashedEntry::move_event(refledger_log::MoveDraft {
+        recorded_at: odt(2026, Month::June, 2, 0, 0, 0, 0),
+        classification: Classification::ContentChange,
+        severity: Severity::High,
+        repo: repo.to_owned(),
+        ref_name: "refs/tags/v1".into(),
+        ref_type_before: RefType::Annotated,
+        ref_type_after: RefType::Annotated,
+        from: sample_from(),
+        to: sample_to(),
+        observation_window_seconds: 3600,
+        source_observations: vec![
             "01ARZ3NDEKTSV4RRFFQ69G5FAV".into(),
             "01ARZ3NDEKTSV4RRFFQ69G5FAW".into(),
         ],
-        Some(Diff {
+        diff: Some(Diff {
             files_added: 1,
             files_removed: 0,
             files_modified: 0,
@@ -77,7 +77,7 @@ fn draft_move(repo: &str) -> UnhashedEntry {
             paths: vec!["a.rs".into()],
             diff_possibly_truncated: false,
         }),
-    )
+    })
 }
 
 fn first_bad_seq(err: &ChainError) -> u64 {

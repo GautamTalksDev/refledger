@@ -2,12 +2,12 @@
 //! match `tests/vectors/heads/*.json` independently of `refledger-log`.
 
 use ed25519_dalek::{Signature, Verifier, VerifyingKey};
+use refledger_verify::canonical_json;
 use serde::Deserialize;
 use serde_json::Value;
 use sha2::{Digest, Sha512};
 use std::fs;
 use std::path::PathBuf;
-use refledger_verify::canonical_json;
 
 #[derive(Debug, Deserialize)]
 struct HeadVector {
@@ -72,7 +72,8 @@ fn all_head_conformance_vectors_match_this_crates_canonicaliser() {
 
         let prehash = hex::encode(Sha512::digest(&bytes));
         assert_eq!(
-            prehash, v.expected_rekor_prehash_sha512_hex,
+            prehash,
+            v.expected_rekor_prehash_sha512_hex,
             "rekor prehash diverge for {} ({})",
             v.description,
             path.display()

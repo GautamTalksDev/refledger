@@ -102,10 +102,7 @@ impl GitLedgerPublisher {
         }
         // Prefer header auth so the token never appears in the remote URL.
         if let Some(token) = &self.github_token {
-            cmd.env(
-                "GIT_CONFIG_COUNT",
-                "1",
-            );
+            cmd.env("GIT_CONFIG_COUNT", "1");
             cmd.env("GIT_CONFIG_KEY_0", "http.https://github.com/.extraheader");
             cmd.env(
                 "GIT_CONFIG_VALUE_0",
@@ -121,10 +118,7 @@ impl GitLedgerPublisher {
         if !out.status.success() {
             let stderr = String::from_utf8_lossy(&out.stderr);
             let stdout = String::from_utf8_lossy(&out.stdout);
-            return Err(format!(
-                "git {} failed: {stderr}{stdout}",
-                args.join(" ")
-            ));
+            return Err(format!("git {} failed: {stderr}{stdout}", args.join(" ")));
         }
         Ok(String::from_utf8_lossy(&out.stdout).trim().to_owned())
     }
@@ -189,9 +183,7 @@ impl LedgerPublisher for GitLedgerPublisher {
                 continue;
             }
             if !path.starts_with("data/log/") {
-                return Err(format!(
-                    "refusing to commit path outside data/log/: {path}"
-                ));
+                return Err(format!("refusing to commit path outside data/log/: {path}"));
             }
         }
         if staged.trim().is_empty() {
@@ -283,4 +275,3 @@ mod tests {
         );
     }
 }
-

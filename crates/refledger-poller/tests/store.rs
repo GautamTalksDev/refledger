@@ -11,7 +11,6 @@ use std::process::Command;
 use std::sync::{Arc, Mutex};
 
 use base64::Engine;
-use serde_json::Value;
 use refledger_log::chain::{verify, UnhashedEntry};
 use refledger_log::entry::{Binding, Classification, Event, RefType, Severity};
 use refledger_log::key_id;
@@ -24,6 +23,7 @@ use refledger_poller::store::{
     Appended, FailingRekor, FaultVolume, RekorAcceptance, RekorClient, StaticRekor, Store,
     StoreError, StoreOptions,
 };
+use serde_json::Value;
 use tempfile::TempDir;
 use time::{Date, Month, OffsetDateTime, PrimitiveDateTime, Time};
 
@@ -87,23 +87,23 @@ fn binding(digit: char, at: OffsetDateTime, with_last: bool) -> Binding {
 }
 
 fn move_at(at: OffsetDateTime) -> UnhashedEntry {
-    UnhashedEntry::move_event(
-        at,
-        Classification::ContentChange,
-        Severity::High,
-        "acme/widgets",
-        "refs/tags/v1",
-        RefType::Lightweight,
-        RefType::Lightweight,
-        binding('a', at, true),
-        binding('b', at, false),
-        3600,
-        vec![
+    UnhashedEntry::move_event(refledger_log::MoveDraft {
+        recorded_at: at,
+        classification: Classification::ContentChange,
+        severity: Severity::High,
+        repo: "acme/widgets".into(),
+        ref_name: "refs/tags/v1".into(),
+        ref_type_before: RefType::Lightweight,
+        ref_type_after: RefType::Lightweight,
+        from: binding('a', at, true),
+        to: binding('b', at, false),
+        observation_window_seconds: 3600,
+        source_observations: vec![
             "01ARZ3NDEKTSV4RRFFQ69G5FAV".into(),
             "01ARZ3NDEKTSV4RRFFQ69G5FAW".into(),
         ],
-        None,
-    )
+        diff: None,
+    })
 }
 
 fn obs_at(at: OffsetDateTime) -> Observation {
@@ -710,10 +710,7 @@ fn post_genesis_identity_warning_lands_in_next_digest_note() {
         .as_ref()
         .and_then(|d| d.note.as_ref())
         .expect("warning must appear in digest note");
-    assert!(
-        note.contains("contact URL unreachable"),
-        "note={note}"
-    );
+    assert!(note.contains("contact URL unreachable"), "note={note}");
 }
 
 /// Build a bare remote + publishing clone under `root` for FF-only publish tests.
@@ -756,7 +753,14 @@ fn setup_publish_clone(root: &std::path::Path) -> (std::path::PathBuf, std::path
         .unwrap()
         .success());
     assert!(Command::new("git")
-        .args(["-C", clone.to_str().unwrap(), "push", "-u", "origin", "main"])
+        .args([
+            "-C",
+            clone.to_str().unwrap(),
+            "push",
+            "-u",
+            "origin",
+            "main"
+        ])
         .status()
         .unwrap()
         .success());
@@ -787,7 +791,14 @@ fn seal_publishes_data_log_to_dedicated_clone() {
         format!("ledger: seal 2026-01-01 seq {}", entry.seq)
     );
     let files = Command::new("git")
-        .args(["-C", clone.to_str().unwrap(), "ls-tree", "-r", "--name-only", "HEAD"])
+        .args([
+            "-C",
+            clone.to_str().unwrap(),
+            "ls-tree",
+            "-r",
+            "--name-only",
+            "HEAD",
+        ])
         .output()
         .unwrap();
     let tree = String::from_utf8_lossy(&files.stdout);
@@ -823,7 +834,12 @@ fn rejected_publish_push_is_recorded_and_retried_next_seal() {
         .success());
     fs::write(other.join("data/log/divergent.txt"), b"other tip").unwrap();
     assert!(Command::new("git")
-        .args(["-C", other.to_str().unwrap(), "add", "data/log/divergent.txt"])
+        .args([
+            "-C",
+            other.to_str().unwrap(),
+            "add",
+            "data/log/divergent.txt"
+        ])
         .status()
         .unwrap()
         .success());
@@ -867,7 +883,13 @@ fn rejected_publish_push_is_recorded_and_retried_next_seal() {
         .unwrap()
         .success());
     assert!(Command::new("git")
-        .args(["-C", clone.to_str().unwrap(), "reset", "--hard", "origin/main"])
+        .args([
+            "-C",
+            clone.to_str().unwrap(),
+            "reset",
+            "--hard",
+            "origin/main"
+        ])
         .status()
         .unwrap()
         .success());
@@ -1043,7 +1065,9 @@ fn enrichment_from_cache(state: &RepoState, obs: &Observation, cache: &CompareCa
     e
 }
 
-fn diffs_from_cache(cache: &CompareCache) -> BTreeMap<(String, String), refledger_log::entry::Diff> {
+fn diffs_from_cache(
+    cache: &CompareCache,
+) -> BTreeMap<(String, String), refledger_log::entry::Diff> {
     let mut m = BTreeMap::new();
     for ((old, new), c) in cache.iter() {
         m.insert(

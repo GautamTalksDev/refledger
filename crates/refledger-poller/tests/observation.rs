@@ -6,11 +6,11 @@
 //! failed. The type system must make a conditions-free observation impossible.
 
 use proptest::prelude::*;
-use serde_json::Value;
 use refledger_poller::observation::{
     store_observation_at, ErrorClass, Method, Observation, ObservedRef, Outcome, RefType,
     SecondaryLimitEvent, SkipReason, Timestamp,
 };
+use serde_json::Value;
 use tempfile::TempDir;
 use time::{Duration, Month, OffsetDateTime, PrimitiveDateTime, Time};
 
@@ -130,7 +130,9 @@ fn lightweight_tag_sets_target_equal_commit_from_one_sha() {
 fn not_modified_304_is_not_error_and_extends_binding() {
     let prior = base_observation(Outcome::Ok {
         http_status: 200,
-        etag: Some(refledger_poller::observation::ETag::new("W/\"stable-etag\"")),
+        etag: Some(refledger_poller::observation::ETag::new(
+            "W/\"stable-etag\"",
+        )),
         refs: vec![ObservedRef::new_lightweight("refs/tags/v1", sha('a'), sha('b')).unwrap()],
     });
 
@@ -205,7 +207,8 @@ fn failed_outcome_serialises_and_is_queryable() {
 #[test]
 fn skipped_outcome_is_written_not_dropped() {
     let dir = TempDir::new().expect("tempdir");
-    let from = Timestamp::from_offset_datetime(odt(2026, Month::September, 21, 11, 0, 0, 0)).unwrap();
+    let from =
+        Timestamp::from_offset_datetime(odt(2026, Month::September, 21, 11, 0, 0, 0)).unwrap();
     let to = Timestamp::from_offset_datetime(odt(2026, Month::September, 21, 12, 0, 0, 0)).unwrap();
     for reason in [
         SkipReason::BudgetExhausted,

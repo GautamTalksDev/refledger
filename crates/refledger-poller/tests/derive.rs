@@ -6,7 +6,6 @@
 use std::collections::BTreeMap;
 use std::fs;
 
-use sha2::{Digest, Sha256};
 use refledger_log::canonical_json;
 use refledger_log::chain::{verify, Chain, UnhashedEntry};
 use refledger_log::entry::{Diff, Event};
@@ -21,6 +20,7 @@ use refledger_poller::enrich::CompareCache;
 use refledger_poller::observation::{
     store_observation_at, ETag, Method, Observation, ObservedRef, Outcome,
 };
+use sha2::{Digest, Sha256};
 use tempfile::TempDir;
 use time::{Duration, Month, OffsetDateTime, PrimitiveDateTime, Time};
 use ulid::Ulid;

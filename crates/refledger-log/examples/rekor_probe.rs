@@ -8,11 +8,11 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use base64::Engine;
-use sha2::{Digest, Sha512};
+use refledger_log::entry::{HashRef, Timestamp};
 use refledger_log::{
     canonical_json, key_id, public_key_pkix_pem, sign_ed25519ph, sign_head, Head, SigningKey,
 };
-use refledger_log::entry::{HashRef, Timestamp};
+use sha2::{Digest, Sha512};
 use time::{Month, OffsetDateTime, PrimitiveDateTime, Time};
 
 fn odt(
@@ -129,7 +129,11 @@ fn main() {
             let v: serde_json::Value = serde_json::from_str(&back).unwrap();
             let found = v
                 .as_object()
-                .map(|o| o.contains_key(uuid) || o.values().any(|e| e["logIndex"].as_u64() == Some(log_index)))
+                .map(|o| {
+                    o.contains_key(uuid)
+                        || o.values()
+                            .any(|e| e["logIndex"].as_u64() == Some(log_index))
+                })
                 .unwrap_or(false);
             if found {
                 println!("FETCH_OK logIndex={log_index} resolves");

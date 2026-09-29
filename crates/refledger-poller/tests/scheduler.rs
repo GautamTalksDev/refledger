@@ -51,7 +51,9 @@ fn m1_shaped_groups() -> Vec<PollGroup> {
 #[test]
 fn concurrency_cap_is_four() {
     assert_eq!(M1_CONCURRENCY, 4);
-    assert!(M1_POINTS_PER_MINUTE * 3 <= DOCUMENTED_SECONDARY_RPM);
+    const {
+        assert!(M1_POINTS_PER_MINUTE * 3 <= DOCUMENTED_SECONDARY_RPM);
+    }
 }
 
 #[test]
@@ -227,7 +229,9 @@ fn single_refusal_one_pause_and_n_skipped_never_n_independent_retries() {
         }
     }
     // Jump past every group's next_due so on_refusal covers all ten.
-    sched.clock().set(epoch + M1_INTERVAL * 2 + Duration::seconds(30));
+    sched
+        .clock()
+        .set(epoch + M1_INTERVAL * 2 + Duration::seconds(30));
     let skipped = sched.on_refusal(None).unwrap();
     assert_eq!(skipped.len(), 10);
     assert!(skipped.iter().all(|o| {

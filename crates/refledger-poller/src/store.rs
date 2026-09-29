@@ -81,7 +81,8 @@ pub enum StoreError {
 /// What [`Store::append_entry`] did with a derived event.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Appended {
-    Written(Entry),
+    /// Boxed: `Entry` is large; keeping the idle `Buffered` variant small.
+    Written(Box<Entry>),
     Buffered,
 }
 
@@ -278,6 +279,7 @@ impl Volume for OsVolume {
         let file = OpenOptions::new()
             .create(true)
             .write(true)
+            .truncate(false)
             .open(&path)
             .map_err(|e| StoreError::Io(e.to_string()))?;
         // SAFETY: `file` is an open fd. LOCK_NB fails instead of blocking so
@@ -649,11 +651,7 @@ impl<V: Volume> Store<V> {
             }
             let from = Timestamp::from_offset_datetime(latest)?;
             let to = Timestamp::from_offset_datetime(now)?;
-            let obs = skip_observation(
-                &g.repo,
-                now,
-                SkipReason::PollerDown { from, to },
-            )?;
+            let obs = skip_observation(&g.repo, now, SkipReason::PollerDown { from, to })?;
             self.append_observation(&obs)?;
             written.push(obs);
         }
@@ -746,18 +744,13 @@ impl<V: Volume> Store<V> {
 
     /// Tip sequence of the hash chain (0-based), or 0 when empty.
     pub fn tip_seq(&self) -> u64 {
-        self.chain
-            .entries()
-            .last()
-            .map(|e| e.seq)
-            .unwrap_or(0)
+        self.chain.entries().last().map(|e| e.seq).unwrap_or(0)
     }
 
     /// Record a post-genesis contact-URL warning for the next digest note.
     pub fn record_identity_warning(&mut self, warning: &str) -> Result<(), StoreError> {
         let line = serde_json::json!({ "warning": warning });
-        let bytes =
-            serde_json::to_vec(&line).map_err(|e| StoreError::Message(e.to_string()))?;
+        let bytes = serde_json::to_vec(&line).map_err(|e| StoreError::Message(e.to_string()))?;
         self.vol
             .append_record("log/identity_warnings.jsonl", &bytes)?;
         self.pending_identity_warnings.push(warning.to_owned());
@@ -837,7 +830,7 @@ impl<V: Volume> Store<V> {
             self.buffer.push(entry);
             return Ok(Appended::Buffered);
         }
-        self.commit(entry).map(Appended::Written)
+        self.commit(entry).map(|e| Appended::Written(Box::new(e)))
     }
 
     /// Seal day D. The digest is the first entry of day D+1, then the buffer drains.
@@ -920,8 +913,7 @@ impl<V: Volume> Store<V> {
             "day": failure.day,
             "error": failure.error,
         });
-        let bytes =
-            serde_json::to_vec(&line).map_err(|e| StoreError::Message(e.to_string()))?;
+        let bytes = serde_json::to_vec(&line).map_err(|e| StoreError::Message(e.to_string()))?;
         self.vol
             .append_record("log/publish_failures.jsonl", &bytes)?;
         self.pending_publish_failures.push(failure.clone());
@@ -1093,8 +1085,7 @@ impl<V: Volume> Store<V> {
             "day": failure.day,
             "error": failure.error,
         });
-        let bytes =
-            serde_json::to_vec(&line).map_err(|e| StoreError::Message(e.to_string()))?;
+        let bytes = serde_json::to_vec(&line).map_err(|e| StoreError::Message(e.to_string()))?;
         self.vol
             .append_record("log/archive_upload_failures.jsonl", &bytes)?;
         self.pending_archive_failures.push(failure.clone());
@@ -1124,7 +1115,11 @@ impl<V: Volume> Store<V> {
         Ok(())
     }
 
-    fn day_stats(&self, day: Date, as_of: OffsetDateTime) -> Result<ObservationDayStats, StoreError> {
+    fn day_stats(
+        &self,
+        day: Date,
+        as_of: OffsetDateTime,
+    ) -> Result<ObservationDayStats, StoreError> {
         let prefix = format!(
             "observations/{:04}/{:02}/{:02}/",
             day.year(),
@@ -1265,10 +1260,9 @@ impl<V: Volume> Store<V> {
             else {
                 continue;
             };
-            let Ok(ts) = OffsetDateTime::parse(
-                recorded,
-                &time::format_description::well_known::Rfc3339,
-            ) else {
+            let Ok(ts) =
+                OffsetDateTime::parse(recorded, &time::format_description::well_known::Rfc3339)
+            else {
                 continue;
             };
             if ts <= cutoff {
@@ -1378,14 +1372,16 @@ fn load_identity_warnings<V: Volume>(vol: &mut V) -> Result<Vec<String>, StoreEr
         if line.is_empty() {
             continue;
         }
-        let value: Value = serde_json::from_slice(line).map_err(|e| {
-            StoreError::Corrupt(format!("identity_warnings.jsonl:{}: {e}", i + 1))
-        })?;
+        let value: Value = serde_json::from_slice(line)
+            .map_err(|e| StoreError::Corrupt(format!("identity_warnings.jsonl:{}: {e}", i + 1)))?;
         let warning = value
             .get("warning")
             .and_then(|v| v.as_str())
             .ok_or_else(|| {
-                StoreError::Corrupt(format!("identity_warnings.jsonl:{}: missing warning", i + 1))
+                StoreError::Corrupt(format!(
+                    "identity_warnings.jsonl:{}: missing warning",
+                    i + 1
+                ))
             })?
             .to_owned();
         out.push(warning);
@@ -1402,9 +1398,8 @@ fn load_publish_failures<V: Volume>(vol: &mut V) -> Result<Vec<PublishFailure>, 
         if line.is_empty() {
             continue;
         }
-        let value: Value = serde_json::from_slice(line).map_err(|e| {
-            StoreError::Corrupt(format!("publish_failures.jsonl:{}: {e}", i + 1))
-        })?;
+        let value: Value = serde_json::from_slice(line)
+            .map_err(|e| StoreError::Corrupt(format!("publish_failures.jsonl:{}: {e}", i + 1)))?;
         let day = value
             .get("day")
             .and_then(|v| v.as_str())

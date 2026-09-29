@@ -3,11 +3,11 @@
 //! Same files consumed by `refledger-verify`. If this test and the verifier's
 //! conformance test disagree, the canonicalisers have diverged.
 
+use refledger_log::canonical_json;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::PathBuf;
-use refledger_log::canonical_json;
 
 #[derive(Debug, Deserialize)]
 struct Vector {

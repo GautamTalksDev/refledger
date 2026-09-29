@@ -9,12 +9,12 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use serde_json::Value;
 use refledger_poller::github::etag::{AuthToken, ConditionalRequest, ETagStore};
 use refledger_poller::github::rest::{
     resolve_repo, Client, ObjectCache, PageBodyCache, RestRequest, RestResponse, Transport,
 };
 use refledger_poller::observation::{ErrorClass, Method, Outcome, PeeledType, RefType, RepoSlug};
+use serde_json::Value;
 use tempfile::TempDir;
 use time::{Duration, Month, OffsetDateTime, PrimitiveDateTime, Time};
 
@@ -581,7 +581,7 @@ fn second_sweep_over_unchanged_refs_issues_zero_dereference_requests() {
 
     let mut h = Harness::new(transport.clone());
     let _ = h.resolve(None);
-    assert!(h.objects.len() > 0);
+    assert!(!h.objects.is_empty());
     assert!(
         !h.objects.has_ttl_or_invalidation_api(),
         "ObjectCache must not expose TTL or invalidation — content-addressed peels do not go stale"

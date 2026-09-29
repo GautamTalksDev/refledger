@@ -1,10 +1,10 @@
 //! Entry schema tests (spec §9.2).
 
-use serde_json::{json, Value};
 use refledger_log::entry::{
     Binding, Classification, Diff, Entry, EntryError, Event, HashRef, PopulationChange,
     PopulationChangeKind, PopulationReason, RefType, Severity, Sha40,
 };
+use serde_json::{json, Value};
 use time::{Duration, Month, OffsetDateTime, PrimitiveDateTime, Time};
 
 fn odt(

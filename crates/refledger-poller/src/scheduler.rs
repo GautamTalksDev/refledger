@@ -159,9 +159,14 @@ pub enum RequestKind {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Step {
     /// Dispatch a poll for this group at `due`.
-    Dispatch { group: String, due: OffsetDateTime },
+    Dispatch {
+        group: String,
+        due: OffsetDateTime,
+    },
     /// Wait until `until` (governor, pause, or next slot).
-    Wait { until: OffsetDateTime },
+    Wait {
+        until: OffsetDateTime,
+    },
     /// Emit a skipped observation (refusal pause, lag, shutdown).
     Skip {
         group: String,
@@ -263,8 +268,8 @@ impl<C: Clock> Scheduler<C> {
         // Half rate at t=0, linear to full at RECOVERY_WINDOW.
         let half = self.governor.cap() / 2;
         let span = self.governor.cap() - half;
-        let frac = elapsed.whole_milliseconds() as f64
-            / RECOVERY_WINDOW.whole_milliseconds() as f64;
+        let frac =
+            elapsed.whole_milliseconds() as f64 / RECOVERY_WINDOW.whole_milliseconds() as f64;
         half + (span as f64 * frac).round() as u32
     }
 
@@ -296,7 +301,11 @@ impl<C: Clock> Scheduler<C> {
         for g in self.groups.values() {
             if g.next_due <= until {
                 self.skipped_this_pause.insert(g.repo.clone());
-                out.push(skipped_obs(&g.repo, now, SkipReason::SecondaryLimitBackoff)?);
+                out.push(skipped_obs(
+                    &g.repo,
+                    now,
+                    SkipReason::SecondaryLimitBackoff,
+                )?);
             }
         }
         Ok(out)
@@ -334,12 +343,12 @@ impl<C: Clock> Scheduler<C> {
             if now < until {
                 // Emit Skipped for any group that becomes due during the pause
                 // and has not yet been recorded for this pause.
-                for repo in self
+                if let Some(repo) = self
                     .groups
                     .values()
                     .filter(|g| g.next_due <= now && !self.skipped_this_pause.contains(&g.repo))
                     .map(|g| g.repo.clone())
-                    .collect::<Vec<_>>()
+                    .next()
                 {
                     self.skipped_this_pause.insert(repo.clone());
                     return Ok(Step::Skip {
@@ -361,26 +370,22 @@ impl<C: Clock> Scheduler<C> {
         }
 
         // Liveness: miss > 2× interval → Skipped SchedulerLag, then reschedule.
-        for repo in self
+        if let Some(repo) = self
             .groups
             .values()
             .filter(|g| now - g.next_due > self.interval * 2)
             .map(|g| g.repo.clone())
-            .collect::<Vec<_>>()
+            .next()
         {
-            let scheduled = self
-                .groups
-                .get(&repo)
-                .map(|g| g.next_due)
-                .unwrap_or(now);
+            let scheduled = self.groups.get(&repo).map(|g| g.next_due).unwrap_or(now);
             let jitter = self.slot_jitter(&repo);
             if let Some(g) = self.groups.get_mut(&repo) {
                 g.next_due = now + jitter;
             }
             let scheduled_ts = crate::observation::Timestamp::from_offset_datetime(scheduled)
-                .map_err(|e| SchedulerError::Observation(e))?;
+                .map_err(SchedulerError::Observation)?;
             let actual_ts = crate::observation::Timestamp::from_offset_datetime(now)
-                .map_err(|e| SchedulerError::Observation(e))?;
+                .map_err(SchedulerError::Observation)?;
             return Ok(Step::Skip {
                 group: repo,
                 reason: SkipReason::SchedulerLag {

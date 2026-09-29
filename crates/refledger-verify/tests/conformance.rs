@@ -4,11 +4,11 @@
 //! between the two implementations is exactly what this test exists to catch —
 //! and it is the single most valuable test in the repo.
 
+use refledger_verify::canonical_json;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::PathBuf;
-use refledger_verify::canonical_json;
 
 #[derive(Debug, Deserialize)]
 struct Vector {

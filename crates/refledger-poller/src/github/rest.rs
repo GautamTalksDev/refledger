@@ -487,11 +487,11 @@ fn resolve_repo_inner<T: Transport>(
     let repo_target = format!("/repos/{owner}/{name}");
     let repo_resp = client
         .send_raw(repo_target, BTreeMap::new())
-        .map_err(|e| ResolveFail::transport(e))?;
+        .map_err(ResolveFail::transport)?;
 
     if repo_resp.status == 301 || repo_resp.status == 302 {
         let location = repo_resp.header("location").unwrap_or("").to_owned();
-        return Ok(build_obs(
+        return build_obs(
             repo,
             path,
             now,
@@ -503,10 +503,10 @@ fn resolve_repo_inner<T: Transport>(
             None,
             Some(location),
             None,
-        )?);
+        );
     }
     if repo_resp.status == 404 {
-        return Ok(build_obs(
+        return build_obs(
             repo,
             path,
             now,
@@ -518,7 +518,7 @@ fn resolve_repo_inner<T: Transport>(
             None,
             None,
             None,
-        )?);
+        );
     }
     if repo_resp.status != 200 {
         return Err(ResolveFail::http(
@@ -536,50 +536,44 @@ fn resolve_repo_inner<T: Transport>(
     // --- list tags (matching-refs) with conditional pagination ---------------
     let list = list_tag_refs(repo, &owner, &name, etags, pages, client, now)?;
     match list {
-        ListResult::NotModified { etag } => {
-            return Ok(build_obs(
-                repo,
-                path,
-                now,
-                Outcome::NotModified {
-                    http_status: 304,
-                    etag,
-                },
-                None,
-                None,
-                archived,
-            )?);
-        }
-        ListResult::Missing => {
-            return Ok(build_obs(
-                repo,
-                path,
-                now,
-                Outcome::Failed {
-                    http_status: 404,
-                    error_class: ErrorClass::Upstream,
-                    backoff_applied: Duration::seconds(0),
-                },
-                None,
-                None,
-                archived,
-            )?);
-        }
-        ListResult::Redirect { status, location } => {
-            return Ok(build_obs(
-                repo,
-                path,
-                now,
-                Outcome::Failed {
-                    http_status: status,
-                    error_class: ErrorClass::Upstream,
-                    backoff_applied: Duration::seconds(0),
-                },
-                None,
-                Some(location),
-                archived,
-            )?);
-        }
+        ListResult::NotModified { etag } => build_obs(
+            repo,
+            path,
+            now,
+            Outcome::NotModified {
+                http_status: 304,
+                etag,
+            },
+            None,
+            None,
+            archived,
+        ),
+        ListResult::Missing => build_obs(
+            repo,
+            path,
+            now,
+            Outcome::Failed {
+                http_status: 404,
+                error_class: ErrorClass::Upstream,
+                backoff_applied: Duration::seconds(0),
+            },
+            None,
+            None,
+            archived,
+        ),
+        ListResult::Redirect { status, location } => build_obs(
+            repo,
+            path,
+            now,
+            Outcome::Failed {
+                http_status: status,
+                error_class: ErrorClass::Upstream,
+                backoff_applied: Duration::seconds(0),
+            },
+            None,
+            Some(location),
+            archived,
+        ),
         ListResult::Refs { refs, etag } => {
             let mut observed = Vec::with_capacity(refs.len());
             let mut peel_budget_hit = false;
@@ -606,11 +600,9 @@ fn resolve_repo_inner<T: Transport>(
                         } else {
                             ObservedRef::new_lightweight(&raw.name, &commit_sha, &tree_sha)
                         }
-                        .map_err(|e| ResolveFail::obs(e))?;
+                        .map_err(ResolveFail::obs)?;
                         if let Some(sha) = action {
-                            r = r
-                                .with_action_yml_sha(sha)
-                                .map_err(|e| ResolveFail::obs(e))?;
+                            r = r.with_action_yml_sha(sha).map_err(ResolveFail::obs)?;
                         }
                         r
                     }
@@ -624,7 +616,7 @@ fn resolve_repo_inner<T: Transport>(
                         object_type,
                         &object_sha,
                     )
-                    .map_err(|e| ResolveFail::obs(e))?,
+                    .map_err(ResolveFail::obs)?,
                 };
                 let _ = &mut observed_ref;
                 observed.push(observed_ref);
@@ -634,7 +626,7 @@ fn resolve_repo_inner<T: Transport>(
             // warm-up from the content-addressed cache.
             let etag = if peel_budget_hit { None } else { etag };
 
-            return Ok(build_obs(
+            build_obs(
                 repo,
                 path,
                 now,
@@ -646,7 +638,7 @@ fn resolve_repo_inner<T: Transport>(
                 None,
                 None,
                 archived,
-            )?);
+            )
         }
     }
 }
@@ -689,10 +681,10 @@ fn list_tag_refs<T: Transport>(
             None => format!("per_page={PER_PAGE}&page={page}"),
         };
         let endpoint =
-            ConditionalRequest::endpoint(TAGS_TEMPLATE, query).map_err(|e| ResolveFail::etag(e))?;
+            ConditionalRequest::endpoint(TAGS_TEMPLATE, query).map_err(ResolveFail::etag)?;
         let request = cond
             .build(&endpoint, Some(client.token()), etags)
-            .map_err(|e| ResolveFail::etag(e))?;
+            .map_err(ResolveFail::etag)?;
 
         let mut headers = BTreeMap::new();
         if let Some(inm) = request.if_none_match_header() {
@@ -701,7 +693,7 @@ fn list_tag_refs<T: Transport>(
         let target = expand_template(TAGS_TEMPLATE, owner, name, endpoint.query());
         let resp = client
             .send_raw(target, headers)
-            .map_err(|e| ResolveFail::transport(e))?;
+            .map_err(ResolveFail::transport)?;
 
         if resp.status == 301 || resp.status == 302 {
             return Ok(ListResult::Redirect {
@@ -722,7 +714,7 @@ fn list_tag_refs<T: Transport>(
 
         etags
             .apply_response(repo, &endpoint, resp.status, response_etag.as_ref(), now)
-            .map_err(|e| ResolveFail::etag(e))?;
+            .map_err(ResolveFail::etag)?;
 
         match resp.status {
             304 => {
@@ -761,7 +753,7 @@ fn list_tag_refs<T: Transport>(
         if next_url.is_none() {
             let candidate = format!("per_page={PER_PAGE}&page={}", page + 1);
             let next_endpoint = ConditionalRequest::endpoint(TAGS_TEMPLATE, &candidate)
-                .map_err(|e| ResolveFail::etag(e))?;
+                .map_err(ResolveFail::etag)?;
             if pages.get(repo, &next_endpoint).is_some()
                 || etags.get(repo, &next_endpoint, now).is_some()
             {
@@ -938,7 +930,7 @@ fn peel_tag_chain<T: Transport>(
     let target = format!("/repos/{owner}/{name}/git/tags/{current_sha}");
     let resp = client
         .send_raw(target, BTreeMap::new())
-        .map_err(|e| ResolveFail::transport(e))?;
+        .map_err(ResolveFail::transport)?;
     if resp.status != 200 {
         return Err(ResolveFail::http(
             resp.status,
@@ -1063,7 +1055,7 @@ fn fetch_commit_tree<T: Transport>(
     let target = format!("/repos/{owner}/{name}/git/commits/{commit_sha}");
     let resp = client
         .send_raw(target, BTreeMap::new())
-        .map_err(|e| ResolveFail::transport(e))?;
+        .map_err(ResolveFail::transport)?;
     if resp.status != 200 {
         return Err(ResolveFail::http(
             resp.status,
@@ -1120,7 +1112,7 @@ fn resolve_action_yml<T: Transport>(
         let target = format!("{base}/{filename}?ref={commit_sha}");
         let resp = client
             .send_raw(target, BTreeMap::new())
-            .map_err(|e| ResolveFail::transport(e))?;
+            .map_err(ResolveFail::transport)?;
         match resp.status {
             200 => {
                 let sha = resp
@@ -1242,9 +1234,9 @@ fn build_obs(
 ) -> Result<Observation, ResolveFail> {
     let mut b = Observation::builder()
         .repo(repo.as_str())
-        .map_err(|e| ResolveFail::obs(e))?
+        .map_err(ResolveFail::obs)?
         .observed_at(now)
-        .map_err(|e| ResolveFail::obs(e))?
+        .map_err(ResolveFail::obs)?
         .method(Method::Rest);
     if let Some(r) = rate_limit_remaining {
         b = b.rate_limit_remaining(r);
@@ -1258,7 +1250,7 @@ fn build_obs(
     if let Some(p) = path {
         b = b.action_path(p);
     }
-    b.outcome(outcome).build().map_err(|e| ResolveFail::obs(e))
+    b.outcome(outcome).build().map_err(ResolveFail::obs)
 }
 
 fn failed_observation(

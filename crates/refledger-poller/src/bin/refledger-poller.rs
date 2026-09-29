@@ -5,9 +5,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use refledger_log::{load_signing_key, KeySource};
-use refledger_poller::once::{
-    run_once, scheduled_time_from_env, OnceArgs, ENABLED_VAR,
-};
+use refledger_poller::once::{run_once, scheduled_time_from_env, OnceArgs, ENABLED_VAR};
 use refledger_poller::publish::GitLedgerPublisher;
 use refledger_poller::store::StoreOptions;
 use time::OffsetDateTime;

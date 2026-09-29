@@ -2,8 +2,8 @@
 use std::fs;
 use std::path::PathBuf;
 
-use sha2::{Digest, Sha256};
 use refledger_log::canonical_json;
+use sha2::{Digest, Sha256};
 
 fn sha40(digit: char) -> String {
     std::iter::repeat(digit).take(40).collect()
@@ -45,15 +45,14 @@ fn write_vector(name: &str, description: &str, input: serde_json::Value) {
 }
 
 fn binding(
-    target: char,
-    commit: char,
-    tree: char,
+    shas: (char, char, char),
     first: &str,
     last: Option<&str>,
     count: u64,
     stable_days: u64,
     action_yml: Option<char>,
 ) -> serde_json::Value {
+    let (target, commit, tree) = shas;
     let mut m = serde_json::Map::new();
     m.insert("target_sha".into(), sha40(target).into());
     m.insert("commit_sha".into(), sha40(commit).into());
@@ -94,8 +93,8 @@ fn main() {
             "ref": "refs/tags/v1.0.0",
             "ref_type_before": "annotated",
             "ref_type_after": "annotated",
-            "from": binding('a','b','c',"2026-01-01T00:00:00.000Z", Some("2026-01-11T00:00:00.000Z"), 4, 10, None),
-            "to": binding('d','e','f',"2026-03-15T12:00:00.000Z", None, 1, 0, None),
+            "from": binding(('a','b','c'),"2026-01-01T00:00:00.000Z", Some("2026-01-11T00:00:00.000Z"), 4, 10, None),
+            "to": binding(('d','e','f'),"2026-03-15T12:00:00.000Z", None, 1, 0, None),
             "source_observations": sources(),
             "observation_window_seconds": 3600
         }),
@@ -118,8 +117,8 @@ fn main() {
             "ref": "refs/tags/v1.1.0",
             "ref_type_before": "annotated",
             "ref_type_after": "annotated",
-            "from": binding('1','2','3',"2026-02-01T00:00:00.000Z", Some("2026-03-01T00:00:00.000Z"), 8, 28, None),
-            "to": binding('4','5','6',"2026-03-16T08:30:00.000Z", None, 1, 0, None),
+            "from": binding(('1','2','3'),"2026-02-01T00:00:00.000Z", Some("2026-03-01T00:00:00.000Z"), 8, 28, None),
+            "to": binding(('4','5','6'),"2026-03-16T08:30:00.000Z", None, 1, 0, None),
             "diff": {
                 "files_added": 2,
                 "files_removed": 1,
@@ -172,8 +171,8 @@ fn main() {
             "ref": "refs/tags/v0.9.0",
             "ref_type_before": "lightweight",
             "ref_type_after": "lightweight",
-            "from": binding('a','b','c',"2025-12-01T00:00:00.000Z", Some("2026-04-01T09:00:00.000Z"), 12, 121, None),
-            "to": binding('a','b','c',"2026-04-01T10:00:00.000Z", None, 1, 0, None),
+            "from": binding(('a','b','c'),"2025-12-01T00:00:00.000Z", Some("2026-04-01T09:00:00.000Z"), 12, 121, None),
+            "to": binding(('a','b','c'),"2026-04-01T10:00:00.000Z", None, 1, 0, None),
             "source_observations": sources(),
             "observation_window_seconds": 3600
         }),
@@ -195,8 +194,8 @@ fn main() {
             "ref": "refs/tags/v0.9.0",
             "ref_type_before": "lightweight",
             "ref_type_after": "annotated",
-            "from": binding('a','b','c',"2026-04-01T10:00:00.000Z", Some("2026-04-01T10:00:00.000Z"), 1, 0, None),
-            "to": binding('f','0','1',"2026-04-02T11:00:00.000Z", None, 1, 0, None),
+            "from": binding(('a','b','c'),"2026-04-01T10:00:00.000Z", Some("2026-04-01T10:00:00.000Z"), 1, 0, None),
+            "to": binding(('f','0','1'),"2026-04-02T11:00:00.000Z", None, 1, 0, None),
             "gap_seconds": 90000,
             "source_observations": sources(),
             "observation_window_seconds": 1800
@@ -233,8 +232,8 @@ fn main() {
             "ref": "refs/tags/v2",
             "ref_type_before": "lightweight",
             "ref_type_after": "annotated",
-            "from": binding('2','3','4',"2026-04-01T00:00:00.000Z", Some("2026-04-20T00:00:00.000Z"), 5, 19, None),
-            "to": binding('5','3','4',"2026-05-01T09:15:00.000Z", None, 1, 0, None),
+            "from": binding(('2','3','4'),"2026-04-01T00:00:00.000Z", Some("2026-04-20T00:00:00.000Z"), 5, 19, None),
+            "to": binding(('5','3','4'),"2026-05-01T09:15:00.000Z", None, 1, 0, None),
             "source_observations": sources(),
             "observation_window_seconds": 600
         }),
@@ -272,8 +271,8 @@ fn main() {
             "ref": "refs/tags/v3.0.0",
             "ref_type_before": "annotated",
             "ref_type_after": "annotated",
-            "from": binding('a','b','c',"2026-01-01T00:00:00.000Z", Some("2026-05-01T00:00:00.000Z"), 30, 120, Some('d')),
-            "to": binding('e','f','0',"2026-05-03T12:00:00.000Z", None, 1, 0, Some('1')),
+            "from": binding(('a','b','c'),"2026-01-01T00:00:00.000Z", Some("2026-05-01T00:00:00.000Z"), 30, 120, Some('d')),
+            "to": binding(('e','f','0'),"2026-05-03T12:00:00.000Z", None, 1, 0, Some('1')),
             "diff": {
                 "files_added": 1,
                 "files_removed": 0,
@@ -305,8 +304,8 @@ fn main() {
             "ref": "refs/tags/バージョン-1.0.0-😀",
             "ref_type_before": "annotated",
             "ref_type_after": "annotated",
-            "from": binding('1','2','3',"2026-05-01T00:00:00.000Z", Some("2026-05-31T00:00:00.000Z"), 3, 30, None),
-            "to": binding('4','5','6',"2026-06-01T00:00:00.000Z", None, 1, 0, None),
+            "from": binding(('1','2','3'),"2026-05-01T00:00:00.000Z", Some("2026-05-31T00:00:00.000Z"), 3, 30, None),
+            "to": binding(('4','5','6'),"2026-06-01T00:00:00.000Z", None, 1, 0, None),
             "source_observations": sources(),
             "observation_window_seconds": 3600
         }),
@@ -332,8 +331,8 @@ fn main() {
             "ref": "refs/tags/v10.0.0",
             "ref_type_before": "annotated",
             "ref_type_after": "annotated",
-            "from": binding('7','8','9',"2026-06-01T00:00:00.000Z", Some("2026-06-30T00:00:00.000Z"), 10, 29, None),
-            "to": binding('a','b','c',"2026-07-01T00:00:00.000Z", None, 1, 0, None),
+            "from": binding(('7','8','9'),"2026-06-01T00:00:00.000Z", Some("2026-06-30T00:00:00.000Z"), 10, 29, None),
+            "to": binding(('a','b','c'),"2026-07-01T00:00:00.000Z", None, 1, 0, None),
             "diff": {
                 "files_added": 5000,
                 "files_removed": 0,
@@ -453,8 +452,8 @@ fn main() {
             "ref": "refs/tags/v6.0",
             "ref_type_before": "annotated",
             "ref_type_after": "annotated",
-            "from": binding('1','2','3',"2026-01-01T00:00:00.000Z", Some("2026-08-01T00:00:00.000Z"), 5, 212, None),
-            "to": binding('4','5','6',"2026-08-04T00:00:00.000Z", None, 1, 0, None),
+            "from": binding(('1','2','3'),"2026-01-01T00:00:00.000Z", Some("2026-08-01T00:00:00.000Z"), 5, 212, None),
+            "to": binding(('4','5','6'),"2026-08-04T00:00:00.000Z", None, 1, 0, None),
             "diff": {
                 "files_added": 100,
                 "files_removed": 50,

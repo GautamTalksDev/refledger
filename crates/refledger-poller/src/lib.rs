@@ -27,7 +27,7 @@ pub use archive::{
 pub use identity::{
     apply_contact_reachability, contact_url_from_ua, ensure_contact_resolves,
     format_contact_warning, probe_contact_url, refuse_to_poll_unless_identified, user_agent,
-    user_agent_with, validate_user_agent, DEFAULT_CONTACT_URL, DEFAULT_LOG_ID, IdentityError,
+    user_agent_with, validate_user_agent, IdentityError, DEFAULT_CONTACT_URL, DEFAULT_LOG_ID,
     VERSION,
 };
 pub use once::{

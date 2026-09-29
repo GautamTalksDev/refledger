@@ -9,7 +9,7 @@ pub use canonical::{
     canonical_json, canonicalise, format_timestamp, parse_canonical, CanonError, CanonicalError,
     CanonicalValue,
 };
-pub use chain::{verify, Chain, ChainError, UnhashedEntry};
+pub use chain::{verify, Chain, ChainError, MoveDraft, UnhashedEntry};
 pub use entry::{
     Ancestry, Binding, Classification, Correlation, Diff, Entry, EntryError, Event, HashRef,
     ObservationDigest, ObservationFileDigest, PopulationChange, PopulationChangeKind,

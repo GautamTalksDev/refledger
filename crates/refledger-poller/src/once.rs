@@ -215,12 +215,8 @@ pub fn run_once_with<T: Transport>(
     let actual_ts = Timestamp::from_offset_datetime(args.actual_start)
         .map_err(|e| OnceError::Observation(e.to_string()))?;
 
-    let gaps = store.record_schedule_gaps(
-        groups,
-        M1_INTERVAL,
-        args.scheduled_at,
-        args.actual_start,
-    )?;
+    let gaps =
+        store.record_schedule_gaps(groups, M1_INTERVAL, args.scheduled_at, args.actual_start)?;
     let days_sealed = store.seal_missed_days_before(args.actual_start)?;
 
     let token = AuthToken::new(&args.token).map_err(|e| OnceError::Message(e.to_string()))?;

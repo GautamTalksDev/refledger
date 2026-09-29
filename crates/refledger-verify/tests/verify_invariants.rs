@@ -3,10 +3,12 @@
 //! - Correlation `member_seqs` must all be strictly less than the entry's seq.
 //! - Published ObservationDigest hashes must match observation files when present.
 
+use refledger_verify::{
+    entry_hash, verify_chain, verify_observation_digests, Failure, VerifyError,
+};
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::PathBuf;
-use refledger_verify::{entry_hash, verify_chain, verify_observation_digests, Failure, VerifyError};
 use tempfile::TempDir;
 
 fn genesis_prev() -> String {
@@ -115,8 +117,9 @@ fn observation_digest_matches_files_when_present() {
             ]
         }
     }));
-    verify_chain(&[entry.clone()]).expect("chain ok");
-    verify_observation_digests(&[entry], dir.path()).expect("digest matches files");
+    verify_chain(std::slice::from_ref(&entry)).expect("chain ok");
+    verify_observation_digests(std::slice::from_ref(&entry), dir.path())
+        .expect("digest matches files");
 }
 
 #[test]

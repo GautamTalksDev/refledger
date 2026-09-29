@@ -45,10 +45,7 @@ pub fn user_agent_with(contact_url: &str) -> String {
 /// Extract the contact URL from a User-Agent of the form `name/ver (+URL)`.
 pub fn contact_url_from_ua(ua: &str) -> Result<&str, IdentityError> {
     let start = ua.rfind("(+").ok_or(IdentityError::MissingContact)? + 2;
-    let end = ua[start..]
-        .find(')')
-        .ok_or(IdentityError::MissingContact)?
-        + start;
+    let end = ua[start..].find(')').ok_or(IdentityError::MissingContact)? + start;
     let url = &ua[start..end];
     if url.is_empty() {
         return Err(IdentityError::MissingContact);
@@ -63,7 +60,8 @@ pub fn validate_user_agent(ua: &str) -> Result<(), IdentityError> {
         return Err(IdentityError::Placeholder(url.to_owned()));
     }
     // Minimal parse: scheme + host. Avoids a URL-crate dependency for one check.
-    let parsed = url::Url::parse(url).map_err(|e| IdentityError::InvalidUrl(format!("{url}: {e}")))?;
+    let parsed =
+        url::Url::parse(url).map_err(|e| IdentityError::InvalidUrl(format!("{url}: {e}")))?;
     if parsed.scheme() != "http" && parsed.scheme() != "https" {
         return Err(IdentityError::InvalidUrl(format!(
             "{url}: scheme must be http or https"

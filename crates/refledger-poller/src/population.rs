@@ -266,31 +266,23 @@ pub fn expand_closure<F>(input: ClosureInput<F>) -> Result<ClosureResult, Popula
 where
     F: Fn(&WatchedKey, &str) -> Option<String>,
 {
-    let mut watched: BTreeSet<WatchedKey> = input.seeds.iter().cloned().collect();
-    let mut added = Vec::new();
-    let mut cutoffs = Vec::new();
-    let mut queue: VecDeque<(WatchedKey, String, u32)> = VecDeque::new();
+    let mut scratch = ClosureScratch {
+        watched: input.seeds.iter().cloned().collect(),
+        added: Vec::new(),
+        cutoffs: Vec::new(),
+        queue: VecDeque::new(),
+    };
 
     for s in &input.seeds {
         for rev in ["c0", "v1", "HEAD"] {
             if let Some(yml) = (input.lookup)(s, rev) {
-                enqueue_deps(
-                    s,
-                    rev,
-                    &yml,
-                    1,
-                    input.depth_cap,
-                    &mut watched,
-                    &mut added,
-                    &mut cutoffs,
-                    &mut queue,
-                );
+                enqueue_deps(s, rev, &yml, 1, input.depth_cap, &mut scratch);
                 break;
             }
         }
     }
 
-    while let Some((parent, parent_rev, depth)) = queue.pop_front() {
+    while let Some((parent, parent_rev, depth)) = scratch.queue.pop_front() {
         let Some(yml) = (input.lookup)(&parent, &parent_rev) else {
             continue;
         };
@@ -300,14 +292,21 @@ where
             &yml,
             depth,
             input.depth_cap,
-            &mut watched,
-            &mut added,
-            &mut cutoffs,
-            &mut queue,
+            &mut scratch,
         );
     }
 
-    Ok(ClosureResult { added, cutoffs })
+    Ok(ClosureResult {
+        added: scratch.added,
+        cutoffs: scratch.cutoffs,
+    })
+}
+
+struct ClosureScratch {
+    watched: BTreeSet<WatchedKey>,
+    added: Vec<ClosureAdded>,
+    cutoffs: Vec<ClosureCutoff>,
+    queue: VecDeque<(WatchedKey, String, u32)>,
 }
 
 fn enqueue_deps(
@@ -316,10 +315,7 @@ fn enqueue_deps(
     yml: &str,
     child_depth: u32,
     depth_cap: u32,
-    watched: &mut BTreeSet<WatchedKey>,
-    added: &mut Vec<ClosureAdded>,
-    cutoffs: &mut Vec<ClosureCutoff>,
-    queue: &mut VecDeque<(WatchedKey, String, u32)>,
+    scratch: &mut ClosureScratch,
 ) {
     for r in extract_external_uses(yml) {
         let child = r.key();
@@ -328,24 +324,24 @@ fn enqueue_deps(
             None => format!("{}@{parent_rev}", parent.repo),
         };
         if child_depth > depth_cap {
-            cutoffs.push(ClosureCutoff {
+            scratch.cutoffs.push(ClosureCutoff {
                 key: child,
                 via,
                 depth: child_depth,
             });
             continue;
         }
-        if !watched.insert(child.clone()) {
+        if !scratch.watched.insert(child.clone()) {
             continue;
         }
-        added.push(ClosureAdded {
+        scratch.added.push(ClosureAdded {
             key: child.clone(),
             via_repo: parent.repo.clone(),
             via_path: parent.path.clone(),
             via_commit: parent_rev.to_owned(),
             depth: child_depth,
         });
-        queue.push_back((child, r.rev, child_depth + 1));
+        scratch.queue.push_back((child, r.rev, child_depth + 1));
     }
 }
 

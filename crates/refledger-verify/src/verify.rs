@@ -482,12 +482,15 @@ pub fn verify_strict(entries: &[Value], heads_raw: &str) -> Result<(), VerifyErr
             .get("head")
             .and_then(|h| h.get("seq"))
             .and_then(|v| v.as_u64())
-            .ok_or_else(|| VerifyError::Parse(format!("heads.jsonl:{}: missing seq", lineno + 1)))?;
+            .ok_or_else(|| {
+                VerifyError::Parse(format!("heads.jsonl:{}: missing seq", lineno + 1))
+            })?;
         lines.push(value);
         latest.insert(seq, ""); // placeholder; rewrite below
     }
     // Re-key to owned values
-    let mut latest_line: std::collections::BTreeMap<u64, &Value> = std::collections::BTreeMap::new();
+    let mut latest_line: std::collections::BTreeMap<u64, &Value> =
+        std::collections::BTreeMap::new();
     for value in &lines {
         let seq = value["head"]["seq"].as_u64().unwrap();
         latest_line.insert(seq, value);

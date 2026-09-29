@@ -39,6 +39,17 @@ pub const CORRELATION_MIN_EXACT: usize = 3;
 /// Fixed factual note on every batch-correlation payload. Never generated prose.
 pub const CORRELATION_NOTE: &str = "At least 3 pre-existing exact-version tags moved to the same target within the correlation window.";
 
+/// One sweep-local move candidate before correlation attachment.
+type SweepMove = (
+    String,
+    RefForm,
+    String,
+    BindingSnapshot,
+    BindingSnapshot,
+    MoveKind,
+    Option<Ancestry>,
+);
+
 /// How a tag name is meant to be used under Actions conventions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -322,9 +333,11 @@ impl RepoState {
 
     /// Seed state from a successful observation (first poll of a repo).
     pub fn from_ok_observation(obs: &Observation) -> Result<Self, ClassifyError> {
-        let mut state = Self::default();
-        state.repo = Some(obs.repo().clone());
-        state.last_ok_observation_id = Some(obs.observation_id());
+        let mut state = Self {
+            repo: Some(obs.repo().clone()),
+            last_ok_observation_id: Some(obs.observation_id()),
+            ..Self::default()
+        };
         let at = obs.observed_at().as_offset_datetime();
         if let Outcome::Ok { refs, .. } = obs.outcome() {
             for r in refs {
@@ -467,15 +480,7 @@ fn classify_ok(
     }
 
     // Moves, recreations, creations.
-    let mut sweep_moves: Vec<(
-        String,
-        RefForm,
-        String,
-        BindingSnapshot,
-        BindingSnapshot,
-        MoveKind,
-        Option<Ancestry>,
-    )> = Vec::new();
+    let mut sweep_moves: Vec<SweepMove> = Vec::new();
 
     for (name, r) in &seen {
         let Some(new_snap) = binding_from_ref(r, at, at, 1)? else {
@@ -588,7 +593,7 @@ fn classify_ok(
 
     prune_move_buffer(state, at);
     state.last_ok_observation_id = Some(detecting_id);
-    events.sort_by(|a, b| event_sort_key(a).cmp(&event_sort_key(b)));
+    events.sort_by_key(event_sort_key);
     Ok((state.clone(), events))
 }
 
@@ -604,15 +609,7 @@ fn event_sort_key(e: &ClassifiedEvent) -> (u8, String) {
 
 fn find_correlations(
     state: &RepoState,
-    sweep_moves: &[(
-        String,
-        RefForm,
-        String,
-        BindingSnapshot,
-        BindingSnapshot,
-        MoveKind,
-        Option<Ancestry>,
-    )],
+    sweep_moves: &[SweepMove],
     at: OffsetDateTime,
 ) -> BTreeMap<String, BatchCorrelation> {
     let mut by_target: BTreeMap<String, Vec<String>> = BTreeMap::new();

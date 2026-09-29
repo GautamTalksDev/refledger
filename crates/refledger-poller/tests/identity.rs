@@ -2,7 +2,7 @@
 
 use refledger_poller::identity::{
     apply_contact_reachability, contact_url_from_ua, format_contact_warning, user_agent,
-    user_agent_with, validate_user_agent, DEFAULT_CONTACT_URL, DEFAULT_LOG_ID, IdentityError,
+    user_agent_with, validate_user_agent, IdentityError, DEFAULT_CONTACT_URL, DEFAULT_LOG_ID,
 };
 
 #[test]
@@ -52,10 +52,7 @@ fn contact_unreachable_is_warning_after_genesis() {
     let warning = apply_contact_reachability(true, Err(err))
         .expect("post-genesis must continue")
         .expect("warning present");
-    assert!(
-        warning.contains("contact URL unreachable"),
-        "{warning}"
-    );
+    assert!(warning.contains("contact URL unreachable"), "{warning}");
     assert_eq!(
         warning,
         format_contact_warning(&IdentityError::Unreachable(

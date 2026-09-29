@@ -5,11 +5,11 @@
 //! that module exists.
 
 use proptest::prelude::*;
-use serde_json::json;
 use refledger_log::canonical::{
     canonicalise, format_timestamp, parse_canonical, CanonError, CanonicalValue,
 };
 use refledger_log::Entry;
+use serde_json::json;
 use time::{Duration, Month, OffsetDateTime, PrimitiveDateTime, Time};
 
 fn odt(
@@ -186,7 +186,7 @@ fn float_returns_error_not_silent_serialisation() {
     );
 
     // Also reject floats that arrive via serde_json::Value.
-    let via_json = CanonicalValue::from_serde_json(&json!(3.14)).expect("keep float node");
+    let via_json = CanonicalValue::from_serde_json(&json!(2.5)).expect("keep float node");
     let err = canonicalise(&via_json).expect_err("json float must error");
     assert!(matches!(err, CanonError::FloatNotPermitted));
 }

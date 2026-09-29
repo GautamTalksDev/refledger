@@ -7,12 +7,8 @@ use std::sync::{Arc, Mutex};
 
 use refledger_log::SigningKey;
 use refledger_poller::github::rest::{RestRequest, RestResponse, Transport};
-use refledger_poller::observation::{
-    ETag, Method, Observation, Outcome, SkipReason, Timestamp,
-};
-use refledger_poller::once::{
-    poller_enabled, run_once_with, CountingTransport, OnceArgs,
-};
+use refledger_poller::observation::{ETag, Method, Observation, Outcome, SkipReason, Timestamp};
+use refledger_poller::once::{poller_enabled, run_once_with, CountingTransport, OnceArgs};
 use refledger_poller::population::PollGroup;
 use refledger_poller::scheduler::M1_INTERVAL;
 use refledger_poller::store::{RekorClient, StaticRekor, Store, StoreOptions};
@@ -173,7 +169,9 @@ fn gap_recorded_between_runs_as_scheduler_lag() {
 
     {
         let mut store = Store::open(dir.path(), opts(last)).unwrap();
-        store.append_observation(&ok_obs("acme/widgets", last)).unwrap();
+        store
+            .append_observation(&ok_obs("acme/widgets", last))
+            .unwrap();
     }
 
     let mut store = Store::open(dir.path(), opts(actual)).unwrap();
@@ -183,10 +181,11 @@ fn gap_recorded_between_runs_as_scheduler_lag() {
     assert_eq!(gaps.len(), 1);
     match gaps[0].outcome() {
         Outcome::Skipped {
-            reason: SkipReason::SchedulerLag {
-                scheduled: s,
-                actual: a,
-            },
+            reason:
+                SkipReason::SchedulerLag {
+                    scheduled: s,
+                    actual: a,
+                },
         } => {
             assert_eq!(s.as_offset_datetime(), scheduled);
             assert_eq!(a.as_offset_datetime(), actual);
@@ -214,11 +213,7 @@ fn run_after_26_hours_seals_both_missed_days_in_order() {
 
     let mut store = Store::open(dir.path(), opts(now)).unwrap();
     let sealed = store.seal_missed_days_before(now).unwrap();
-    assert_eq!(
-        sealed.len(),
-        2,
-        "expected Jan 1 then Jan 2, got {sealed:?}"
-    );
+    assert_eq!(sealed.len(), 2, "expected Jan 1 then Jan 2, got {sealed:?}");
     assert_eq!(sealed[0].day(), 1);
     assert_eq!(sealed[1].day(), 2);
 
@@ -230,15 +225,18 @@ fn run_after_26_hours_seals_both_missed_days_in_order() {
         .collect();
     assert_eq!(digests.len(), 2);
     assert!(
-        digests[0].observation_digest.as_ref().unwrap().note.as_deref()
+        digests[0]
+            .observation_digest
+            .as_ref()
+            .unwrap()
+            .note
+            .as_deref()
             == Some("observation files published on the data branch")
-            || digests
-                .iter()
-                .any(|e| e
-                    .observation_digest
-                    .as_ref()
-                    .and_then(|d| d.note.as_ref())
-                    .is_some_and(|n| n.contains("observation files published on the data branch"))),
+            || digests.iter().any(|e| e
+                .observation_digest
+                .as_ref()
+                .and_then(|d| d.note.as_ref())
+                .is_some_and(|n| n.contains("observation files published on the data branch"))),
         "seal note must mention data branch observations"
     );
 }
@@ -275,10 +273,7 @@ fn confirmation_re_poll_recorded_after_movement() {
 
     let mock = MockTransport::new();
     mock.route("/repos/acme/widgets", "repo_ok")
-        .route(
-            "/repos/acme/widgets/git/matching-refs/tags",
-            "tags_moved",
-        )
+        .route("/repos/acme/widgets/git/matching-refs/tags", "tags_moved")
         .route(
             "/repos/acme/widgets/git/commits/2222222222222222222222222222222222222222",
             "git_commit_2",
@@ -325,8 +320,10 @@ fn confirmation_re_poll_recorded_after_movement() {
 
 #[test]
 fn schedule_stamps_survive_round_trip() {
-    let scheduled = Timestamp::from_offset_datetime(odt(2026, Month::January, 1, 12, 2, 0, 0)).unwrap();
-    let actual = Timestamp::from_offset_datetime(odt(2026, Month::January, 1, 12, 3, 0, 0)).unwrap();
+    let scheduled =
+        Timestamp::from_offset_datetime(odt(2026, Month::January, 1, 12, 2, 0, 0)).unwrap();
+    let actual =
+        Timestamp::from_offset_datetime(odt(2026, Month::January, 1, 12, 3, 0, 0)).unwrap();
     let mut obs = ok_obs("acme/widgets", actual.as_offset_datetime());
     obs.stamp_schedule(scheduled, actual);
     let wire = serde_json::to_string(&obs).unwrap();

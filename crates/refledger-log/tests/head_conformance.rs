@@ -4,12 +4,12 @@
 //! `refledger-verify` must reproduce canonical bytes, pure Ed25519 signature,
 //! and SHA-512 Rekor prehash for every vector.
 
+use refledger_log::canonical_json;
+use refledger_log::sign::{sign_head, verify_head, Head, SigningKey};
 use serde::Deserialize;
 use sha2::{Digest, Sha512};
 use std::fs;
 use std::path::PathBuf;
-use refledger_log::canonical_json;
-use refledger_log::sign::{sign_head, verify_head, Head, SigningKey};
 
 #[derive(Debug, Deserialize)]
 struct HeadVector {
@@ -47,7 +47,11 @@ fn all_head_conformance_vectors_match_refledger_log() {
     for path in &paths {
         let v: HeadVector = serde_json::from_str(&fs::read_to_string(path).unwrap())
             .unwrap_or_else(|e| panic!("parse {}: {e}", path.display()));
-        assert!(!v.description.is_empty(), "{} missing description", path.display());
+        assert!(
+            !v.description.is_empty(),
+            "{} missing description",
+            path.display()
+        );
 
         let seed = hex::decode(&v.test_key_seed_hex).expect("seed hex");
         let seed: [u8; 32] = seed.try_into().expect("32-byte seed");
@@ -66,13 +70,15 @@ fn all_head_conformance_vectors_match_refledger_log() {
 
         let signed = sign_head(&v.head, &key).expect("sign");
         assert_eq!(
-            signed.signature, v.expected_signature_hex,
+            signed.signature,
+            v.expected_signature_hex,
             "signature: {} ({})",
             v.description,
             path.display()
         );
         assert_eq!(
-            signed.public_key, v.expected_public_key_hex,
+            signed.public_key,
+            v.expected_public_key_hex,
             "public key: {} ({})",
             v.description,
             path.display()
@@ -81,7 +87,8 @@ fn all_head_conformance_vectors_match_refledger_log() {
 
         let prehash = hex::encode(Sha512::digest(&bytes));
         assert_eq!(
-            prehash, v.expected_rekor_prehash_sha512_hex,
+            prehash,
+            v.expected_rekor_prehash_sha512_hex,
             "rekor prehash: {} ({})",
             v.description,
             path.display()

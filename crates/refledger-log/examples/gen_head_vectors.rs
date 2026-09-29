@@ -7,10 +7,10 @@
 use std::fs;
 use std::path::PathBuf;
 
-use sha2::{Digest, Sha512};
 use refledger_log::canonical_json;
 use refledger_log::entry::{HashRef, Timestamp};
 use refledger_log::sign::{sign_head, Head, SigningKey};
+use sha2::{Digest, Sha512};
 use time::{Date, Month, OffsetDateTime, PrimitiveDateTime, Time};
 
 fn odt(
@@ -66,16 +66,8 @@ fn main() {
         Head {
             seq: 0,
             entry_hash: HashRef::parse(format!("sha256:{}", "11".repeat(32))).unwrap(),
-            recorded_at: Timestamp::from_offset_datetime(odt(
-                2026,
-                Month::January,
-                1,
-                0,
-                0,
-                0,
-                0,
-            ))
-            .unwrap(),
+            recorded_at: Timestamp::from_offset_datetime(odt(2026, Month::January, 1, 0, 0, 0, 0))
+                .unwrap(),
             log_id: "refledger".into(),
         },
     );
@@ -126,16 +118,8 @@ fn main() {
         Head {
             seq: 42,
             entry_hash: HashRef::parse(format!("sha256:{}", "cd".repeat(32))).unwrap(),
-            recorded_at: Timestamp::from_offset_datetime(odt(
-                2026,
-                Month::June,
-                15,
-                8,
-                30,
-                0,
-                0,
-            ))
-            .unwrap(),
+            recorded_at: Timestamp::from_offset_datetime(odt(2026, Month::June, 15, 8, 30, 0, 0))
+                .unwrap(),
             log_id: "refledger-测试-ログ".into(),
         },
     );
