@@ -22,6 +22,45 @@ M1 measures the seven-day exit on this Actions cadence (every 5 minutes).
 6. **Ledger publish:** after each seal, sealed `log/` files are committed under `data/log/` on `main` using `GITHUB_TOKEN` (contents: write). Fast-forward only; never force. See [Ledger publish](#ledger-publish) below.
 7. **Enable:** leave workflow `.github/workflows/poll.yml` inert until ready. Genesis is flipping repository variable `REFLEDGER_ENABLED` to the string `true`. Do not set it in the workflow file.
 
+## Clock
+
+GitHub's Actions scheduler alone was not enough for M1. After genesis, **zero**
+scheduled `poll` runs were observed while the canary rotator's schedule only
+fired about **2 of 6** expected slots. Archive days cannot be recovered, so an
+external clock triggers each poll.
+
+`clock/` is a Cloudflare Worker (`refledger-clock`) on the operator's main
+Cloudflare account. It has no `workers.dev` hostname, no routes, and no public
+HTTP API: every `fetch` returns 404. Its only job is a cron matching poll.yml
+(`2-57/5 * * * *`, never the `:00` minute) that POSTs
+`workflow_dispatch` for `poll.yml` on `main`.
+
+The Actions `schedule` trigger in `.github/workflows/poll.yml` stays as a
+backup. Concurrency group `refledger-poller` with `cancel-in-progress: false`
+already prevents overlapping writers if both fire.
+
+### Token (`DISPATCH_TOKEN`)
+
+Fine-grained personal access token, repository access limited to
+`GautamTalksDev/refledger` only:
+
+| Permission | Access |
+|---|---|
+| Actions | Read and write |
+| Contents | No access |
+| Metadata | Read-only (required by GitHub) |
+
+That is enough for `POST .../actions/workflows/poll.yml/dispatches` and nothing
+else. Do not use `GITHUB_TOKEN` from Actions here; this secret lives in the
+Worker. Never commit the token. Never log it.
+
+Fine-grained tokens expire in at most one year. Before expiry: mint a
+replacement with the same scope, set it with `wrangler secret put DISPATCH_TOKEN`
+from inside `clock/`, then revoke the old token.
+
+Deploy and secret rotation are operator steps run from `clock/`. Agents must not
+run `wrangler deploy` or `wrangler secret put` against this account.
+
 ## Ledger publish
 
 The public repository is a witness. Sealed days must reach `main` or `cargo run -p refledger-verify -- data/log --strict` on a fresh clone checks an empty folder.

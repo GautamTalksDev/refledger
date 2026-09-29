@@ -22,4 +22,17 @@ cargo test --workspace --all-features
 echo "==> tools/check-pins.sh"
 bash tools/check-pins.sh
 
+if [[ -f clock/package.json ]]; then
+  echo "==> clock: npm ci && npm test"
+  (
+    cd clock
+    if [[ -f package-lock.json ]]; then
+      npm ci
+    else
+      npm install
+    fi
+    npm test
+  )
+fi
+
 echo "pre-push: OK"

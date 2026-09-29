@@ -1,5 +1,8 @@
 # Refledger poller — one sweep per scheduled GitHub Actions run.
 #
+# Primary trigger: Cloudflare Worker clock/ (workflow_dispatch).
+# schedule: below remains as backup. Concurrency group prevents overlap.
+#
 # Inert until repository variable REFLEDGER_ENABLED is set to the string true.
 # Do not set that variable in this file; genesis is an operator flip.
 

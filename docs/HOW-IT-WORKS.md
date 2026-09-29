@@ -4,7 +4,9 @@ From one HTTP request to a signed, publicly witnessed fact. This is the whole ma
 
 ```mermaid
 flowchart TD
-    S["Scheduler<br/>the only thing that reads a clock"] --> P["Poll<br/>list tags with a stored ETag"]
+    S["External clock<br/>Cloudflare Worker cron"] --> W["poll.yml<br/>workflow_dispatch"]
+    B["Actions schedule<br/>backup"] --> W
+    W --> P["Poll<br/>list tags with a stored ETag"]
     P -->|"304 nothing changed"| NM["NotModified observation"]
     P -->|"200 something changed"| R["Resolve<br/>peel tags to commits, trees, action.yml"]
     P -->|"403 or 429"| F["Failed observation<br/>plus one global pause"]
@@ -30,7 +32,11 @@ Two design rules run through everything below:
 
 ## 1. Poll: asking GitHub cheaply, on a fixed schedule
 
-Every 5 minutes, a GitHub Actions workflow runs one sweep: for every watched repository, the poller asks GitHub one question: *what are your tags right now?*
+Every 5 minutes an external Cloudflare Worker clock (`clock/`, Worker name
+`refledger-clock`) POSTs `workflow_dispatch` for the poll workflow. The workflow
+still lists a matching `schedule` cron as backup. Either path starts one
+sweep: for every watched repository, the poller asks GitHub one question: *what
+are your tags right now?*
 
 The schedule uses off minutes (`:02`, `:07`, `:12`, … `:57`), never `:00`, because GitHub warns that scheduled jobs can be delayed under load at the top of the hour. Each run records when it was supposed to start and when it actually started, so schedule lag is measured data rather than a guess.
 
