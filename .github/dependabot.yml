@@ -13,9 +13,25 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    # Crypto + observation-id majors wait until after the seven-day run.
+    # Upgrade sha2 / digest / ed25519-dalek together, deliberately, with both
+    # conformance suites green as the gate. ulid 3 needs an API migration.
+    ignore:
+      - dependency-name: sha2
+        update-types: ["version-update:semver-major"]
+      - dependency-name: digest
+        update-types: ["version-update:semver-major"]
+      - dependency-name: ed25519-dalek
+        update-types: ["version-update:semver-major"]
+      - dependency-name: ulid
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /clock
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    # TypeScript 7 is a toolchain rewrite; upgrade deliberately after the run.
+    ignore:
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
