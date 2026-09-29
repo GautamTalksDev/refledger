@@ -1,11 +1,12 @@
 //! Publish sealed ledger files to the public git repository.
 //!
-//! The poller's live data directory is never a git working tree. After each
-//! seal, sealed `log/` bytes are copied into a dedicated publishing clone,
-//! committed under `data/log/`, and fast-forward pushed. A git failure is
-//! recorded for the next ObservationDigest note and never stops polling.
-//! Authentication is a deploy key with write access to this one repository
-//! only — never a personal access token.
+//! After each seal, sealed `log/` bytes are copied into a dedicated publishing
+//! clone (or the Actions checkout), committed under `data/log/`, and
+//! fast-forward pushed. A git failure is recorded for the next
+//! ObservationDigest note and never stops polling.
+//!
+//! Authentication is either a deploy key (VM) or `GITHUB_TOKEN` (Actions).
+//! Never a personal access token.
 
 use std::fs::{self, OpenOptions};
 use std::io::Write;
@@ -46,11 +47,13 @@ impl LedgerPublisher for NoopPublisher {
 /// `GautamTalksDev/refledger` (or a test bare remote). The live poller data
 /// directory must not be this path.
 pub struct GitLedgerPublisher {
-    /// Absolute path to the publishing clone on the VM.
+    /// Absolute path to the publishing clone (or Actions main checkout).
     pub clone_dir: PathBuf,
     /// Deploy key (write access to this repo only). Sets `GIT_SSH_COMMAND`.
-    /// Omit only for local file:// remotes in tests.
+    /// Omit when using [`Self::github_token`] or local file:// remotes.
     pub deploy_key: Option<PathBuf>,
+    /// Actions `GITHUB_TOKEN` for HTTPS push. Never logged.
+    pub github_token: Option<String>,
 }
 
 impl GitLedgerPublisher {
@@ -58,11 +61,17 @@ impl GitLedgerPublisher {
         Self {
             clone_dir: clone_dir.into(),
             deploy_key,
+            github_token: None,
         }
     }
 
-    /// `REFLEDGER_PUBLISH_CLONE` (required) and `REFLEDGER_PUBLISH_DEPLOY_KEY`
-    /// (required in production; optional only for local file:// remotes).
+    pub fn with_github_token(mut self, token: impl Into<String>) -> Self {
+        self.github_token = Some(token.into());
+        self
+    }
+
+    /// `REFLEDGER_PUBLISH_CLONE` (required) plus either
+    /// `REFLEDGER_PUBLISH_DEPLOY_KEY` or `GITHUB_TOKEN`.
     pub fn from_env() -> Result<Self, String> {
         let clone_dir = std::env::var("REFLEDGER_PUBLISH_CLONE")
             .map_err(|_| "REFLEDGER_PUBLISH_CLONE is not set".to_owned())?;
@@ -70,7 +79,15 @@ impl GitLedgerPublisher {
             Ok(p) if !p.is_empty() => Some(PathBuf::from(p)),
             _ => None,
         };
-        Ok(Self::new(clone_dir, deploy_key))
+        let github_token = match std::env::var("GITHUB_TOKEN") {
+            Ok(t) if !t.is_empty() => Some(t),
+            _ => None,
+        };
+        Ok(Self {
+            clone_dir: PathBuf::from(clone_dir),
+            deploy_key,
+            github_token,
+        })
     }
 
     fn git(&self, args: &[&str]) -> Result<std::process::Output, String> {
@@ -81,6 +98,18 @@ impl GitLedgerPublisher {
             cmd.env(
                 "GIT_SSH_COMMAND",
                 format!("ssh -i {key} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"),
+            );
+        }
+        // Prefer header auth so the token never appears in the remote URL.
+        if let Some(token) = &self.github_token {
+            cmd.env(
+                "GIT_CONFIG_COUNT",
+                "1",
+            );
+            cmd.env("GIT_CONFIG_KEY_0", "http.https://github.com/.extraheader");
+            cmd.env(
+                "GIT_CONFIG_VALUE_0",
+                format!("AUTHORIZATION: bearer {token}"),
             );
         }
         cmd.output()
@@ -177,7 +206,6 @@ impl LedgerPublisher for GitLedgerPublisher {
             payload.day.day()
         );
         let msg = format!("ledger: seal {day} seq {}", payload.seq);
-        // Identity is local to the publishing clone; never a personal token.
         self.git_ok(&[
             "-c",
             "user.email=refledger-publish@users.noreply.github.com",
@@ -196,6 +224,29 @@ impl LedgerPublisher for GitLedgerPublisher {
             return Err(format!("fast-forward push rejected: {stderr}{stdout}"));
         }
         Ok(())
+    }
+}
+
+fn porcelain_path(line: &str) -> Option<&str> {
+    let line = line.trim_end();
+    if line.len() < 3 {
+        return None;
+    }
+    // XY (2 chars) then whitespace then path; renames use `old -> new`.
+    let rest = line[2..].trim_start();
+    if rest.is_empty() {
+        return None;
+    }
+    let path = rest
+        .rsplit_once(" -> ")
+        .map(|(_, new)| new)
+        .unwrap_or(rest)
+        .trim()
+        .trim_matches('"');
+    if path.is_empty() {
+        None
+    } else {
+        Some(path)
     }
 }
 
@@ -220,26 +271,16 @@ pub fn public_log_path(store_rel: &str) -> Option<PathBuf> {
         .map(|rest| Path::new("data/log").join(rest))
 }
 
-/// Extract the path from a `git status --porcelain` line (v1).
-fn porcelain_path(line: &str) -> Option<&str> {
-    let line = line.trim_end();
-    if line.len() < 3 {
-        return None;
-    }
-    // XY (2 chars) then whitespace then path; renames use `old -> new`.
-    let rest = line[2..].trim_start();
-    if rest.is_empty() {
-        return None;
-    }
-    let path = rest
-        .rsplit_once(" -> ")
-        .map(|(_, new)| new)
-        .unwrap_or(rest)
-        .trim()
-        .trim_matches('"');
-    if path.is_empty() {
-        None
-    } else {
-        Some(path)
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn porcelain_handles_rename() {
+        assert_eq!(
+            porcelain_path("R  data/log/a.jsonl -> data/log/b.jsonl"),
+            Some("data/log/b.jsonl")
+        );
     }
 }
+

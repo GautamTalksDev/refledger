@@ -14,6 +14,7 @@ pub mod derive;
 pub mod enrich;
 pub mod github;
 pub mod identity;
+pub mod once;
 pub mod population;
 pub mod publish;
 pub mod scheduler;
@@ -28,6 +29,10 @@ pub use identity::{
     format_contact_warning, probe_contact_url, refuse_to_poll_unless_identified, user_agent,
     user_agent_with, validate_user_agent, DEFAULT_CONTACT_URL, DEFAULT_LOG_ID, IdentityError,
     VERSION,
+};
+pub use once::{
+    infer_scheduled_slot, poller_enabled, run_once, run_once_with, scheduled_time_from_env,
+    CountingTransport, OnceArgs, OnceError, OnceReport, UreqTransport, ENABLED_VAR,
 };
 pub use publish::{
     format_publish_failure_note, GitLedgerPublisher, LedgerPublishPayload, LedgerPublisher,

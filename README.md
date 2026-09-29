@@ -60,7 +60,7 @@ It isn't the only tag monitor out there, either. Commercial tools watch tags pri
 |---|---|
 | **Stage** | M1: the observatory is built and entering its first continuous run |
 | **Watching** | 38 action keys across 35 repositories, plus a canary we control |
-| **Poll rate** | every 60 seconds per repository |
+| **Poll rate** | every 5 minutes per repository on GitHub Actions |
 | **Public site** | coming at `refledger.gautamkhosla.com` |
 
 The population is deliberately small and honestly defined: a set of cited seed actions plus everything those actions pull in through their own `action.yml` files, at every tag. See [`population/METHOD.md`](population/METHOD.md).

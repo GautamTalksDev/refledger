@@ -18,7 +18,7 @@ flowchart TD
     L --> H["Daily signed head"]
     H --> K["Sigstore Rekor"]
     H --> G["public git repo<br/>fast-forward only"]
-    O --> M[("Off machine mirror")]
+    O --> M[("data branch<br/>public observations")]
 ```
 
 Two design rules run through everything below:
@@ -28,19 +28,24 @@ Two design rules run through everything below:
 
 ---
 
-## 1. Poll: asking GitHub cheaply, thousands of times
+## 1. Poll: asking GitHub cheaply, on a fixed schedule
 
-Every 60 seconds, for every watched repository, the poller asks GitHub one question: *what are your tags right now?*
+Every 5 minutes, a GitHub Actions workflow runs one sweep: for every watched repository, the poller asks GitHub one question: *what are your tags right now?*
 
-It asks with the `ETag` from last time. If nothing changed, GitHub answers `304 Not Modified` with an empty body. That answer is almost free: it doesn't count against GitHub's hourly request budget, as long as the request is authenticated. Since tags rarely move, nearly every poll is a 304.
+The schedule uses off minutes (`:02`, `:07`, `:12`, … `:57`), never `:00`, because GitHub warns that scheduled jobs can be delayed under load at the top of the hour. Each run records when it was supposed to start and when it actually started, so schedule lag is measured data rather than a guess.
+
+When a sweep sees a tag move, it re-polls that repository about 60 seconds later in the same short job and records both observations. That catches flickers such as create, delete, recreate that a single look would miss.
+
+It asks with the `ETag` from last time. If nothing changed, GitHub answers `304 Not Modified` with an empty body. That answer is almost free: it does not count against GitHub's hourly request budget, as long as the request is authenticated. Since tags rarely move, nearly every poll is a 304. On Actions, `GITHUB_TOKEN` rotates every run, so ETags may not survive a token change; each run logs how many responses were 304 versus 200 (`docs/CALIBRATION.md`).
 
 "Almost" is doing real work in that sentence. GitHub also enforces **secondary limits**, and a 304 still costs one point there. Those limits have no header, so you can't see how close you are. You only find out by being refused. So Refledger:
 
 * runs a single points governor over *every* request it makes, capped at a third of GitHub's documented ceiling
+* caps each Actions run at 150 requests and spreads first-run tag peels across runs
 * treats any refusal as one global pause, not a stampede of retries
 * writes every refusal down as an observation, so the gap is visible in the data
 
-At today's population that's about 33 points a minute against a ceiling of 900. Plenty of headroom, measured rather than hoped for.
+At today's population a full sweep fits well under the `GITHUB_TOKEN` budget of 1,000 requests per hour.
 
 ### Every poll becomes an observation
 
@@ -52,7 +57,7 @@ flowchart LR
     Q --> D["Skipped<br/>we chose not to ask, and why"]
 ```
 
-Skipped observations carry a reason: budget exhausted, backing off after a refusal, scheduler running late, shutting down, or the poller simply wasn't running (recorded on restart as `PollerDown`). A gap is always a record, never a silence.
+Skipped observations carry a reason: budget exhausted, backing off after a refusal, scheduler running late (with scheduled vs actual start times), shutting down, or the poller simply wasn't running (recorded on restart as `PollerDown`). A gap is always a record, never a silence.
 
 ---
 

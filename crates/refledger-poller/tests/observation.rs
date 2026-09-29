@@ -211,7 +211,10 @@ fn skipped_outcome_is_written_not_dropped() {
         SkipReason::BudgetExhausted,
         SkipReason::SecondaryLimitBackoff,
         SkipReason::ShutdownMidSweep,
-        SkipReason::SchedulerLag,
+        SkipReason::SchedulerLag {
+            scheduled: from,
+            actual: to,
+        },
         SkipReason::PollerDown { from, to },
     ] {
         let obs = base_observation(Outcome::Skipped { reason });

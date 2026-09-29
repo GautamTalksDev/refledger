@@ -9,15 +9,29 @@ Measurement of GitHub's undocumented REST secondary rate-limit bucketing.
 
 ### 2026-09-28 — gate moved
 
-At the amended M1 population (tens of repositories, one poll per minute with
-REST+ETag), secondary spend is under 4% of the documented 900-point ceiling
-**whichever way GitHub buckets it**. The per-template-versus-per-URL question
-only bites past a few hundred repos.
+At the amended M1 population (tens of repositories, one poll every 5 minutes with
+REST+ETag on GitHub Actions), secondary spend is a small fraction of the
+documented 900-point ceiling **whichever way GitHub buckets it**. The
+per-template-versus-per-URL question only bites past a few hundred repos.
 
 Calibration is therefore **not** an M1 exit gate. The scheduler ships with a
-conservative fixed rate (see `scheduler.rs`: 60s interval, concurrency 4,
-global 300 points/minute). Archive days cannot be recovered; waiting on this
-measurement costs days that the log can never backfill.
+conservative fixed rate (see `scheduler.rs`: 300s interval on GitHub Actions,
+concurrency 4, global 300 points/minute, 150 requests per run). Archive days
+cannot be recovered; waiting on this measurement costs days that the log can
+never backfill.
+
+### 2026-09-29 — Actions token rotation and ETags
+
+Each Actions run authenticates with a fresh `GITHUB_TOKEN`. GitHub may treat
+validators as bound to the token that stored them, so a 304 rate measured on a
+long-lived PAT may not hold across runs. Every `once` run logs how many
+responses were **304** versus **200**.
+
+If ETags do not survive token rotation, each sweep re-lists tags (~one request
+per watched repository, plus peels only on change or warm-up). At 35
+repositories and a 5 minute cadence that is about **420 listing requests per
+hour**, still under the 1,000/hour `GITHUB_TOKEN` budget even before 304s.
+Record live 304/200 ratios here after genesis; do not invent them.
 
 **Required before the watched population passes ~200 repositories** (and again
 before any high-frequency tier). Until then a live Mode A/B run is useful but

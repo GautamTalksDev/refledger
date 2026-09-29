@@ -254,7 +254,11 @@ pub enum SkipReason {
     SecondaryLimitBackoff,
     ShutdownMidSweep,
     /// Sweep missed its window by more than twice the poll interval.
-    SchedulerLag,
+    /// `scheduled` is when the run was supposed to start; `actual` is when it did.
+    SchedulerLag {
+        scheduled: Timestamp,
+        actual: Timestamp,
+    },
     /// Poller was down long enough that the gap would otherwise be silent.
     /// `from` is the latest prior `observed_at` for the group; `to` is restart.
     PollerDown {
@@ -494,6 +498,10 @@ pub struct Observation {
     /// Subdirectory action path (`owner/repo/path@ref`). Population must key on
     /// `(repo, path)`, not repo alone.
     action_path: Option<String>,
+    /// Workflow scheduled time for this run (GitHub Actions `scheduled` event).
+    scheduled_at: Option<Timestamp>,
+    /// When this workflow run actually began (schedule lag is measured data).
+    actual_start: Option<Timestamp>,
 }
 
 impl Observation {
@@ -510,6 +518,8 @@ impl Observation {
             redirect_location: None,
             archived: None,
             action_path: None,
+            scheduled_at: None,
+            actual_start: None,
             _repo: PhantomData,
             _observed_at: PhantomData,
             _method: PhantomData,
@@ -565,6 +575,20 @@ impl Observation {
         self.action_path.as_deref()
     }
 
+    pub fn scheduled_at(&self) -> Option<Timestamp> {
+        self.scheduled_at
+    }
+
+    pub fn actual_start(&self) -> Option<Timestamp> {
+        self.actual_start
+    }
+
+    /// Stamp schedule lag fields after build (workflow once-path).
+    pub fn stamp_schedule(&mut self, scheduled: Timestamp, actual: Timestamp) {
+        self.scheduled_at = Some(scheduled);
+        self.actual_start = Some(actual);
+    }
+
     pub fn refs(&self) -> &[ObservedRef] {
         match &self.outcome {
             Outcome::Ok { refs, .. } => refs,
@@ -611,6 +635,12 @@ impl Serialize for Observation {
         if self.action_path.is_some() {
             count += 1;
         }
+        if self.scheduled_at.is_some() {
+            count += 1;
+        }
+        if self.actual_start.is_some() {
+            count += 1;
+        }
         let mut st = serializer.serialize_struct("Observation", count)?;
         st.serialize_field("observation_id", &self.observation_id.to_string())?;
         st.serialize_field("repo", &self.repo)?;
@@ -635,6 +665,12 @@ impl Serialize for Observation {
         }
         if let Some(path) = &self.action_path {
             st.serialize_field("action_path", path)?;
+        }
+        if let Some(t) = self.scheduled_at {
+            st.serialize_field("scheduled_at", &t)?;
+        }
+        if let Some(t) = self.actual_start {
+            st.serialize_field("actual_start", &t)?;
         }
         st.end()
     }
@@ -662,6 +698,10 @@ impl<'de> Deserialize<'de> for Observation {
             archived: Option<bool>,
             #[serde(default)]
             action_path: Option<String>,
+            #[serde(default)]
+            scheduled_at: Option<Timestamp>,
+            #[serde(default)]
+            actual_start: Option<Timestamp>,
         }
         let raw = Raw::deserialize(deserializer)?;
         let observation_id =
@@ -679,6 +719,8 @@ impl<'de> Deserialize<'de> for Observation {
             redirect_location: raw.redirect_location,
             archived: raw.archived,
             action_path: raw.action_path,
+            scheduled_at: raw.scheduled_at,
+            actual_start: raw.actual_start,
         };
         validate_secondary(&obs).map_err(de::Error::custom)?;
         Ok(obs)
@@ -716,6 +758,8 @@ pub struct ObservationBuilder<R, Oa, M, Oc> {
     redirect_location: Option<String>,
     archived: Option<bool>,
     action_path: Option<String>,
+    scheduled_at: Option<Timestamp>,
+    actual_start: Option<Timestamp>,
     _repo: PhantomData<R>,
     _observed_at: PhantomData<Oa>,
     _method: PhantomData<M>,
@@ -764,6 +808,16 @@ impl<R, Oa, M, Oc> ObservationBuilder<R, Oa, M, Oc> {
         self.action_path = Some(path.into());
         self
     }
+
+    pub fn scheduled_at(mut self, t: Timestamp) -> Self {
+        self.scheduled_at = Some(t);
+        self
+    }
+
+    pub fn actual_start(mut self, t: Timestamp) -> Self {
+        self.actual_start = Some(t);
+        self
+    }
 }
 
 impl<Oa, M, Oc> ObservationBuilder<MissingRepo, Oa, M, Oc> {
@@ -782,6 +836,8 @@ impl<Oa, M, Oc> ObservationBuilder<MissingRepo, Oa, M, Oc> {
             redirect_location: self.redirect_location,
             archived: self.archived,
             action_path: self.action_path,
+            scheduled_at: self.scheduled_at,
+            actual_start: self.actual_start,
             _repo: PhantomData,
             _observed_at: PhantomData,
             _method: PhantomData,
@@ -806,6 +862,8 @@ impl<R, M, Oc> ObservationBuilder<R, MissingObservedAt, M, Oc> {
             redirect_location: self.redirect_location,
             archived: self.archived,
             action_path: self.action_path,
+            scheduled_at: self.scheduled_at,
+            actual_start: self.actual_start,
             _repo: PhantomData,
             _observed_at: PhantomData,
             _method: PhantomData,
@@ -827,6 +885,8 @@ impl<R, Oa, Oc> ObservationBuilder<R, Oa, MissingMethod, Oc> {
             redirect_location: self.redirect_location,
             archived: self.archived,
             action_path: self.action_path,
+            scheduled_at: self.scheduled_at,
+            actual_start: self.actual_start,
             _repo: PhantomData,
             _observed_at: PhantomData,
             _method: PhantomData,
@@ -848,6 +908,8 @@ impl<R, Oa, M> ObservationBuilder<R, Oa, M, MissingOutcome> {
             redirect_location: self.redirect_location,
             archived: self.archived,
             action_path: self.action_path,
+            scheduled_at: self.scheduled_at,
+            actual_start: self.actual_start,
             _repo: PhantomData,
             _observed_at: PhantomData,
             _method: PhantomData,
@@ -878,6 +940,8 @@ impl ObservationBuilder<HasRepo, HasObservedAt, HasMethod, HasOutcome> {
             redirect_location: self.redirect_location,
             archived: self.archived,
             action_path: self.action_path,
+            scheduled_at: self.scheduled_at,
+            actual_start: self.actual_start,
         };
         validate_secondary(&obs)?;
         Ok(obs)

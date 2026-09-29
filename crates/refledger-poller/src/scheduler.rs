@@ -1,12 +1,12 @@
 //! Poll scheduler — the only component that reads the wall clock.
 //!
-//! M1 policy (conservative fixed rate; calibration gates population growth
-//! past ~200 repos, not this launch):
-//! - one tier: every poll group once per 60s
-//! - concurrency 4
+//! M1 policy (GitHub Actions; one sweep per scheduled run):
+//! - one tier: every poll group once per 300s (cron every 5 minutes)
+//! - concurrency 4 (still used by the interactive scheduler)
 //! - global secondary-points governor at 300/minute (one third of the
 //!   documented 900 ceiling), applied to every request
 //! - refusals pause globally; due groups get one Skipped observation each
+//! - `once` runs also cap requests (150) and new peels (40) per job
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
@@ -16,8 +16,14 @@ use time::{Duration, OffsetDateTime};
 use crate::observation::{Method, Observation, ObservationError, Outcome, SkipReason};
 use crate::population::PollGroup;
 
-/// Poll interval for M1's single tier.
-pub const M1_INTERVAL: Duration = Duration::seconds(60);
+/// Poll interval for M1 on GitHub Actions (one sweep per scheduled run).
+pub const M1_INTERVAL: Duration = Duration::seconds(300);
+/// Hard cap on GitHub API requests in a single `once` run (GITHUB_TOKEN budget).
+pub const MAX_REQUESTS_PER_RUN: u32 = 150;
+/// Cap on first-seen object peels per run so large tag sets warm across runs.
+pub const MAX_NEW_PEELS_PER_RUN: u32 = 40;
+/// Confirmation re-poll delay after a detected movement (same run).
+pub const CONFIRM_DELAY: Duration = Duration::seconds(60);
 /// Global secondary-points ceiling used by the governor.
 pub const M1_POINTS_PER_MINUTE: u32 = 300;
 /// Documented REST secondary ceiling (for commentary / tests).
@@ -362,13 +368,25 @@ impl<C: Clock> Scheduler<C> {
             .map(|g| g.repo.clone())
             .collect::<Vec<_>>()
         {
+            let scheduled = self
+                .groups
+                .get(&repo)
+                .map(|g| g.next_due)
+                .unwrap_or(now);
             let jitter = self.slot_jitter(&repo);
             if let Some(g) = self.groups.get_mut(&repo) {
                 g.next_due = now + jitter;
             }
+            let scheduled_ts = crate::observation::Timestamp::from_offset_datetime(scheduled)
+                .map_err(|e| SchedulerError::Observation(e))?;
+            let actual_ts = crate::observation::Timestamp::from_offset_datetime(now)
+                .map_err(|e| SchedulerError::Observation(e))?;
             return Ok(Step::Skip {
                 group: repo,
-                reason: SkipReason::SchedulerLag,
+                reason: SkipReason::SchedulerLag {
+                    scheduled: scheduled_ts,
+                    actual: actual_ts,
+                },
                 at: now,
             });
         }

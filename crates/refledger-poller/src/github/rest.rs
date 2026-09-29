@@ -104,6 +104,10 @@ impl<T: Transport> Client<T> {
         self
     }
 
+    pub fn transport(&self) -> &T {
+        &self.transport
+    }
+
     pub fn token(&self) -> &AuthToken {
         &self.token
     }
@@ -253,6 +257,10 @@ impl PageBodyCache {
 pub struct ObjectCache {
     path: PathBuf,
     entries: BTreeMap<String, CacheEntry>,
+    /// Cap on first-seen peels this process (warm-up spread across runs).
+    peel_budget: Option<u32>,
+    /// New peels performed since open (cache misses that hit the network).
+    new_peels: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -290,9 +298,32 @@ impl ObjectCache {
         let mut cache = Self {
             path,
             entries: BTreeMap::new(),
+            peel_budget: None,
+            new_peels: 0,
         };
         cache.load()?;
         Ok(cache)
+    }
+
+    /// Limit newly dereferenced objects this run (0 = no new peels).
+    pub fn set_peel_budget(&mut self, budget: u32) {
+        self.peel_budget = Some(budget);
+        self.new_peels = 0;
+    }
+
+    pub fn new_peels(&self) -> u32 {
+        self.new_peels
+    }
+
+    /// Returns false when a new network peel would exceed the budget.
+    pub fn try_consume_peel_budget(&mut self) -> bool {
+        if let Some(budget) = self.peel_budget {
+            if self.new_peels >= budget {
+                return false;
+            }
+        }
+        self.new_peels += 1;
+        true
     }
 
     pub fn len(&self) -> usize {
@@ -551,7 +582,12 @@ fn resolve_repo_inner<T: Transport>(
         }
         ListResult::Refs { refs, etag } => {
             let mut observed = Vec::with_capacity(refs.len());
+            let mut peel_budget_hit = false;
             for raw in &refs {
+                if !objects.contains(&raw.object_sha) && !objects.try_consume_peel_budget() {
+                    peel_budget_hit = true;
+                    break;
+                }
                 let peel = peel_ref(&owner, &name, raw, objects, client)?;
                 let mut observed_ref = match peel.peeled {
                     Peeled::Commit {
@@ -593,6 +629,10 @@ fn resolve_repo_inner<T: Transport>(
                 let _ = &mut observed_ref;
                 observed.push(observed_ref);
             }
+
+            // Partial peel: omit ETag so the next run re-lists and continues
+            // warm-up from the content-addressed cache.
+            let etag = if peel_budget_hit { None } else { etag };
 
             return Ok(build_obs(
                 repo,

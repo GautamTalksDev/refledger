@@ -141,13 +141,13 @@ fn enrich_compare_charges_the_same_governor() {
 }
 
 #[test]
-fn steady_state_thirty_three_groups_is_about_thirty_three_points_per_minute() {
+fn steady_state_thirty_three_groups_is_about_one_per_interval_slice() {
     let epoch = odt(2026, Month::September, 28, 12, 0, 0, 0);
     let clock = FakeClock::new(epoch);
     let mut sched = Scheduler::m1(clock, &m1_shaped_groups(), epoch);
     let mut charges = 0u32;
+    // One fifth of the 300s interval: expect ~33/5 ≈ 7 listing charges.
     let end = epoch + Duration::seconds(60);
-    // Run one minute of wall time, completing each dispatch immediately.
     while sched.clock().now() < end {
         match sched.poll().unwrap() {
             Step::Dispatch { .. } => {
@@ -166,10 +166,9 @@ fn steady_state_thirty_three_groups_is_about_thirty_three_points_per_minute() {
             Step::Idle => break,
         }
     }
-    // One listing charge per group per minute in steady state.
     assert!(
-        (30..=36).contains(&charges),
-        "expected ~33 listing charges in 60s, got {charges}"
+        (5..=9).contains(&charges),
+        "expected ~7 listing charges in 60s of a 300s interval, got {charges}"
     );
     assert!(charges <= M1_POINTS_PER_MINUTE);
 }
@@ -208,16 +207,27 @@ proptest! {
 #[test]
 fn single_refusal_one_pause_and_n_skipped_never_n_independent_retries() {
     let epoch = odt(2026, Month::September, 28, 12, 0, 0, 0);
-    let clock = FakeClock::new(epoch + Duration::seconds(30));
+    let clock = FakeClock::new(epoch);
     let groups = groups_n(10);
     let mut sched = Scheduler::m1(clock, &groups, epoch);
-    // Make every group due.
-    for _ in 0..10 {
-        if let Step::Dispatch { .. } = sched.poll().unwrap() {
-            sched.complete_request();
+    // Advance through a full interval so every group has been due once.
+    let end = epoch + M1_INTERVAL + Duration::seconds(1);
+    while sched.clock().now() < end {
+        match sched.poll().unwrap() {
+            Step::Dispatch { .. } => sched.complete_request(),
+            Step::Wait { until } => {
+                let next = until.min(end);
+                if next <= sched.clock().now() {
+                    sched.clock().advance(Duration::milliseconds(10));
+                } else {
+                    sched.clock().set(next);
+                }
+            }
+            Step::Skip { .. } | Step::Idle => break,
         }
     }
-    sched.clock().set(epoch + Duration::seconds(90));
+    // Jump past every group's next_due so on_refusal covers all ten.
+    sched.clock().set(epoch + M1_INTERVAL * 2 + Duration::seconds(30));
     let skipped = sched.on_refusal(None).unwrap();
     assert_eq!(skipped.len(), 10);
     assert!(skipped.iter().all(|o| {
@@ -231,12 +241,13 @@ fn single_refusal_one_pause_and_n_skipped_never_n_independent_retries() {
 
     // During the pause, further poll() must Wait or re-emit only new dues —
     // never start N independent retries.
+    let pause_at = sched.clock().now();
     let mut dispatches = 0;
     for _ in 0..50 {
         match sched.poll().unwrap() {
             Step::Dispatch { .. } => dispatches += 1,
             Step::Wait { until } => {
-                assert!(until >= epoch + Duration::seconds(90) + MIN_REFUSAL_PAUSE);
+                assert!(until >= pause_at + MIN_REFUSAL_PAUSE);
                 break;
             }
             Step::Skip {
@@ -249,9 +260,7 @@ fn single_refusal_one_pause_and_n_skipped_never_n_independent_retries() {
     assert_eq!(dispatches, 0, "pause must not dispatch");
 
     // After pause, recovery is half-rate (cap ~150).
-    sched
-        .clock()
-        .set(epoch + Duration::seconds(90) + MIN_REFUSAL_PAUSE);
+    sched.clock().set(pause_at + MIN_REFUSAL_PAUSE);
     let mut charged = 0u32;
     let now = sched.clock().now();
     while sched.charge(RequestKind::RefListing) {
@@ -291,7 +300,7 @@ fn missed_window_records_scheduler_lag() {
     sched.clock().set(epoch + M1_INTERVAL * 3);
     match sched.poll().unwrap() {
         Step::Skip {
-            reason: SkipReason::SchedulerLag,
+            reason: SkipReason::SchedulerLag { .. },
             ..
         } => {}
         other => panic!("expected SchedulerLag, got {other:?}"),

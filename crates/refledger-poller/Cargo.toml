@@ -6,6 +6,10 @@ rust-version.workspace = true
 license.workspace = true
 description = "GitHub tag poller and observation model for Refledger"
 
+[[bin]]
+name = "refledger-poller"
+path = "src/bin/refledger-poller.rs"
+
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

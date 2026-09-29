@@ -66,16 +66,16 @@ The exit condition brought into this file was **500 actions for seven days**. De
 
 That is the number the seven-day run is for. It is not 500, and it is not whatever count a later poller process happens to have loaded. Changing it is a new dated section.
 
-## M1 exit condition (restated 2026-09-28)
+## M1 exit condition (restated 2026-09-29)
 
-Seven consecutive days on the VM (`docs/DEPLOYMENT.md`) with:
+Seven consecutive days on GitHub Actions (`docs/DEPLOYMENT.md`) at a **5 minute** cadence with:
 
 - chain verifies from genesis with `refledger-verify --strict`
 - 7 ObservationDigests, 7 signed heads, 7 Rekor log indexes that resolve
 - every canary action detected and correctly classified, p95 latency published in `docs/DETECTION.md`
 - every coverage gap present as an observation, none inferred
 
-A restart during the run does not reset the count if the chain and digests show no unrecorded gap. A day with an unrecorded gap does.
+Scheduled runs can be delayed or dropped under GitHub load. Every miss is recorded as a gap (`SchedulerLag` with scheduled vs actual start). A restart or missed cron does not reset the seven-day count if the chain and digests show no unrecorded gap. A day with an unrecorded gap does.
 
 ## Ranking honesty
 

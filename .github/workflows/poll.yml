@@ -1,0 +1,125 @@
+# Refledger poller — one sweep per scheduled GitHub Actions run.
+#
+# Inert until repository variable REFLEDGER_ENABLED is set to the string true.
+# Do not set that variable in this file; genesis is an operator flip.
+
+name: poll
+
+on:
+  schedule:
+    # Every 5 minutes at :02, :07, :12, … :57. Never :00 (busy minute).
+    - cron: "2-57/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: refledger-poller
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  poll:
+    name: once
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ vars.REFLEDGER_ENABLED == 'true' }}
+    steps:
+      - name: checkout main
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          path: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: prepare data worktree at ./state
+        working-directory: main
+        run: |
+          set -euo pipefail
+          STATE="${{ github.workspace }}/state"
+          mkdir -p "$STATE"
+          if git ls-remote --exit-code --heads origin data >/dev/null 2>&1; then
+            git fetch origin data
+            git worktree add --force "$STATE" origin/data
+          else
+            # First run: orphan data branch with empty store layout.
+            git checkout --orphan data
+            git rm -rf . >/dev/null 2>&1 || true
+            mkdir -p observations log
+            touch observations/.gitkeep log/.gitkeep
+            git add -A
+            git -c user.email=refledger-poller@users.noreply.github.com \
+                -c user.name=refledger-poller \
+                commit -m "data branch genesis"
+            git push -u origin HEAD:data
+            git checkout main
+            git worktree add --force "$STATE" origin/data
+          fi
+
+      - name: rust toolchain
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          toolchain: "1.98.1"
+
+      - name: restore poller binary cache
+        id: cache-poller
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: main/target/release/refledger-poller
+          key: poller-${{ runner.os }}-${{ hashFiles('main/crates/**', 'main/Cargo.lock') }}
+
+      - name: build poller on cache miss
+        if: steps.cache-poller.outputs.cache-hit != 'true'
+        working-directory: main
+        run: cargo build --release -p refledger-poller
+
+      - name: run once
+        id: once
+        working-directory: main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REFLEDGER_SIGNING_KEY: ${{ secrets.REFLEDGER_SIGNING_KEY }}
+          REFLEDGER_PUBLISH_CLONE: ${{ github.workspace }}/main
+          REFLEDGER_REQUIRE_ENABLED: "1"
+          REFLEDGER_ENABLED: ${{ vars.REFLEDGER_ENABLED }}
+        run: |
+          set -euo pipefail
+          # Infer scheduled slot locally; never echo secrets.
+          ACTUAL=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
+          export REFLEDGER_SCHEDULED_AT="${REFLEDGER_SCHEDULED_AT:-$ACTUAL}"
+          OUT=$(./target/release/refledger-poller once \
+            --data "${{ github.workspace }}/state" \
+            --watched population/watched.jsonl)
+          {
+            echo "commit_msg<<EOF"
+            echo "$OUT"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "$OUT"
+
+      - name: commit state to data branch
+        working-directory: ${{ github.workspace }}/state
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          MSG="${{ steps.once.outputs.commit_msg }}"
+          if [[ -z "$MSG" ]]; then
+            MSG="poll $(date -u +"%Y-%m-%dT%H:%M:%SZ") seq unknown"
+          fi
+          git config user.email refledger-poller@users.noreply.github.com
+          git config user.name refledger-poller
+          git add -A
+          if git diff --cached --quiet; then
+            echo "no state changes"
+            exit 0
+          fi
+          git commit -m "$MSG"
+          # Fast-forward only. Retry once. Never force.
+          if ! git push origin HEAD:data; then
+            git pull --ff-only origin data
+            git push origin HEAD:data || {
+              echo "FATAL: fast-forward push of data branch failed after retry"
+              exit 1
+            }
+          fi

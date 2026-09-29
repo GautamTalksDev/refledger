@@ -101,6 +101,8 @@ pub struct StoreOptions {
     /// Dedicated publishing clone for `data/log/` on the public repo.
     /// Defaults to [`NoopPublisher`].
     pub publisher: Box<dyn LedgerPublisher>,
+    /// When true, digests note that observation JSONL lives on the `data` branch.
+    pub observations_on_data_branch: bool,
 }
 
 impl StoreOptions {
@@ -113,6 +115,7 @@ impl StoreOptions {
             rekor: Box::new(HttpRekor::production()),
             archive: Box::new(NoopArchive),
             publisher: Box::new(NoopPublisher),
+            observations_on_data_branch: false,
         }
     }
 }
@@ -521,6 +524,7 @@ pub struct Store<V: Volume> {
     buffer: Vec<UnhashedEntry>,
     inflight: BTreeSet<u64>,
     next_ticket: u64,
+    observations_on_data_branch: bool,
 }
 
 impl Store<OsVolume> {
@@ -553,6 +557,7 @@ impl<V: Volume> Store<V> {
             buffer: Vec::new(),
             inflight: BTreeSet::new(),
             next_ticket: 1,
+            observations_on_data_branch: opts.observations_on_data_branch,
         })
     }
 
@@ -655,6 +660,99 @@ impl<V: Volume> Store<V> {
         Ok(written)
     }
 
+    /// Record schedule gaps for Actions `once` runs using [`SkipReason::SchedulerLag`].
+    ///
+    /// When the latest observation is older than `2 × interval`, one Skipped
+    /// observation is written per poll group with the real scheduled vs actual times.
+    pub fn record_schedule_gaps(
+        &mut self,
+        groups: &[PollGroup],
+        interval: Duration,
+        scheduled: OffsetDateTime,
+        actual: OffsetDateTime,
+    ) -> Result<Vec<Observation>, StoreError> {
+        let threshold = interval * 2;
+        let mut written = Vec::new();
+        let scheduled_ts = Timestamp::from_offset_datetime(scheduled)?;
+        let actual_ts = Timestamp::from_offset_datetime(actual)?;
+        for g in groups {
+            let Some(latest) = self.latest_observed_at(&g.repo)? else {
+                continue;
+            };
+            if actual - latest <= threshold {
+                continue;
+            }
+            let obs = skip_observation(
+                &g.repo,
+                actual,
+                SkipReason::SchedulerLag {
+                    scheduled: scheduled_ts,
+                    actual: actual_ts,
+                },
+            )?;
+            self.append_observation(&obs)?;
+            written.push(obs);
+        }
+        Ok(written)
+    }
+
+    /// Seal every finished UTC day since the last observation, in order.
+    /// Empty days receive a zero digest. Does not seal `now`'s calendar day.
+    pub fn seal_missed_days_before(
+        &mut self,
+        now: OffsetDateTime,
+    ) -> Result<Vec<Date>, StoreError> {
+        let today = now.date();
+        let Some(latest) = self.latest_any_observed_at()? else {
+            return Ok(Vec::new());
+        };
+        let mut day = latest.date();
+        let mut sealed_now = Vec::new();
+        while day < today {
+            if !self.sealed.contains(&day) {
+                self.seal_day(day)?;
+                sealed_now.push(day);
+            }
+            day = day
+                .next_day()
+                .ok_or_else(|| StoreError::Message(format!("no day after {day}")))?;
+        }
+        Ok(sealed_now)
+    }
+
+    /// Latest `observed_at` across all observation files, if any.
+    pub fn latest_any_observed_at(&self) -> Result<Option<OffsetDateTime>, StoreError> {
+        let mut latest: Option<OffsetDateTime> = None;
+        for path in self.vol.list("observations")? {
+            if !path.ends_with(".jsonl") || path.contains(".torn.") {
+                continue;
+            }
+            let bytes = self.vol.read(&path)?.unwrap_or_default();
+            for line in bytes.split(|b| *b == b'\n') {
+                if line.is_empty() {
+                    continue;
+                }
+                let obs: Observation = serde_json::from_slice(line)
+                    .map_err(|e| StoreError::Corrupt(format!("{path}: {e}")))?;
+                let at = obs.observed_at().as_offset_datetime();
+                latest = Some(match latest {
+                    Some(prev) if prev >= at => prev,
+                    _ => at,
+                });
+            }
+        }
+        Ok(latest)
+    }
+
+    /// Tip sequence of the hash chain (0-based), or 0 when empty.
+    pub fn tip_seq(&self) -> u64 {
+        self.chain
+            .entries()
+            .last()
+            .map(|e| e.seq)
+            .unwrap_or(0)
+    }
+
     /// Record a post-genesis contact-URL warning for the next digest note.
     pub fn record_identity_warning(&mut self, warning: &str) -> Result<(), StoreError> {
         let line = serde_json::json!({ "warning": warning });
@@ -664,6 +762,41 @@ impl<V: Volume> Store<V> {
             .append_record("log/identity_warnings.jsonl", &bytes)?;
         self.pending_identity_warnings.push(warning.to_owned());
         Ok(())
+    }
+
+    /// Target bindings (`name:sha`) from the latest Ok observation for `repo`.
+    pub fn latest_ok_targets(&self, repo: &str) -> Result<BTreeSet<String>, StoreError> {
+        let segment = crate::observation::RepoSlug::parse(repo)
+            .map_err(StoreError::Observation)?
+            .path_segment();
+        let suffix = format!("/{segment}.jsonl");
+        let mut best: Option<(OffsetDateTime, BTreeSet<String>)> = None;
+        for path in self.vol.list("observations")? {
+            if !path.ends_with(&suffix) || path.contains(".torn.") {
+                continue;
+            }
+            let bytes = self.vol.read(&path)?.unwrap_or_default();
+            for line in bytes.split(|b| *b == b'\n') {
+                if line.is_empty() {
+                    continue;
+                }
+                let obs: Observation = serde_json::from_slice(line)
+                    .map_err(|e| StoreError::Corrupt(format!("{path}: {e}")))?;
+                let Outcome::Ok { refs, .. } = obs.outcome() else {
+                    continue;
+                };
+                let at = obs.observed_at().as_offset_datetime();
+                if best.as_ref().is_some_and(|(prev, _)| *prev >= at) {
+                    continue;
+                }
+                let mut targets = BTreeSet::new();
+                for r in refs {
+                    targets.insert(format!("{}:{}", r.name(), r.target_sha()));
+                }
+                best = Some((at, targets));
+            }
+        }
+        Ok(best.map(|(_, t)| t).unwrap_or_default())
     }
 
     /// Latest `observed_at` for `repo` across all observation files, if any.
@@ -1084,6 +1217,12 @@ impl<V: Volume> Store<V> {
             let text = format_publish_failure_note(failure);
             if !mentioned.contains(&text) {
                 notes.push(text);
+            }
+        }
+        if self.observations_on_data_branch {
+            let text = "observation files published on the data branch";
+            if !mentioned.contains(text) {
+                notes.push(text.to_owned());
             }
         }
         notes.sort();

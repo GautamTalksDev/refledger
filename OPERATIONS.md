@@ -88,3 +88,14 @@ Two REST endpoints named in §3 are superseded for the reasons below. The §3 li
 - **Interval:** one tier, every poll group once per **60 seconds**, dues spread across the interval (never a burst at `:00`). Concurrency **4**. Global secondary-points governor capped at **300/minute** (one third of the documented 900 ceiling), applied to every request class.
 - **Calibration:** Mode A/B measurement is **not** an M1 gate. At tens of repositories the spend is under 4% of the secondary ceiling either way GitHub buckets. Calibration is required before the watched population passes ~200 (`docs/CALIBRATION.md`).
 - **Detection latency:** the published figure for §7 will live at `docs/DETECTION.md`, produced by joining `GautamTalksDev/canary`'s ledger against the chain.
+
+### 2026-09-29 — GitHub Actions host and 5 minute cadence
+
+§4's tier table is left as published; this entry supersedes the 60 second interval above for M1.
+
+- **Host:** scheduled GitHub Actions workflow (`.github/workflows/poll.yml`), not a long-lived VM. One sweep per run, then exit.
+- **Interval:** every **5 minutes** at `:02`, `:07`, `:12`, … `:57` (never `:00`). Cron can be delayed or dropped under load; every miss is recorded as a `SchedulerLag` gap with scheduled vs actual start times.
+- **Confirmation:** when a run sees a tag move, it re-polls that repository about 60 seconds later in the same job and records both observations.
+- **Budget:** at most 150 GitHub API requests per run; first-run tag peels capped so large sets warm across runs.
+- **Enable:** repository variable `REFLEDGER_ENABLED` must equal `true`. Default is off.
+- **Observations:** public on the `data` branch. Daily sealed digests still land on `main` under `data/log/` via `GITHUB_TOKEN`.
