@@ -150,3 +150,4 @@
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"70cfedf3823c1836e38e48c4f691655b5a1cfa652e6a4aa5b6671c4a14944162\"","stored_at":"2026-09-29T22:17:22.110Z"}
 {"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"eb59bd1e21ca28a957bb48e4c3f1278f5b7b454ca36f191be19af9edaa1d4c9b\"","stored_at":"2026-09-29T22:32:27.472Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"89ee6753e3b80ef4db0d116b3963205c236b9394b8dd0177d7fda26de7304cec\"","stored_at":"2026-09-29T23:07:21.746Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"ebf6d719fcd97c0978cd57d27af1f3d02ecb601aea4d183b97ae232c2d64842f\"","stored_at":"2026-09-29T23:37:27.353Z"}
