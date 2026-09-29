@@ -1,6 +1,6 @@
 # Calibration harness (not shipped)
 
-Standalone Rust binary. **Not** a Cargo workspace member — see the empty
+Standalone Rust binary. **Not** a Cargo workspace member  -  see the empty
 `[workspace]` table in `Cargo.toml`.
 
 Builds with:

@@ -1,4 +1,4 @@
-# Naming — Refledger
+# Naming  -  Refledger
 
 The product name is Refledger. Defaults that genesis will bake in:
 
@@ -20,4 +20,4 @@ name into signed material.
 | PyPI | `refledger` | reserve / publish placeholder |
 
 The archive and canary live under the personal account, not a GitHub org.
-`log_id` remains `"refledger"` — the product name is unchanged.
+`log_id` remains `"refledger"`  -  the product name is unchanged.

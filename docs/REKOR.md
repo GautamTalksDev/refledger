@@ -1,6 +1,6 @@
 # Rekor witnessing
 
-## Live confirmation — 2026-09-28
+## Live confirmation - 2026-09-28
 
 Submitted `hashedrekord` `0.0.1` to `https://rekor.sigstore.dev/api/v1/log/entries`
 with:

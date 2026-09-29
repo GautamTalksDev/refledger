@@ -5,7 +5,7 @@ Builds and expands `population/watched.jsonl`. **Not** a Cargo workspace member
 
 ## Hard rules
 
-- **No HTML scraping** of GitHub “Used by” / dependents pages — forbidden by
+- **No HTML scraping** of GitHub “Used by” / dependents pages  -  forbidden by
   `OPERATIONS.md`.
 - **Code search is not a ranking engine.** It can at best confirm candidates.
 

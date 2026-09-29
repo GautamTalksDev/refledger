@@ -8,9 +8,9 @@ Your workflow says this:
 uses: some-org/some-action@v4
 ```
 
-That looks like a version. It isn't. It's a pointer, and whoever controls that repository can aim it at completely different code tonight. Your workflow file won't change. Your diff won't show anything. The next run just executes whatever `v4` means now.
+That looks like a version. It is not. It is a pointer, and whoever controls that repository can aim it at completely different code tonight. Your workflow file will not change. Your diff will not show anything. The next run just executes whatever `v4` means now.
 
-And here's the part almost nobody knows: **when a tag moves, GitHub keeps no record of where it used to point.** The old value is simply gone.
+And here is the part almost nobody knows: **when a tag moves, GitHub keeps no record of where it used to point.** The old value is simply gone.
 
 Refledger writes it down. It watches GitHub Action tags, records what every tag pointed at and when it moved, and signs that record so nobody (including us) can quietly rewrite it later.
 
@@ -42,15 +42,15 @@ Both attacks share a shape: many old, stable, *exact* version tags moving togeth
 
 **A ledger.** Every movement becomes an entry in an append only, hash chained log. Each entry names the one before it. Change a single byte anywhere and the chain breaks at that exact spot.
 
-**A witness.** Once a day the day's ObservationDigest is signed with Ed25519, appended to `heads.jsonl`, submitted to [Sigstore's Rekor](https://docs.sigstore.dev/logging/overview/), and fast-forward pushed to the public repository so `git clone` carries the ledger. We can't rewrite yesterday even if we wanted to.
+**A witness.** Once a day the day's ObservationDigest is signed with Ed25519, appended to `heads.jsonl`, submitted to [Sigstore's Rekor](https://docs.sigstore.dev/logging/overview/), and fast-forward pushed to the public repository so `git clone` carries the ledger. We cannot rewrite yesterday even if we wanted to.
 
-**Reproducible.** Give anyone the raw observation archive and they can regenerate the entire ledger byte for byte. You don't have to trust our log. You can rebuild it.
+**Reproducible.** Give anyone the raw observations from the `data` branch and they can regenerate the entire ledger byte for byte. You do not have to trust our log. You can rebuild it.
 
 ## What Refledger is not
 
-It doesn't tell you an action is "safe" or "compromised". It tells you what moved, when we saw it, and what changed. Most tag movement is completely legitimate: GitHub's own guidance tells maintainers to move major version tags like `v4` forward with every release. Refledger records facts and leaves the verdicts to you.
+It does not tell you an action is "safe" or "compromised". It tells you what moved, when we saw it, and what changed. Most tag movement is completely legitimate: GitHub's own guidance tells maintainers to move major version tags like `v4` forward with every release. Refledger records facts and leaves the verdicts to you.
 
-It isn't the only tag monitor out there, either. Commercial tools watch tags privately for their customers. Refledger's point is different: the record is **public, free, and independently verifiable.**
+It is not the only tag monitor out there, either. Commercial tools watch tags privately for their customers. Refledger's point is different: the record is **public, free, and independently verifiable.**
 
 ---
 
@@ -58,18 +58,20 @@ It isn't the only tag monitor out there, either. Commercial tools watch tags pri
 
 | | |
 |---|---|
-| **Stage** | M1: the observatory is built and entering its first continuous run |
-| **Watching** | 38 action keys across 35 repositories, plus a canary we control |
-| **Poll rate** | every 5 minutes per repository on GitHub Actions |
+| **Stage** | M1: genesis landed; first continuous seven-day run; **code on `main` is frozen** (`FREEZE.md`) |
+| **Watching** | 38 action keys across 35 repositories, plus a canary we control (36 poll groups) |
+| **Poll rate** | every 5 minutes at `:02`, `:07`, … via Cloudflare Worker `refledger-clock` (Actions `schedule` as backup) |
 | **Public site** | coming at `refledger.gautamkhosla.com` |
 
 The population is deliberately small and honestly defined: a set of cited seed actions plus everything those actions pull in through their own `action.yml` files, at every tag. See [`population/METHOD.md`](population/METHOD.md).
 
 ---
 
-## Check our work in 60 seconds
+## Check our work
 
-You shouldn't have to take our word for anything. Clone the repo and run the verifier, pinning the published signing key (`docs/PUBLIC-KEY.md`):
+You should not have to take our word for anything. Pin the published signing key (`docs/PUBLIC-KEY.md`).
+
+**After the first daily seal** (00:00 UTC), a fresh clone of `main` has `data/log/` with day files and `heads.jsonl`:
 
 ```bash
 git clone https://github.com/GautamTalksDev/refledger.git
@@ -78,7 +80,9 @@ cargo run --locked --release -p refledger-verify -- data/log --strict \
   --pubkey b3e7e795c35dee53731e039b76da930fc54e87e2edc632449a8a2e55252e276a
 ```
 
-It replays the whole chain, checks every signed head, and tells you in five lines whether the record is intact. The verifier shares no code with the signer, on purpose. Full walkthrough in [`docs/VERIFY.md`](docs/VERIFY.md).
+**Before that seal**, `data/log/` is not on `main` yet. The in-progress chain is on the `data` branch under `log/`. See [`docs/VERIFY.md`](docs/VERIFY.md) for the day-file-only check (no `--strict` until heads exist).
+
+The verifier shares no code with the signer, on purpose.
 
 ---
 
@@ -87,12 +91,13 @@ It replays the whole chain, checks every signed head, and tells you in five line
 | Document | What's in it |
 |---|---|
 | [How it works](docs/HOW-IT-WORKS.md) | The full pipeline, from a single HTTP request to a signed, witnessed entry |
-| [Verify the ledger](docs/VERIFY.md) | Every check the verifier runs, and why it's built independently |
+| [Verify the ledger](docs/VERIFY.md) | Every check the verifier runs, and why it is built independently |
 | [Log format](docs/LOG-FORMAT.md) | The normative byte level specification |
 | [Rekor witnessing](docs/REKOR.md) | How daily heads are submitted to Sigstore's public log |
 | [Crawler policy](OPERATIONS.md) | What we request from GitHub, how often, and how we back off |
 | [Security](SECURITY.md) | How to report a bug, and what we do when we spot something live |
 | [Kill test](KILL-TEST.md) | The public, pre registered condition under which this project shuts down |
+| [Freeze](FREEZE.md) | Code freeze on `main` for the seven-day run |
 
 ---
 
@@ -103,13 +108,15 @@ crates/
   refledger-log/      entries, canonical JSON, hash chain, signing
   refledger-verify/   the independent verifier (shares no code with the above)
   refledger-poller/   observe, resolve, classify, derive, store, schedule
+clock/                Cloudflare Worker that dispatches poll.yml
 tests/vectors/        conformance vectors both implementations must reproduce
 population/           what we watch, and exactly why
-data/log/             the ledger itself, one file per UTC day, plus signed heads
-docs/                 everything you'd want to read
+data/log/             sealed ledger on main (after first seal); day files + heads
+docs/                 everything you would want to read
 ```
 
-Canary (deliberate tag moves for detection measurement): [GautamTalksDev/canary](https://github.com/GautamTalksDev/canary).
+Live observations and the in-progress day log are on the **`data` branch** (directories `observations/` and `log/`). Canary (deliberate tag moves for detection measurement): [GautamTalksDev/canary](https://github.com/GautamTalksDev/canary).
+
 ## License
 
 Code is Apache 2.0. See [`LICENSE-APACHE`](LICENSE-APACHE).

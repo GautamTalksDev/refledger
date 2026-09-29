@@ -20,5 +20,5 @@ The freeze exists so the running poller, log format, and signatures stay the ins
 
 Seven full days after the first clean seal on `main` (operator records the start wall-clock here when the run begins):
 
-- **Run start (UTC):** _TBD — first clean seal_
-- **Freeze lifts (UTC):** _TBD — start + 7 days_
+- **Run start (UTC):** _TBD (first clean seal)_
+- **Freeze lifts (UTC):** _TBD (start + 7 days)_

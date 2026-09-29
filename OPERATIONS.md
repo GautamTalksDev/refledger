@@ -1,10 +1,10 @@
 # Operations
 
-This document is the public crawler policy for Refledger. It is published before the first request is made. It is a commitment to third parties — repository owners, GitHub, and anyone relying on our data — not an internal runbook.
+This document is the public crawler policy for Refledger. It is published before the first request is made. It is a commitment to third parties (repository owners, GitHub, and anyone relying on our data), not an internal runbook.
 
 ## 1. What this service does
 
-Refledger polls public GitHub repositories for git tag refs and records what each ref pointed at and when, using documented public APIs. The purpose is a durable, independently verifiable log of tag identity over time — not private repository access, not account harassment, and not scraping of non-API surfaces.
+Refledger polls public GitHub repositories for git tag refs and records what each ref pointed at and when, using documented public APIs. The purpose is a durable, independently verifiable log of tag identity over time: not private repository access, not account harassment, and not scraping of non-API surfaces.
 
 ## 2. Identification
 
@@ -61,8 +61,8 @@ We can only know a tag moved between two observations, never the exact moment. E
 
 ## 8. Contact and correction
 
-- **Security contact:** security@\<domain\> (or the address published on the contact page at `<domain>`)
-- **Data-correction contact:** corrections@\<domain\> (or the address published on the contact page at `<domain>`)
+- **Security contact:** see [`SECURITY.md`](SECURITY.md) (GitHub private vulnerability advisory preferred).
+- **Data-correction contact:** open an issue on `GautamTalksDev/refledger` tagged for data correction, or use the address published on the contact page when `refledger.dev` is live.
 
 A maintainer who believes our data is wrong will get an investigation and, if we were wrong, a correction entry appended to the log.
 
@@ -70,18 +70,18 @@ A maintainer who believes our data is wrong will get an investigation and, if we
 
 This policy changes only via a dated entry appended here. Prior text is not rewritten in place.
 
-### 2026-09-21 — Initial publication
+### 2026-09-21 - Initial publication
 
 Initial publication of this operations policy, before the first crawler request.
 
-### 2026-09-28 — Tag listing and commit endpoints
+### 2026-09-28 - Tag listing and commit endpoints
 
 Two REST endpoints named in §3 are superseded for the reasons below. The §3 list is left as published; this entry is the amendment.
 
 - **Tag listing:** `GET /repos/{owner}/{repo}/git/refs/tags` is replaced by `GET /repos/{owner}/{repo}/git/matching-refs/tags`. Live check (2026-09-28) against a tagless public repository (`octocat/Spoon-Knife`) and a nonexistent repository showed that `/git/refs/tags` returns `404` for both, so a tagless repo would be indistinguishable from a deleted one. `/git/matching-refs/tags` returns `200` with `[]` for the tagless case and `404` for the missing case.
 - **Commit → tree:** `GET /repos/{owner}/{repo}/commits/{sha}` is replaced by `GET /repos/{owner}/{repo}/git/commits/{sha}`. The git-data endpoint returns the tree oid without the full file list and stats the poller does not need.
 
-### 2026-09-28 — M1 polling rate and detection latency path
+### 2026-09-28 - M1 polling rate and detection latency path
 
 §4's tier table is left as published; this entry is the amendment for M1.
 
@@ -89,7 +89,7 @@ Two REST endpoints named in §3 are superseded for the reasons below. The §3 li
 - **Calibration:** Mode A/B measurement is **not** an M1 gate. At tens of repositories the spend is under 4% of the secondary ceiling either way GitHub buckets. Calibration is required before the watched population passes ~200 (`docs/CALIBRATION.md`).
 - **Detection latency:** the published figure for §7 will live at `docs/DETECTION.md`, produced by joining `GautamTalksDev/canary`'s ledger against the chain.
 
-### 2026-09-29 — GitHub Actions host and 5 minute cadence
+### 2026-09-29 - GitHub Actions host and 5 minute cadence
 
 §4's tier table is left as published; this entry supersedes the 60 second interval above for M1.
 
@@ -99,3 +99,13 @@ Two REST endpoints named in §3 are superseded for the reasons below. The §3 li
 - **Budget:** at most 150 GitHub API requests per run; first-run tag peels capped so large sets warm across runs.
 - **Enable:** repository variable `REFLEDGER_ENABLED` must equal `true`. Default is off.
 - **Observations:** public on the `data` branch. Daily sealed digests still land on `main` under `data/log/` via `GITHUB_TOKEN`.
+
+### 2026-09-29 - Clock, read PAT, ledger Environment, two-phase budget
+
+Amends the Actions-host entry above to match the system as it runs after genesis.
+
+- **Primary clock:** Cloudflare Worker `refledger-clock` (`clock/`) POSTs `workflow_dispatch` for `poll.yml` on the same `:02`, `:07`, … cadence. The workflow `schedule` remains backup only.
+- **Reads vs pushes:** API reads use repository secret `REFLEDGER_GITHUB_TOKEN` (fine-grained PAT, public-repo read). Pushes use the job `GITHUB_TOKEN`. The signing key is Environment secret `REFLEDGER_SIGNING_KEY` on Environment `ledger` (main only), never a repository-level secret.
+- **Budget:** per-run cap raised to **300** requests and **120** new peels; secondary governor still **300** points/minute. Each run is **two-phase**: phase 1 does conditional repo metadata + tag listing for every poll group; phase 2 spends the remainder on peels and `action.yml` / compare. Detection is never starved by warm-up.
+- **Population:** 36 poll groups (35 ecosystem repositories plus the canary).
+- **Freeze:** code on `main` is frozen for seven days from the first clean seal (`FREEZE.md`). Docs may still change.

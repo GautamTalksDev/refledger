@@ -5,9 +5,9 @@ Measurement of GitHub's undocumented REST secondary rate-limit bucketing.
 **Question:** does the ~900 points/minute REST secondary limit bucket per route
 **template** (`/repos/{owner}/{repo}/git/refs/tags`) or per **full URL**?
 
-## Status: deferred past M1 — gate is population growth, not launch
+## Status: deferred past M1 - gate is population growth, not launch
 
-### 2026-09-28 — gate moved
+### 2026-09-28 - gate moved
 
 At the amended M1 population (tens of repositories, one poll every 5 minutes with
 REST+ETag on GitHub Actions), secondary spend is a small fraction of the
@@ -20,7 +20,7 @@ concurrency 4, global 300 points/minute, 300 requests and 120 new peels per
 run). Archive days cannot be recovered; waiting on this measurement costs days
 that the log can never backfill.
 
-### 2026-09-29 — Actions token rotation and ETags
+### 2026-09-29 - Actions token rotation and ETags
 
 Each Actions run authenticates with a fresh `GITHUB_TOKEN`. GitHub may treat
 validators as bound to the token that stored them, so a 304 rate measured on a
@@ -33,7 +33,7 @@ repositories and a 5 minute cadence that is about **420 listing requests per
 hour**, still under the 1,000/hour `GITHUB_TOKEN` budget even before 304s.
 Record live 304/200 ratios here after genesis; do not invent them.
 
-### 2026-09-29 — stable read PAT and raised per-run caps
+### 2026-09-29 - stable read PAT and raised per-run caps
 
 API reads now use `REFLEDGER_GITHUB_TOKEN` (fine-grained PAT, public-repo read).
 `GITHUB_TOKEN` is push-only (data branch + ledger publish). A stable token keeps
@@ -54,7 +54,7 @@ At 300 requests/run the primary budget is the binding constraint only if almost
 every call is a 200. With a surviving ETag and a quiet population, most polls
 are 304 and the peel budget dominates warm-up time instead.
 
-### 2026-09-29 — two-phase budget (detection before backfill)
+### 2026-09-29 - two-phase budget (detection before backfill)
 
 Each `once` run is split:
 
@@ -105,9 +105,9 @@ cargo run --manifest-path tools/calibrate/Cargo.toml --release -- \
 
 The instrument:
 
-1. Mode A — conditional `GET /repos/{owner}/{repo}/git/refs/tags` across N
+1. Mode A - conditional `GET /repos/{owner}/{repo}/git/refs/tags` across N
    different repos, ramping 100→1200 rpm.
-2. Mode B — the same volume against one repo repeatedly.
+2. Mode B - the same volume against one repo repeatedly.
 3. Records timestamp, status, `x-ratelimit-*`, `retry-after`, latency for every
    request.
 4. Honours `Retry-After` without exception and **stops the ramp on the first
