@@ -74,7 +74,7 @@ You shouldn't have to take our word for anything. Clone the repo and run the ver
 ```bash
 git clone https://github.com/GautamTalksDev/refledger.git
 cd refledger
-cargo run --release -p refledger-verify -- data/log --strict \
+cargo run --locked --release -p refledger-verify -- data/log --strict \
   --pubkey b3e7e795c35dee53731e039b76da930fc54e87e2edc632449a8a2e55252e276a
 ```
 

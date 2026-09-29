@@ -5,7 +5,7 @@ The verifier is an independent implementation of [`LOG-FORMAT.md`](LOG-FORMAT.md
 ## Quick check
 
 ```bash
-cargo run --release -p refledger-verify -- data/log --strict \
+cargo run --locked --release -p refledger-verify -- data/log --strict \
   --pubkey b3e7e795c35dee53731e039b76da930fc54e87e2edc632449a8a2e55252e276a
 ```
 

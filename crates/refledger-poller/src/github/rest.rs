@@ -54,11 +54,32 @@ const PER_PAGE: u32 = 100;
 const REPO_META_QUERY: &str = "";
 
 /// One outbound REST request as the resolver sees it.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// `Debug` redacts `authorization` (and any header whose name matches) so a
+/// failed-send `{:?}` log cannot leak a bearer token.
+#[derive(Clone, PartialEq, Eq)]
 pub struct RestRequest {
     pub method: &'static str,
     pub target: String,
     pub headers: BTreeMap<String, String>,
+}
+
+impl std::fmt::Debug for RestRequest {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut headers = BTreeMap::new();
+        for (k, v) in &self.headers {
+            if k.eq_ignore_ascii_case("authorization") {
+                headers.insert(k.clone(), "Bearer [redacted]".to_owned());
+            } else {
+                headers.insert(k.clone(), v.clone());
+            }
+        }
+        f.debug_struct("RestRequest")
+            .field("method", &self.method)
+            .field("target", &self.target)
+            .field("headers", &headers)
+            .finish()
+    }
 }
 
 /// One REST response. `body` is `None` on 304 and similar.

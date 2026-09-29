@@ -1,4 +1,4 @@
-# Refledger poller — one sweep per scheduled GitHub Actions run.
+# Refledger poller: one sweep per clock or scheduled GitHub Actions run.
 #
 # Primary trigger: Cloudflare Worker clock/ (workflow_dispatch).
 # schedule: below remains as backup. Concurrency group prevents overlap.
@@ -18,14 +18,20 @@ concurrency:
   group: refledger-poller
   cancel-in-progress: false
 
+# Least privilege at the workflow root. The poll job elevates for pushes.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   poll:
     name: once
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    # Signing key lives only in Environment "ledger" (main branch only).
+    environment: ledger
+    # contents: write is required to push the data branch and seal ledger commits.
+    permissions:
+      contents: write
     if: ${{ vars.REFLEDGER_ENABLED == 'true' }}
     steps:
       - name: checkout main
@@ -33,14 +39,17 @@ jobs:
         with:
           path: main
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
 
       - name: prepare data worktree at ./state
         working-directory: main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          STATE="${{ github.workspace }}/state"
+          STATE="${GITHUB_WORKSPACE}/state"
           mkdir -p "$STATE"
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           if git ls-remote --exit-code --heads origin data >/dev/null 2>&1; then
             git fetch origin data
             git worktree add --force "$STATE" origin/data
@@ -87,19 +96,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REFLEDGER_GITHUB_TOKEN: ${{ secrets.REFLEDGER_GITHUB_TOKEN }}
+          # Environment secret on "ledger" only; never a repository-level secret.
           REFLEDGER_SIGNING_KEY: ${{ secrets.REFLEDGER_SIGNING_KEY }}
           REFLEDGER_PUBLISH_CLONE: ${{ github.workspace }}/main
           REFLEDGER_REQUIRE_ENABLED: "1"
           REFLEDGER_ENABLED: ${{ vars.REFLEDGER_ENABLED }}
           # Concurrency group is the writer lock on Actions.
           REFLEDGER_SKIP_STORE_LOCK: "1"
+          DATA_DIR: ${{ github.workspace }}/state
         run: |
           set -euo pipefail
           # Infer scheduled slot locally; never echo secrets.
           ACTUAL=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
           export REFLEDGER_SCHEDULED_AT="${REFLEDGER_SCHEDULED_AT:-$ACTUAL}"
           OUT=$(./target/release/refledger-poller once \
-            --data "${{ github.workspace }}/state" \
+            --data "${DATA_DIR}" \
             --watched population/watched.jsonl)
           {
             echo "commit_msg<<EOF"
@@ -112,9 +123,13 @@ jobs:
         working-directory: ${{ github.workspace }}/state
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Pass via env so the value is not interpolated into the script body
+          # (zizmor template-injection). Commit message is our own poller output.
+          COMMIT_MSG: ${{ steps.once.outputs.commit_msg }}
         run: |
           set -euo pipefail
-          MSG="${{ steps.once.outputs.commit_msg }}"
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          MSG="${COMMIT_MSG:-}"
           if [[ -z "$MSG" ]]; then
             MSG="poll $(date -u +"%Y-%m-%dT%H:%M:%SZ") seq unknown"
           fi

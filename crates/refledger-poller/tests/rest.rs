@@ -890,6 +890,48 @@ fn matching_refs_503_is_api_server() {
 }
 
 #[test]
+fn failed_request_debug_never_contains_authorization_value() {
+    // RestRequest carries the live bearer in headers. Debug must redact it so a
+    // panicked send / Err(format!("{:?}", req)) cannot leak REFLEDGER_GITHUB_TOKEN.
+    let secret = "ghs_LIVE_TOKEN_MUST_NOT_APPEAR_IN_LOGS_9f3a2b";
+    let mut headers = BTreeMap::new();
+    headers.insert("authorization".into(), format!("Bearer {secret}"));
+    headers.insert("accept".into(), "application/vnd.github+json".into());
+    let req = RestRequest {
+        method: "GET",
+        target: "/repos/acme/widgets".into(),
+        headers,
+    };
+    let rendered = format!("{req:?}");
+    assert!(
+        !rendered.contains(secret),
+        "RestRequest Debug leaked the token: {rendered}"
+    );
+    assert!(
+        !rendered.contains(&format!("Bearer {secret}")),
+        "RestRequest Debug leaked Bearer value: {rendered}"
+    );
+    assert!(
+        rendered.contains("Bearer [redacted]"),
+        "expected redacted marker, got {rendered}"
+    );
+
+    let token = AuthToken::new(secret).unwrap();
+    let token_dbg = format!("{token:?}");
+    assert!(
+        !token_dbg.contains(secret),
+        "AuthToken Debug leaked: {token_dbg}"
+    );
+
+    // Simulated failed-send log line (what a careless Err(format!("{:?}", req)) would look like).
+    let fake_log = format!("transport failed for {req:?}");
+    assert!(!fake_log.contains(secret));
+    assert!(!fake_log
+        .to_ascii_lowercase()
+        .contains(&secret.to_ascii_lowercase()));
+}
+
+#[test]
 fn transport_err_is_network_with_status_zero() {
     #[derive(Clone)]
     struct Boom;
