@@ -137,3 +137,4 @@
 {"repo":"tj-actions/glob","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"34c227e7bcd8019971111a0a82729b39ecc5b5ac6538a390f1afe93013efb0a5\"","stored_at":"2026-09-29T19:45:51.152Z"}
 {"repo":"tj-actions/json2file","template":"/repos/{owner}/{repo}","query":"","etag":"\"db65a3685c5b0ea2f39060eaa894a1712c98dcfd496abfe5908e114b698ce0a2\"","stored_at":"2026-09-29T19:45:51.152Z"}
 {"repo":"tj-actions/json2file","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"03918e01079bbd1b92008762b45b690be2073092678904d28b72e949038d548a\"","stored_at":"2026-09-29T19:45:51.152Z"}
+{"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"e221b6f9065a608557b9bfdcf6175efe7e925aecef279de61719238aa50a3164\"","stored_at":"2026-09-29T20:17:21.959Z"}
