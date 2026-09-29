@@ -407,7 +407,7 @@ pub fn earliest_for_key<'a>(
 
 /// Commit that fixed per-group genesis skipping subdirectory keys.
 /// Filled when this change lands on `main`.
-pub const PER_KEY_ADDED_FIX_COMMIT: &str = "PENDING_PER_KEY_ADDED";
+pub const PER_KEY_ADDED_FIX_COMMIT: &str = "b896a50";
 
 /// Deterministic Added entries for every watched key that still lacks one.
 ///
