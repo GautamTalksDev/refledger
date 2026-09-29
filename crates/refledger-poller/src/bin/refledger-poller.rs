@@ -1,10 +1,10 @@
-//! `refledger-poller once` — one GitHub Actions sweep, then exit.
+//! `refledger-poller` — once sweeps and signing-key generation.
 
 use std::env;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use refledger_log::{load_signing_key, KeySource};
+use refledger_log::{generate_signing_key_file, load_signing_key, KeySource};
 use refledger_poller::once::{run_once, scheduled_time_from_env, OnceArgs, ENABLED_VAR};
 use refledger_poller::publish::GitLedgerPublisher;
 use refledger_poller::store::StoreOptions;
@@ -12,12 +12,73 @@ use time::OffsetDateTime;
 
 fn main() -> ExitCode {
     let mut args = env::args().skip(1).collect::<Vec<_>>();
-    if args.first().map(String::as_str) != Some("once") {
-        eprintln!("usage: refledger-poller once --data <dir> [--watched <path>]");
+    let Some(cmd) = args.first().map(String::as_str) else {
+        usage();
         return ExitCode::from(2);
+    };
+    match cmd {
+        "once" => {
+            args.remove(0);
+            cmd_once(&args)
+        }
+        "keygen" => {
+            args.remove(0);
+            cmd_keygen(&args)
+        }
+        "-h" | "--help" | "help" => {
+            usage();
+            ExitCode::SUCCESS
+        }
+        other => {
+            eprintln!("unknown subcommand: {other}");
+            usage();
+            ExitCode::from(2)
+        }
     }
-    args.remove(0);
+}
 
+fn usage() {
+    eprintln!(
+        "usage:\n  refledger-poller once --data <dir> [--watched <path>]\n  refledger-poller keygen --out <path>"
+    );
+}
+
+fn cmd_keygen(args: &[String]) -> ExitCode {
+    let mut out: Option<PathBuf> = None;
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--out" => {
+                i += 1;
+                out = args.get(i).map(PathBuf::from);
+            }
+            other => {
+                eprintln!("unknown argument: {other}");
+                return ExitCode::from(2);
+            }
+        }
+        i += 1;
+    }
+    let Some(out) = out else {
+        eprintln!("--out <path> is required");
+        return ExitCode::from(2);
+    };
+
+    match generate_signing_key_file(&out) {
+        Ok(pubk) => {
+            // Public material only. Never print the seed.
+            println!("public_key={}", pubk.public_key_hex);
+            println!("key_id={}", pubk.key_id);
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("keygen failed: {e}");
+            ExitCode::from(1)
+        }
+    }
+}
+
+fn cmd_once(args: &[String]) -> ExitCode {
     let mut data_dir: Option<PathBuf> = None;
     let mut watched: Option<PathBuf> = None;
     let mut i = 0;

@@ -2,6 +2,9 @@
 **/target/
 /data/
 *.age
+*.key
+*.seed
+refledger-signing*
 .env
 .env.*
 !.env.example

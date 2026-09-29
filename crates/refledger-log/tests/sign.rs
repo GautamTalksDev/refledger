@@ -2,9 +2,11 @@
 
 use refledger_log::entry::{HashRef, Timestamp};
 use refledger_log::sign::{
-    load_signing_key, sign_head, verify_head, Head, KeySource, SignError, SigningKey,
+    generate_signing_key_file, key_id, load_signing_key, sign_head, verify_head, Head, KeySource,
+    SignError, SigningKey,
 };
-use tempfile::NamedTempFile;
+use std::os::unix::fs::PermissionsExt;
+use tempfile::{NamedTempFile, TempDir};
 use time::{Month, OffsetDateTime, PrimitiveDateTime, Time};
 
 fn odt(
@@ -129,5 +131,42 @@ fn signing_key_debug_does_not_contain_secret_hex() {
     assert!(
         debug.contains("REDACTED") || debug.contains("SigningKey"),
         "expected a redacted Debug representation; got {debug}"
+    );
+}
+
+#[test]
+fn keygen_writes_0600_seed_file_and_returns_only_public_material() {
+    let dir = TempDir::new().unwrap();
+    let path = dir.path().join("signing.key");
+    let pubk = generate_signing_key_file(&path).expect("keygen");
+
+    let meta = std::fs::metadata(&path).expect("stat");
+    assert_eq!(
+        meta.permissions().mode() & 0o777,
+        0o600,
+        "seed file must be mode 0600"
+    );
+
+    let seed = std::fs::read_to_string(&path).expect("read seed");
+    let seed = seed.trim();
+    assert_eq!(seed.len(), 64);
+    assert!(seed.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f')));
+
+    // Public output never includes the seed.
+    assert!(!pubk.public_key_hex.contains(seed));
+    assert!(!pubk.key_id.contains(seed));
+    assert_eq!(pubk.public_key_hex.len(), 64);
+    assert!(pubk.key_id.starts_with("sha256:"));
+
+    let loaded = load_signing_key(KeySource::File(path.clone())).expect("load");
+    let pk = hex::encode(loaded.verifying_key_bytes());
+    assert_eq!(pk, pubk.public_key_hex);
+    assert_eq!(key_id(&loaded.verifying_key_bytes()), pubk.key_id);
+
+    // Compatible with the 64-hex seed format key-backup.sh expects.
+    let again = generate_signing_key_file(&path);
+    assert!(
+        matches!(again, Err(SignError::AlreadyExists(_))),
+        "overwrite must be refused: {again:?}"
     );
 }

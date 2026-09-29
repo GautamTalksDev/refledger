@@ -5,7 +5,8 @@
 
 use std::fmt;
 use std::fs;
-use std::path::PathBuf;
+use std::io::Write;
+use std::path::{Path, PathBuf};
 
 use ed25519_dalek::{Signature, Signer, Verifier, VerifyingKey};
 use ed25519_dalek::{SigningKey as DalekSigningKey, SECRET_KEY_LENGTH};
@@ -56,6 +57,10 @@ pub enum SignError {
     InvalidPublicKey,
     #[error("signature verification failed")]
     VerificationFailed,
+    #[error("refusing to overwrite existing key file: {0}")]
+    AlreadyExists(String),
+    #[error("failed to draw OS entropy: {0}")]
+    Entropy(String),
 }
 
 /// Where to load a signing secret from. Never a compiled-in constant.
@@ -133,6 +138,76 @@ fn parse_hex_seed(raw: &str) -> Result<SigningKey, SignError> {
 /// This is not a hash of the hex encoding or of the PEM form.
 pub fn key_id(public_key: &[u8; 32]) -> String {
     format!("sha256:{}", hex::encode(Sha256::digest(public_key)))
+}
+
+/// Public half printed by keygen. Never contains secret material.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GeneratedPublicKey {
+    /// 64 lowercase hex characters (raw 32-byte Ed25519 public key).
+    pub public_key_hex: String,
+    /// `sha256:` + SHA-256 of the raw public key bytes.
+    pub key_id: String,
+}
+
+/// Generate an Ed25519 seed from the OS random source, write it to `path`
+/// (64 lowercase hex chars + newline, mode `0600`), and return only the public
+/// half. Refuses to overwrite an existing file.
+pub fn generate_signing_key_file(path: &Path) -> Result<GeneratedPublicKey, SignError> {
+    if path.exists() {
+        return Err(SignError::AlreadyExists(path.display().to_string()));
+    }
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent).map_err(|e| SignError::Io(e.to_string()))?;
+        }
+    }
+
+    let mut seed = [0u8; SECRET_KEY_LENGTH];
+    getrandom::fill(&mut seed).map_err(|e| SignError::Entropy(e.to_string()))?;
+    let key = SigningKey::from_seed_bytes(&seed)?;
+    let public = key.verifying_key_bytes();
+    let public_key_hex = hex::encode(public);
+    let kid = key_id(&public);
+
+    let mut hex_seed = hex::encode(seed);
+    seed.zeroize();
+
+    write_seed_file_0600(path, &hex_seed)?;
+    hex_seed.zeroize();
+
+    Ok(GeneratedPublicKey {
+        public_key_hex,
+        key_id: kid,
+    })
+}
+
+fn write_seed_file_0600(path: &Path, hex_seed: &str) -> Result<(), SignError> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .mode(0o600)
+            .open(path)
+            .map_err(|e| {
+                if e.kind() == std::io::ErrorKind::AlreadyExists {
+                    SignError::AlreadyExists(path.display().to_string())
+                } else {
+                    SignError::Io(e.to_string())
+                }
+            })?;
+        writeln!(file, "{hex_seed}").map_err(|e| SignError::Io(e.to_string()))?;
+        file.sync_all().map_err(|e| SignError::Io(e.to_string()))?;
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = hex_seed;
+        return Err(SignError::Io(
+            "signing key generation requires a Unix filesystem for mode 0600".into(),
+        ));
+    }
+    Ok(())
 }
 
 /// PKIX `SubjectPublicKeyInfo` PEM for an Ed25519 public key.

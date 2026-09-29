@@ -16,6 +16,6 @@ pub use entry::{
     PopulationReason, RefForm, RefType, Severity, Sha40, Timestamp, FORMAT_VERSION,
 };
 pub use sign::{
-    key_id, load_signing_key, public_key_pkix_pem, sign_ed25519ph, sign_head, verify_head, Head,
-    KeySource, SignError, SignedHead, SigningKey,
+    generate_signing_key_file, key_id, load_signing_key, public_key_pkix_pem, sign_ed25519ph,
+    sign_head, verify_head, GeneratedPublicKey, Head, KeySource, SignError, SignedHead, SigningKey,
 };

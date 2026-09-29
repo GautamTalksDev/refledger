@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # Encrypt the Refledger signing seed for offline backup (docs/KEY-BACKUP.md).
+#
+# The key file is the 64-char lowercase hex seed written by
+# `refledger-poller keygen --out <path>` (optional trailing newline).
 set -euo pipefail
 
 usage() {
