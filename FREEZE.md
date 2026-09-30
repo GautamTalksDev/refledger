@@ -14,7 +14,7 @@ The freeze exists so the running poller, log format, and signatures stay the ins
 
 | Date (UTC) | Commit | Why |
 | --- | --- | --- |
-| 2026-09-30 | 231b93e (+ follow-up) | Pre-freeze: first seal published on `data` and was signed/witnessed, but `main` publish failed because `.gitignore` ignored `data/`, then again because untracked parent `data/` was refused as outside `data/log/`. Narrowed ignore rules, allow `data/` parent during publish, retry pending publishes every poll, and CI-guard `data/log`. Freeze had not started (starts at first clean seal on `main`). |
+| 2026-09-30 | 231b93e, 251fcdc | Pre-freeze: first seal published on `data` and was signed/witnessed, but `main` publish failed because `.gitignore` ignored `data/`, then again because untracked parent `data/` was refused as outside `data/log/`. Narrowed ignore rules, allow `data/` parent during publish, retry pending publishes every poll, and CI-guard `data/log`. Freeze had not started (starts at first clean seal on `main`). |
 
 ## Ends
 
