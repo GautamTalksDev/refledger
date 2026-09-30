@@ -50,3 +50,5 @@
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/attest-build-provenance","archived":false}
 {"repo":"aws-actions/amazon-ecr-login","archived":false}
+{"repo":"actions/cache","archived":false}
+{"repo":"aws-actions/amazon-ecr-login","archived":false}
