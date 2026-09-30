@@ -114,3 +114,4 @@
 {"repo":"github/super-linter","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/setup-python","archived":false}
+{"repo":"actions/attest-build-provenance","archived":false}
