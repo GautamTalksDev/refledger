@@ -156,3 +156,4 @@
 {"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"7bd90ca782c5ff010747906af97627bfebdb25465a6f92078f75ad5999800926\"","stored_at":"2026-09-30T00:07:25.614Z"}
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"90e15f8d0c0477b15b17710bcf1e9a7de050a022092dd45bc99cee5586b824ce\"","stored_at":"2026-09-30T00:07:25.614Z"}
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"213d2488c22cb108a19acc2c527ad5e64ff0e3bc4eeee603db7562e73c06848f\"","stored_at":"2026-09-30T00:17:23.477Z"}
+{"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"3afc52963fcdc425c65b11357303694364e04c08032b8e74ba765a63f3d2c05f\"","stored_at":"2026-09-30T00:27:24.467Z"}
