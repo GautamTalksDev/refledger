@@ -161,3 +161,5 @@
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"a34b55f2243b661c1bb457fede2b95b6f7bd1102bf3f7f8635fae822a2018b74\"","stored_at":"2026-09-30T00:42:23.840Z"}
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"9e53a8eb338ca52201465ff4a90365d68c2e14a82a293534c96fba4f2b17bf55\"","stored_at":"2026-09-30T00:47:27.201Z"}
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"194dba62f7aeff7a732923bdf72dbbcca0b1bc3174047e08ac7f1a4ed8f2a65c\"","stored_at":"2026-09-30T00:52:22.882Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"b51e8c52828b879ce9585ee79f437f6d9deaaa682972352755fb1b593051241b\"","stored_at":"2026-09-30T00:57:26.602Z"}
+{"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"d88d0c5c1e8f24b3e1a362c73baaa112eab1bb082a96b43a39b6666f7589939e\"","stored_at":"2026-09-30T00:57:26.602Z"}
