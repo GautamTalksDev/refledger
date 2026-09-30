@@ -8,6 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **2026-09-30 - once never derived moves (gap-no-derive-2026-09-29).** The
+  Actions `once` runner stored observations but never ran
+  classify → enrich → derive → append, so the chain recorded no
+  Move/Deletion/Recreation since genesis (tip stayed at population Adds).
+  Archive replay found **0** ecosystem tag moves in that window; canary
+  patterns 3 and 4 were not observationally recoverable. Forward-only fix:
+  wire the same helper the library path uses into `run_once`; reserve
+  confirm + enrich budget before phase-2 backfill; leave sealed days
+  untouched. The next ObservationDigest carries note
+  `gap-no-derive-2026-09-29`.
+
+- **2026-09-30 - listing invented tree_sha.** Phase-1 Ok observations used
+  the commit SHA as `tree_sha` (lightweight) or placeholder
+  `000…001`/`000…002` (annotated). A commit's tree is immutable; those
+  values were wrong. Listing now records cache trees only, otherwise
+  listing-only refs with no invented tree. Affected archive observation
+  ids are listed in `docs/tree-sha-affected-observations.txt` (not
+  rewritten).
+
 - **2026-09-30 - seal publish to main.** `.gitignore` no longer ignores
   `data/log/` (it had blocked the first seal's `git add`). Pending publish
   failures retry on every poll until fast-forward succeeds, then the next
@@ -23,6 +42,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   line sums `skipped`/`failed` from signed ObservationDigests.
 
 ### Changed
+
+- **2026-09-30 - canary patterns 3 and 4 split across rotations.**
+  `lightweight_to_annotated` / `annotated_to_lightweight` and
+  `delete` / `recreate` each leave their intermediate state for at least
+  one poll. Patterns act only on pre-existing bootstrap tags.
+  `canary-score` scores only event-producing patterns and reports
+  creation-only rows separately.
 
 - **2026-09-29 - genesis, clock, hardening, freeze.** First continuous M1 day:
   genesis population entries and live polls on the `data` branch; Cloudflare

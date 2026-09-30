@@ -6,9 +6,8 @@
 use std::collections::BTreeMap;
 use std::fs;
 
-use refledger_log::canonical_json;
 use refledger_log::chain::{verify, Chain, UnhashedEntry};
-use refledger_log::entry::{Diff, Event};
+use refledger_log::entry::Event;
 use refledger_poller::classify::{
     classify, Ancestry, ClassifiedEvent, Enrichment, MoveKind, RefForm, RepoState, Severity,
     CORRELATION_NOTE,
@@ -352,8 +351,22 @@ fn observation_digest_commits_to_day_files() {
 
 #[test]
 fn replay_observe_classify_derive_chain_is_byte_for_byte() {
-    // Full archive → two independent replays → identical canonical JSONL bytes.
+    // Full archive → two independent replays through the SAME helper
+    // `run_once` uses (`classify_enrich_derive_append`) → identical bytes.
     // Enrich results come from a persisted compare cache (no network on replay).
+    use refledger_log::SigningKey;
+    use refledger_poller::classify_enrich_derive_append;
+    use refledger_poller::github::rest::{RestRequest, RestResponse, Transport};
+    use refledger_poller::store::{StaticRekor, Store, StoreOptions};
+
+    #[derive(Clone, Default)]
+    struct NoNetwork;
+    impl Transport for NoNetwork {
+        fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
+            Err(format!("replay must not hit network: {}", request.target))
+        }
+    }
+
     let root = TempDir::new().unwrap();
     let obs_dir = root.path().join("observations");
     let cache_path = root.path().join("compare.jsonl");
@@ -396,7 +409,6 @@ fn replay_observe_classify_derive_chain_is_byte_for_byte() {
     );
     store_observation_at(&sweep2, &obs_dir).unwrap();
 
-    // Seed compare cache as if enrich had already run (replay needs no network).
     let mut cache = CompareCache::open(&cache_path).unwrap();
     cache
         .put(
@@ -416,10 +428,27 @@ fn replay_observe_classify_derive_chain_is_byte_for_byte() {
     drop(cache);
 
     let run = || -> Vec<u8> {
-        let cache = CompareCache::open(&cache_path).unwrap();
-        let mut chain = Chain::ephemeral("replay");
-        chain
-            .append(UnhashedEntry::correction(
+        let dir = TempDir::new().unwrap();
+        // Seed compare cache into the store data dir so the helper can open it.
+        fs::copy(&cache_path, dir.path().join("compare.jsonl")).unwrap();
+        let mut compare = CompareCache::open(dir.path().join("compare.jsonl")).unwrap();
+        let key = SigningKey::from_seed_bytes(&[9u8; 32]).unwrap();
+        let mut store = Store::open(
+            dir.path(),
+            StoreOptions {
+                log_id: "replay".into(),
+                signing_key: key,
+                recovered_at: t0,
+                rekor: Box::new(StaticRekor { log_index: 1 }),
+                archive: Box::new(refledger_poller::NoopArchive),
+                publisher: Box::new(refledger_poller::NoopPublisher),
+                observations_on_data_branch: false,
+                skip_lock: true,
+            },
+        )
+        .unwrap();
+        store
+            .append_entry(UnhashedEntry::correction(
                 t0,
                 0,
                 "genesis placeholder — log opened",
@@ -427,28 +456,21 @@ fn replay_observe_classify_derive_chain_is_byte_for_byte() {
             .unwrap();
 
         let mut state = RepoState::default();
-        let observations = load_obs_sorted(&obs_dir);
-        for obs in &observations {
-            let enrich = enrichment_from_cache(&state, obs, &cache);
-            let (next, events) = classify(&state, obs, &enrich).unwrap();
-            let mut tip = tip_from_chain(
-                &chain,
-                obs.repo().as_str(),
-                obs.observed_at().as_offset_datetime(),
-            );
-            tip.diffs = diffs_from_cache(&cache);
-            let derived = derive(&tip, &events).unwrap();
-            append_all(&mut chain, derived);
-            state = next;
+        let transport = NoNetwork;
+        for obs in load_obs_sorted(&obs_dir) {
+            store.append_observation(&obs).unwrap();
+            classify_enrich_derive_append(
+                &mut store,
+                &mut state,
+                &mut compare,
+                &transport,
+                "token",
+                &obs,
+            )
+            .unwrap();
         }
-        verify(chain.entries()).unwrap();
-        let mut bytes = Vec::new();
-        for e in chain.entries() {
-            let v = serde_json::to_value(e).unwrap();
-            bytes.extend(canonical_json(&v).unwrap());
-            bytes.push(b'\n');
-        }
-        bytes
+        verify(store.entries()).unwrap();
+        store.chain_bytes().unwrap()
     };
 
     let a = run();
@@ -477,46 +499,6 @@ fn load_obs_sorted(dir: &std::path::Path) -> Vec<Observation> {
     walk(dir, &mut out);
     out.sort_by_key(|o: &Observation| o.observed_at().as_offset_datetime());
     out
-}
-
-fn enrichment_from_cache(state: &RepoState, obs: &Observation, cache: &CompareCache) -> Enrichment {
-    let mut e = Enrichment::empty();
-    let Outcome::Ok { refs, .. } = obs.outcome() else {
-        return e;
-    };
-    for r in refs {
-        let (Some(new_commit), Some(_)) = (r.commit_sha(), r.tree_sha()) else {
-            continue;
-        };
-        let Some(prev) = state.binding(r.name()) else {
-            continue;
-        };
-        if prev.commit_sha() == new_commit {
-            continue;
-        }
-        if let Some(c) = cache.get(prev.commit_sha(), new_commit) {
-            e = e.with_ancestry(prev.commit_sha(), new_commit, c.ancestry);
-        }
-    }
-    e
-}
-
-fn diffs_from_cache(cache: &CompareCache) -> BTreeMap<(String, String), Diff> {
-    let mut m = BTreeMap::new();
-    for ((old, new), c) in cache.iter() {
-        m.insert(
-            (old.clone(), new.clone()),
-            Diff {
-                files_added: c.files_added,
-                files_removed: c.files_removed,
-                files_modified: c.files_modified,
-                files_renamed: c.files_renamed,
-                paths: c.paths.clone(),
-                diff_possibly_truncated: c.diff_possibly_truncated,
-            },
-        );
-    }
-    m
 }
 
 #[test]

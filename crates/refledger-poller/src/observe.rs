@@ -440,6 +440,27 @@ impl ObservedRef {
         })
     }
 
+    /// Listing-only ref: target known, peel not yet resolved.
+    ///
+    /// Used when phase-1 tag listing has the tip SHA but the object cache has
+    /// no commit tree yet. Never invents a `tree_sha` (a commit's tree is
+    /// immutable; using the commit SHA as a stand-in corrupts classification).
+    pub fn new_unpeeled(
+        name: impl Into<String>,
+        ref_type: RefType,
+        target_sha: impl AsRef<str>,
+    ) -> Result<Self, ObservationError> {
+        Ok(Self {
+            name: name.into(),
+            ref_type,
+            target_sha: Sha40::parse(target_sha)?,
+            commit_sha: None,
+            tree_sha: None,
+            peeled_type: PeeledType::Commit,
+            action_yml_sha: None,
+        })
+    }
+
     /// Tag whose peel is a tree or blob — legal git, not a poller error.
     ///
     /// The peeled object oid is stored in `tree_sha` and exposed via

@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "headers": {},
+  "body": {
+    "status": "ahead",
+    "ahead_by": 1,
+    "behind_by": 0,
+    "total_commits": 1,
+    "files": [
+      {
+        "filename": "action.yml",
+        "status": "modified"
+      }
+    ]
+  }
+}

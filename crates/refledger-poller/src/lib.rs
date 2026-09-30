@@ -31,8 +31,9 @@ pub use identity::{
     VERSION,
 };
 pub use once::{
-    infer_scheduled_slot, poller_enabled, run_once, run_once_with, scheduled_time_from_env,
-    CountingTransport, OnceArgs, OnceError, OnceReport, UreqTransport, ENABLED_VAR,
+    classify_enrich_derive_append, infer_scheduled_slot, poller_enabled, run_once, run_once_with,
+    scheduled_time_from_env, CountingTransport, OnceArgs, OnceError, OnceReport, UreqTransport,
+    ENABLED_VAR,
 };
 pub use publish::{
     format_publish_failure_note, format_publish_success_note, GitLedgerPublisher,

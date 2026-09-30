@@ -997,6 +997,64 @@ impl<V: Volume> Store<V> {
         self.record_identity_warning(NOTE)
     }
 
+    /// Named gap: from genesis until the derive-wiring fix, `once` stored
+    /// observations but appended no Move/Deletion/Recreation. Archive replay
+    /// found 0 ecosystem tag moves in that window; canary patterns 3 and 4
+    /// were not observable. Idempotent.
+    pub fn ensure_gap_no_derive_digest_note(&mut self) -> Result<(), StoreError> {
+        const MARKER: &str = "gap-no-derive-2026-09-29";
+        // Placeholder filled at commit time via docs; the note text is stable.
+        const NOTE: &str = "gap-no-derive-2026-09-29: from genesis until the once derive-wiring fix the runner stored observations but appended no Move, Deletion or Recreation entries; replay of the archive found 0 ecosystem tag moves in that window; canary patterns 3 and 4 were not observable";
+        if self
+            .pending_identity_warnings
+            .iter()
+            .any(|w| w.contains(MARKER))
+        {
+            return Ok(());
+        }
+        for entry in self.chain.entries() {
+            if entry.event != Event::ObservationDigest {
+                continue;
+            }
+            if let Some(d) = &entry.observation_digest {
+                if d.note.as_deref().is_some_and(|n| n.contains(MARKER)) {
+                    return Ok(());
+                }
+            }
+        }
+        self.record_identity_warning(NOTE)
+    }
+
+    /// Ok observations for `repo`, oldest first.
+    pub fn ok_observations_chronological(
+        &self,
+        repo: &str,
+    ) -> Result<Vec<Observation>, StoreError> {
+        let segment = crate::observation::RepoSlug::parse(repo)
+            .map_err(StoreError::Observation)?
+            .path_segment();
+        let suffix = format!("/{segment}.jsonl");
+        let mut out = Vec::new();
+        for path in self.vol.list("observations")? {
+            if !path.ends_with(&suffix) || path.contains(".torn.") {
+                continue;
+            }
+            let bytes = self.vol.read(&path)?.unwrap_or_default();
+            for line in bytes.split(|b| *b == b'\n') {
+                if line.is_empty() {
+                    continue;
+                }
+                let obs: Observation = serde_json::from_slice(line)
+                    .map_err(|e| StoreError::Corrupt(format!("{path}: {e}")))?;
+                if matches!(obs.outcome(), Outcome::Ok { .. }) {
+                    out.push(obs);
+                }
+            }
+        }
+        out.sort_by_key(|o| o.observed_at().as_offset_datetime());
+        Ok(out)
+    }
+
     /// Seal day D. The digest is the first entry of day D+1, then the buffer drains.
     ///
     /// After the digest is committed, an optional extra observation mirror may

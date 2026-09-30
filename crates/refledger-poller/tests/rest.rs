@@ -969,3 +969,93 @@ fn transport_err_is_network_with_status_zero() {
         other => panic!("expected Failed/Network status 0, got {other:?}"),
     }
 }
+
+#[test]
+fn listing_never_invents_tree_sha_equal_to_commit() {
+    // Phase-1 Ok must not use commit_sha as tree_sha. Uncached tips are
+    // listing-only (no tree); cached tips must match the object cache.
+    let dir = TempDir::new().unwrap();
+    let at = odt(2026, Month::January, 1, 12, 0, 0, 0);
+    let mock = MockTransport::new();
+    mock.route("/repos/acme/widgets", "repo_ok").route(
+        "/repos/acme/widgets/git/matching-refs/tags",
+        "tags_lightweight",
+    );
+    // No git/commits route: peel budget 0 → listing-only refs.
+    let mut etags = ETagStore::open(dir.path().join("etag.jsonl"), Duration::hours(1)).unwrap();
+    let mut pages = PageBodyCache::open(dir.path().join("pages.jsonl")).unwrap();
+    let mut meta = RepoMetaCache::open(dir.path().join("meta.jsonl")).unwrap();
+    let mut objects = ObjectCache::open(dir.path().join("objects.jsonl")).unwrap();
+    objects.set_peel_budget(0);
+    let client = Client::new(mock, AuthToken::new("ghp_test").unwrap());
+    let slug = RepoSlug::parse("acme/widgets").unwrap();
+    let obs = resolve_repo(
+        &slug,
+        None,
+        &mut etags,
+        &mut pages,
+        &mut meta,
+        &mut objects,
+        &client,
+        at,
+    );
+    let Outcome::Ok { refs, .. } = obs.outcome() else {
+        panic!("expected Ok, got {:?}", obs.outcome());
+    };
+    assert!(!refs.is_empty());
+    for r in refs {
+        if let (Some(c), Some(t)) = (r.commit_sha(), r.tree_sha()) {
+            assert_ne!(
+                c,
+                t,
+                "tree_sha must not be invented as commit_sha for {}",
+                r.name()
+            );
+            if let Some(cached) = objects.tree_sha_for_commit(c) {
+                assert_eq!(cached, t, "observation tree must match object cache");
+            }
+        }
+    }
+}
+
+#[test]
+fn object_cache_refuses_conflicting_tree_for_same_commit() {
+    let dir = TempDir::new().unwrap();
+    let mut objects = ObjectCache::open(dir.path().join("objects.jsonl")).unwrap();
+    // Seed via a real peel path.
+    let mock = MockTransport::new();
+    mock.route("/repos/acme/widgets", "repo_ok")
+        .route(
+            "/repos/acme/widgets/git/matching-refs/tags",
+            "tags_lightweight",
+        )
+        .route(
+            "/repos/acme/widgets/git/commits/1111111111111111111111111111111111111111",
+            "git_commit_1",
+        )
+        .route(
+            "/repos/acme/widgets/contents/action.yml",
+            "contents_action_yml",
+        );
+    let mut etags = ETagStore::open(dir.path().join("etag.jsonl"), Duration::hours(1)).unwrap();
+    let mut pages = PageBodyCache::open(dir.path().join("pages.jsonl")).unwrap();
+    let mut meta = RepoMetaCache::open(dir.path().join("meta.jsonl")).unwrap();
+    let client = Client::new(mock, AuthToken::new("ghp_test").unwrap());
+    let slug = RepoSlug::parse("acme/widgets").unwrap();
+    let at = odt(2026, Month::January, 1, 12, 0, 0, 0);
+    let _ = resolve_repo(
+        &slug,
+        None,
+        &mut etags,
+        &mut pages,
+        &mut meta,
+        &mut objects,
+        &client,
+        at,
+    );
+    let tree = objects
+        .tree_sha_for_commit("1111111111111111111111111111111111111111")
+        .expect("peeled")
+        .to_owned();
+    assert_eq!(tree, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+}

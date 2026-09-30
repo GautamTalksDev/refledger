@@ -463,6 +463,14 @@ impl ObjectCache {
         self.entries.contains_key(sha)
     }
 
+    /// Tree SHA previously recorded for `commit_sha`, if any.
+    pub fn tree_sha_for_commit(&self, commit_sha: &str) -> Option<&str> {
+        match self.entries.get(commit_sha) {
+            Some(CacheEntry::Commit { tree_sha, .. }) => Some(tree_sha.as_str()),
+            _ => None,
+        }
+    }
+
     /// Intentionally absent: content-addressed peels do not go stale.
     ///
     /// Tests assert this returns false so a future TTL/invalidate API cannot
@@ -476,6 +484,23 @@ impl ObjectCache {
     }
 
     fn put(&mut self, sha: &str, entry: CacheEntry) -> Result<(), RestError> {
+        if let (
+            Some(CacheEntry::Commit {
+                tree_sha: prior, ..
+            }),
+            CacheEntry::Commit {
+                tree_sha: next,
+                commit_sha,
+                ..
+            },
+        ) = (self.entries.get(sha), &entry)
+        {
+            if prior != next {
+                return Err(RestError::Corrupt(format!(
+                    "commit {commit_sha} tree is immutable: cache has {prior}, refusing {next}"
+                )));
+            }
+        }
         let record = ObjectRecord {
             sha: sha.to_owned(),
             entry: entry.clone(),
@@ -611,7 +636,7 @@ pub fn resolve_repo<T: Transport>(
     now: OffsetDateTime,
 ) -> Observation {
     let now = refledger_log::normalize_to_utc_millis(now);
-    match resolve_repo_listing(repo, path, etags, pages, repo_meta, client, now) {
+    match resolve_repo_listing(repo, path, etags, pages, repo_meta, objects, client, now) {
         Ok(pass) => {
             let early = pass.early_observation;
             if let Some(w) = pass.warm {
@@ -658,17 +683,19 @@ pub fn resolve_repo<T: Transport>(
 }
 
 /// Phase 1 only: repository metadata (conditional) and tag listing (conditional).
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn resolve_repo_listing<T: Transport>(
     repo: &RepoSlug,
     path: Option<&str>,
     etags: &mut ETagStore,
     pages: &mut PageBodyCache,
     repo_meta: &mut RepoMetaCache,
+    objects: &ObjectCache,
     client: &Client<T>,
     now: OffsetDateTime,
 ) -> Result<ListingPass, ResolveFail> {
     let now = refledger_log::normalize_to_utc_millis(now);
-    resolve_repo_listing_inner(repo, path, etags, pages, repo_meta, client, now)
+    resolve_repo_listing_inner(repo, path, etags, pages, repo_meta, objects, client, now)
 }
 
 /// Phase 2 only: peels and action.yml using the remaining request budget.
@@ -804,46 +831,99 @@ fn warm_up_refs<T: Transport>(
     objects: &mut ObjectCache,
     client: &Client<T>,
 ) -> Result<(Vec<ObservedRef>, bool), ResolveFail> {
-    let mut observed = Vec::with_capacity(refs.len());
     let mut peel_budget_hit = false;
     for raw in refs {
-        if !objects.contains(&raw.object_sha) && !objects.try_consume_peel_budget() {
+        if objects.contains(&raw.object_sha) {
+            // Cache hit: still resolve action.yml if missing for commit peels.
+            let peel = peel_ref(owner, name, raw, objects, client)?;
+            if let Peeled::Commit { commit_sha, .. } = &peel.peeled {
+                let _ = resolve_action_yml(owner, name, commit_sha, path, objects, client)?;
+            }
+            continue;
+        }
+        if !objects.try_consume_peel_budget() {
             peel_budget_hit = true;
-            break;
+            continue;
         }
         let peel = peel_ref(owner, name, raw, objects, client)?;
-        let observed_ref = match peel.peeled {
-            Peeled::Commit {
-                commit_sha,
-                tree_sha,
-            } => {
-                let action = resolve_action_yml(owner, name, &commit_sha, path, objects, client)?;
-                let mut r = if peel.ref_type == RefType::Annotated {
-                    ObservedRef::new_annotated(&raw.name, &peel.target_sha, &commit_sha, &tree_sha)
-                } else {
-                    ObservedRef::new_lightweight(&raw.name, &commit_sha, &tree_sha)
-                }
-                .map_err(ResolveFail::obs)?;
-                if let Some(sha) = action {
-                    r = r.with_action_yml_sha(sha).map_err(ResolveFail::obs)?;
-                }
-                r
-            }
-            Peeled::NonCommit {
-                object_type,
-                object_sha,
-            } => ObservedRef::new_non_commit(
-                &raw.name,
-                peel.ref_type,
-                &peel.target_sha,
-                object_type,
-                &object_sha,
-            )
-            .map_err(ResolveFail::obs)?,
-        };
-        observed.push(observed_ref);
+        if let Peeled::Commit { commit_sha, .. } = &peel.peeled {
+            let _ = resolve_action_yml(owner, name, commit_sha, path, objects, client)?;
+        }
+    }
+    let mut observed = Vec::with_capacity(refs.len());
+    for raw in refs {
+        observed.push(observed_ref_from_cache_or_listing(raw, objects)?);
     }
     Ok((observed, peel_budget_hit))
+}
+
+/// Build an [`ObservedRef`] from the object cache, or a listing-only stub.
+///
+/// Never invents `tree_sha`. A commit already in the cache must contribute
+/// exactly that cached tree.
+fn observed_ref_from_cache_or_listing(
+    raw: &RawRef,
+    objects: &ObjectCache,
+) -> Result<ObservedRef, ResolveFail> {
+    if let Some(cached) = objects.get(&raw.object_sha) {
+        let peel = peel_from_cache(raw.object_type.as_str(), &raw.object_sha, cached);
+        return observed_from_peel(raw, &peel, objects);
+    }
+    // Tip not cached: listing-only. Do not pretend the tip SHA is a tree.
+    let ref_type = match raw.object_type.as_str() {
+        "tag" => RefType::Annotated,
+        _ => RefType::Lightweight,
+    };
+    ObservedRef::new_unpeeled(&raw.name, ref_type, &raw.object_sha).map_err(ResolveFail::obs)
+}
+
+fn observed_from_peel(
+    raw: &RawRef,
+    peel: &PeelResult,
+    objects: &ObjectCache,
+) -> Result<ObservedRef, ResolveFail> {
+    match &peel.peeled {
+        Peeled::Commit {
+            commit_sha,
+            tree_sha,
+        } => {
+            if let Some(cached_tree) = objects.tree_sha_for_commit(commit_sha) {
+                if cached_tree != tree_sha.as_str() {
+                    return Err(ResolveFail::protocol(format!(
+                        "commit {commit_sha} tree mismatch: cache={cached_tree} peel={tree_sha}"
+                    )));
+                }
+            }
+            let action = match objects.get(commit_sha) {
+                Some(CacheEntry::Commit {
+                    action_yml_sha: Some(a),
+                    ..
+                }) => a.clone(),
+                _ => None,
+            };
+            let mut r = if peel.ref_type == RefType::Annotated {
+                ObservedRef::new_annotated(&raw.name, &peel.target_sha, commit_sha, tree_sha)
+            } else {
+                ObservedRef::new_lightweight(&raw.name, commit_sha, tree_sha)
+            }
+            .map_err(ResolveFail::obs)?;
+            if let Some(sha) = action {
+                r = r.with_action_yml_sha(sha).map_err(ResolveFail::obs)?;
+            }
+            Ok(r)
+        }
+        Peeled::NonCommit {
+            object_type,
+            object_sha,
+        } => ObservedRef::new_non_commit(
+            &raw.name,
+            peel.ref_type,
+            &peel.target_sha,
+            *object_type,
+            object_sha,
+        )
+        .map_err(ResolveFail::obs),
+    }
 }
 
 fn warm_job(repo: &RepoSlug, path: Option<&str>, refs: Vec<RawRef>) -> Option<WarmUpContext> {
@@ -858,6 +938,9 @@ fn warm_job(repo: &RepoSlug, path: Option<&str>, refs: Vec<RawRef>) -> Option<Wa
 }
 
 /// Tag-list observation for movement detection before peels complete (phase 1).
+///
+/// Peeled `commit_sha`/`tree_sha` come only from the object cache. Uncached
+/// tips are stored as listing-only refs (target SHA, no invented tree).
 fn build_listing_ok_observation(
     repo: &RepoSlug,
     path: Option<&str>,
@@ -865,39 +948,11 @@ fn build_listing_ok_observation(
     refs: &[RawRef],
     etag: Option<crate::observation::ETag>,
     archived: Option<bool>,
+    objects: &ObjectCache,
 ) -> Result<Observation, ResolveFail> {
     let mut observed = Vec::with_capacity(refs.len());
     for raw in refs {
-        let r = match raw.object_type.as_str() {
-            "commit" => ObservedRef::new_lightweight(&raw.name, &raw.object_sha, &raw.object_sha),
-            "tag" => ObservedRef::new_annotated(
-                &raw.name,
-                &raw.object_sha,
-                "0000000000000000000000000000000000000001",
-                "0000000000000000000000000000000000000002",
-            ),
-            "tree" => ObservedRef::new_non_commit(
-                &raw.name,
-                RefType::Lightweight,
-                &raw.object_sha,
-                PeeledType::Tree,
-                &raw.object_sha,
-            ),
-            "blob" => ObservedRef::new_non_commit(
-                &raw.name,
-                RefType::Lightweight,
-                &raw.object_sha,
-                PeeledType::Blob,
-                &raw.object_sha,
-            ),
-            other => {
-                return Err(ResolveFail::protocol(format!(
-                    "unsupported ref object type {other}"
-                )));
-            }
-        }
-        .map_err(ResolveFail::obs)?;
-        observed.push(r);
+        observed.push(observed_ref_from_cache_or_listing(raw, objects)?);
     }
     build_obs(
         repo,
@@ -921,6 +976,7 @@ fn resolve_repo_listing_inner<T: Transport>(
     etags: &mut ETagStore,
     pages: &mut PageBodyCache,
     repo_meta: &mut RepoMetaCache,
+    objects: &ObjectCache,
     client: &Client<T>,
     now: OffsetDateTime,
 ) -> Result<ListingPass, ResolveFail> {
@@ -989,7 +1045,8 @@ fn resolve_repo_listing_inner<T: Transport>(
             warm: None,
         }),
         ListResult::Refs { refs, etag } => {
-            let obs = build_listing_ok_observation(repo, path, now, &refs, etag, archived)?;
+            let obs =
+                build_listing_ok_observation(repo, path, now, &refs, etag, archived, objects)?;
             Ok(ListingPass {
                 early_observation: Some(obs),
                 warm: warm_job(repo, path, refs),
@@ -1620,6 +1677,18 @@ fn build_obs(
         b = b.action_path(p);
     }
     b.outcome(outcome).build().map_err(ResolveFail::obs)
+}
+
+/// Build an Ok observation after phase-2 warm-up (shared with `once`).
+pub(crate) fn build_obs_for_once(
+    repo: &str,
+    path: Option<&str>,
+    now: OffsetDateTime,
+    outcome: Outcome,
+    archived: Option<bool>,
+) -> Result<Observation, ResolveFail> {
+    let slug = RepoSlug::parse(repo).map_err(ResolveFail::obs)?;
+    build_obs(&slug, path, now, outcome, None, None, archived)
 }
 
 fn failed_observation(

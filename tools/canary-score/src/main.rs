@@ -56,8 +56,9 @@ fn main() -> Result<()> {
     fs::write(&args.out, md)?;
     println!("wrote {}", args.out.display());
     println!(
-        "scored={} pre_genesis={} during_gap={} detected={}",
+        "scored={} creation_only={} pre_genesis={} during_gap={} detected={}",
         report.scored.len(),
+        report.creation_only.len(),
         report.pre_genesis.len(),
         report.during_gap.len(),
         report.detected

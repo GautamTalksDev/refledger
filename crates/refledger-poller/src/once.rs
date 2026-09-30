@@ -15,10 +15,14 @@ use time::{Date, Duration, OffsetDateTime};
 
 use refledger_log::normalize_to_utc_millis;
 
+use crate::classify::{classify, Enrichment, RepoState};
+use crate::derive::{derive, ChainTip};
+use crate::enrich::{enrich, CompareCache};
 use crate::github::etag::{AuthToken, ETagStore};
 use crate::github::rest::{
-    resolve_repo, resolve_repo_listing, resolve_repo_warm_up, Client, ObjectCache, PageBodyCache,
-    RepoMetaCache, ResolveFail, RestRequest, RestResponse, Transport, WarmUpContext,
+    build_obs_for_once, resolve_repo, resolve_repo_listing, resolve_repo_warm_up, Client,
+    ObjectCache, PageBodyCache, RepoMetaCache, ResolveFail, RestRequest, RestResponse, Transport,
+    WarmUpContext,
 };
 use crate::observation::{Observation, Outcome, RepoSlug, SkipReason, Timestamp};
 use crate::population::{load_watched, poll_groups, PollGroup};
@@ -26,11 +30,12 @@ use crate::scheduler::{
     skip_observation, CONFIRM_DELAY, M1_INTERVAL, MAX_NEW_PEELS_PER_RUN, MAX_REQUESTS_PER_RUN,
 };
 use crate::store::{OsVolume, Store, StoreError, StoreOptions};
+use refledger_log::entry::Diff;
 
 /// Repo variable that must equal `true` before the Actions job runs.
 pub const ENABLED_VAR: &str = "REFLEDGER_ENABLED";
 
-/// True only when the repo variable is exactly `true`.
+/// True only when `value` is exactly `true`.
 pub fn poller_enabled(value: Option<&str>) -> bool {
     value == Some("true")
 }
@@ -45,6 +50,12 @@ pub enum OnceError {
     Observation(String),
     #[error("rest: {0}")]
     Rest(String),
+    #[error("classify: {0}")]
+    Classify(String),
+    #[error("enrich: {0}")]
+    Enrich(String),
+    #[error("derive: {0}")]
+    Derive(String),
     #[error("{0}")]
     Message(String),
 }
@@ -96,6 +107,7 @@ pub struct OnceReport {
     pub status_304: u32,
     pub conditional_requests: u32,
     pub tip_seq: u64,
+    pub derived_events: usize,
 }
 
 /// Counting transport wrapper: enforces the per-run request budget and tallies
@@ -103,7 +115,7 @@ pub struct OnceReport {
 /// ETags can survive across runs; `GITHUB_TOKEN` is push-only.
 pub struct CountingTransport<T: Transport> {
     inner: T,
-    max: u32,
+    max: AtomicU32,
     requests: AtomicU32,
     status_200: AtomicU32,
     status_304: AtomicU32,
@@ -114,12 +126,21 @@ impl<T: Transport> CountingTransport<T> {
     pub fn new(inner: T, max: u32) -> Self {
         Self {
             inner,
-            max,
+            max: AtomicU32::new(max),
             requests: AtomicU32::new(0),
             status_200: AtomicU32::new(0),
             status_304: AtomicU32::new(0),
             conditional_requests: AtomicU32::new(0),
         }
+    }
+
+    /// Cap further sends at `max` (used to hold back confirm/enrich budget).
+    pub fn set_max(&self, max: u32) {
+        self.max.store(max, Ordering::Relaxed);
+    }
+
+    pub fn max(&self) -> u32 {
+        self.max.load(Ordering::Relaxed)
     }
 
     pub fn requests(&self) -> u32 {
@@ -150,10 +171,11 @@ impl<T: Transport> Transport for CountingTransport<T> {
         {
             self.conditional_requests.fetch_add(1, Ordering::Relaxed);
         }
+        let max = self.max.load(Ordering::Relaxed);
         loop {
             let cur = self.requests.load(Ordering::Relaxed);
-            if cur >= self.max {
-                return Err(format!("request budget exhausted ({cur} >= {})", self.max));
+            if cur >= max {
+                return Err(format!("request budget exhausted ({cur} >= {max})"));
             }
             if self
                 .requests
@@ -167,8 +189,6 @@ impl<T: Transport> Transport for CountingTransport<T> {
             Ok(r) => r,
             Err(e) => {
                 // A failed send still consumed budget: the attempt happened.
-                // Callers that need to distinguish budget-deny from transport
-                // failure inspect the error string.
                 return Err(e);
             }
         };
@@ -235,8 +255,6 @@ fn read_response(status: u16, resp: ureq::Response) -> Result<RestResponse, Stri
             match serde_json::from_str(&text) {
                 Ok(v) => Some(v),
                 Err(e) if (400..600).contains(&status) => {
-                    // Preserve HTTP status for classification; attach a truncated
-                    // body so callers can log the failure cause.
                     eprintln!(
                         "github non-json body url={url} status={status} parse={e} body={}",
                         truncate_chars(&text, 512)
@@ -278,6 +296,14 @@ fn truncate_chars(s: &str, max: usize) -> String {
     out
 }
 
+/// Held after phase 1 so warm-up can replace listing stubs with real peels
+/// before anything is appended for an Ok listing.
+struct PendingOk {
+    early: Observation,
+    warm: WarmUpContext,
+    moved_targets: usize,
+}
+
 /// Run one full Actions sweep against an injectable transport (tests).
 pub fn run_once_with<T: Transport>(
     store: &mut Store<OsVolume>,
@@ -312,10 +338,17 @@ pub fn run_once_with<T: Transport>(
     let mut objects = ObjectCache::open(data.join("objects.jsonl"))
         .map_err(|e| OnceError::Rest(e.to_string()))?;
     objects.set_peel_budget(args.max_new_peels);
+    let mut compare = CompareCache::open(data.join("compare.jsonl"))
+        .map_err(|e| OnceError::Enrich(e.to_string()))?;
 
     let mut observations = 0usize;
+    let mut derived_events = 0usize;
     let mut moved: Vec<String> = Vec::new();
-    let mut warm_jobs: Vec<WarmUpContext> = Vec::new();
+    let mut pending_ok: Vec<PendingOk> = Vec::new();
+    let mut warm_only: Vec<WarmUpContext> = Vec::new();
+    // Repo states rebuilt lazily from the observation archive, then updated
+    // as this run appends.
+    let mut states: BTreeMap<String, RepoState> = BTreeMap::new();
 
     // Phase 1: every poll group gets a conditional listing (and repo metadata)
     // before any peel or action.yml work consumes the shared budget.
@@ -328,6 +361,7 @@ pub fn run_once_with<T: Transport>(
             &mut etags,
             &mut pages,
             &mut repo_meta,
+            &objects,
             &client,
             actual_start,
         ) {
@@ -346,31 +380,146 @@ pub fn run_once_with<T: Transport>(
                 obs.stamp_schedule(scheduled_ts, actual_ts);
                 store.append_observation(&obs)?;
                 observations += 1;
+                derived_events += process_observation(
+                    store,
+                    &mut states,
+                    &mut compare,
+                    client.transport(),
+                    &args.token,
+                    &obs,
+                )?;
                 continue;
             }
         };
-        if let Some(obs) = pass.early_observation {
-            let prior_targets = store.latest_ok_targets(&g.repo)?;
-            let mut obs = obs;
-            obs.stamp_schedule(scheduled_ts, actual_ts);
-            if movement_detected(&obs, &prior_targets) {
-                moved.push(g.repo.clone());
+
+        let Some(mut early) = pass.early_observation else {
+            continue;
+        };
+        early.stamp_schedule(scheduled_ts, actual_ts);
+        let warm = pass.warm;
+
+        match early.outcome() {
+            Outcome::Ok { .. } => {
+                let prior_targets = store.latest_ok_targets(&g.repo)?;
+                let moved_n = movement_target_count(&early, &prior_targets);
+                if moved_n > 0 {
+                    moved.push(g.repo.clone());
+                }
+                if let Some(w) = warm {
+                    pending_ok.push(PendingOk {
+                        early,
+                        warm: w,
+                        moved_targets: moved_n,
+                    });
+                } else {
+                    // Empty-repo Ok: nothing to peel.
+                    store.append_observation(&early)?;
+                    observations += 1;
+                    derived_events += process_observation(
+                        store,
+                        &mut states,
+                        &mut compare,
+                        client.transport(),
+                        &args.token,
+                        &early,
+                    )?;
+                }
             }
-            store.append_observation(&obs)?;
-            observations += 1;
-        }
-        if let Some(w) = pass.warm {
-            warm_jobs.push(w);
+            _ => {
+                // 304 / Failed / Skipped: append now. 304 may still warm cache.
+                store.append_observation(&early)?;
+                observations += 1;
+                derived_events += process_observation(
+                    store,
+                    &mut states,
+                    &mut compare,
+                    client.transport(),
+                    &args.token,
+                    &early,
+                )?;
+                if let Some(w) = warm {
+                    warm_only.push(w);
+                }
+            }
         }
     }
 
-    // Phase 2: warm-up peels and action.yml fetches with whatever budget remains.
-    for w in warm_jobs {
-        if let Err(e) = resolve_repo_warm_up(&w, &pages, &mut objects, &client) {
-            if !matches!(e, ResolveFail::BudgetExhausted) {
-                return Err(OnceError::Rest(format!("warm-up: {e:?}")));
-            }
+    // Reserve confirm + enrich before phase-2 backfill takes anything.
+    let moved_tips: usize = pending_ok.iter().map(|p| p.moved_targets).sum();
+    let reserve = reserved_budget(moved.len(), moved_tips);
+    let hard_max = args.max_requests;
+    let phase1_used = client.transport().requests();
+    let phase2_ceiling = hard_max.saturating_sub(reserve).max(phase1_used);
+    client.transport().set_max(phase2_ceiling);
+
+    let mut deferred_ok: Vec<Observation> = Vec::new();
+
+    // Phase 2a: warm object cache for 304s (no new observation).
+    for w in warm_only {
+        if client.transport().requests() >= phase2_ceiling {
+            break;
         }
+        let _ = resolve_repo_warm_up(&w, &pages, &mut objects, &client);
+    }
+
+    // Phase 2b: warm-up peels, append Ok observations (classify deferred so
+    // enrich compares spend from the reserved budget, not the backfill pool).
+    for pending in pending_ok {
+        let obs = if client.transport().requests() >= phase2_ceiling {
+            pending.early
+        } else {
+            match resolve_repo_warm_up(&pending.warm, &pages, &mut objects, &client) {
+                Ok((observed, peel_budget_hit)) => {
+                    let (http_status, etag, archived) = match pending.early.outcome() {
+                        Outcome::Ok {
+                            http_status, etag, ..
+                        } => (*http_status, etag.clone(), pending.early.archived()),
+                        _ => (200, None, pending.early.archived()),
+                    };
+                    let etag = if peel_budget_hit { None } else { etag };
+                    let mut built = build_obs_for_once(
+                        pending.warm.repo.as_str(),
+                        pending.warm.path.as_deref(),
+                        pending.early.observed_at().as_offset_datetime(),
+                        Outcome::Ok {
+                            http_status,
+                            etag,
+                            refs: observed,
+                        },
+                        archived,
+                    )
+                    .unwrap_or(pending.early);
+                    built.stamp_schedule(scheduled_ts, actual_ts);
+                    built
+                }
+                Err(ResolveFail::BudgetExhausted) => pending.early,
+                Err(e) => {
+                    let msg = format!("{e:?}");
+                    if msg.contains("budget exhausted") {
+                        pending.early
+                    } else {
+                        return Err(OnceError::Rest(format!("warm-up: {e:?}")));
+                    }
+                }
+            }
+        };
+        store.append_observation(&obs)?;
+        observations += 1;
+        deferred_ok.push(obs);
+    }
+
+    // Restore reserved budget for enrich (deferred Ok) then confirmation.
+    client.transport().set_max(hard_max);
+
+    for obs in &deferred_ok {
+        derived_events += process_observation(
+            store,
+            &mut states,
+            &mut compare,
+            client.transport(),
+            &args.token,
+            obs,
+        )?;
     }
 
     let confirmations = if !moved.is_empty() {
@@ -378,6 +527,7 @@ pub fn run_once_with<T: Transport>(
         let confirm_at = actual_start + args.confirm_delay;
         let mut n = 0usize;
         for repo in &moved {
+            // Confirm always runs when reserved; only stop if the hard max is hit.
             if client.transport().requests() >= args.max_requests {
                 break;
             }
@@ -395,6 +545,14 @@ pub fn run_once_with<T: Transport>(
             obs.stamp_schedule(scheduled_ts, actual_ts);
             store.append_observation(&obs)?;
             observations += 1;
+            derived_events += process_observation(
+                store,
+                &mut states,
+                &mut compare,
+                client.transport(),
+                &args.token,
+                &obs,
+            )?;
             n += 1;
         }
         n
@@ -412,7 +570,110 @@ pub fn run_once_with<T: Transport>(
         status_304: client.transport().status_304(),
         conditional_requests: client.transport().conditional_requests(),
         tip_seq: store.tip_seq(),
+        derived_events,
     })
+}
+
+/// Requests held back from phase-2 backfill for confirm + enrich.
+fn reserved_budget(moved_repos: usize, moved_tips: usize) -> u32 {
+    // Confirm resolve_repo: repo metadata + tag listing (often 304) ≈ 2.
+    // Enrich: one compare per moved tip.
+    let confirm = (moved_repos as u32).saturating_mul(2);
+    let enrich = moved_tips as u32;
+    confirm.saturating_add(enrich)
+}
+
+/// Shared observe → enrich → classify → derive → append path.
+///
+/// [`run_once_with`] calls this after every stored observation. Replay tests
+/// must use this helper (not a hand-rolled classify/derive loop) so the
+/// Actions path and the library path cannot diverge again.
+pub fn classify_enrich_derive_append<T: Transport>(
+    store: &mut Store<OsVolume>,
+    state: &mut RepoState,
+    compare: &mut CompareCache,
+    transport: &T,
+    token: &str,
+    obs: &Observation,
+) -> Result<usize, OnceError> {
+    let enrichment = enrich(state, obs, compare, transport, token)
+        .map_err(|e| OnceError::Enrich(e.to_string()))?;
+    let (next, events) =
+        classify(state, obs, &enrichment).map_err(|e| OnceError::Classify(e.to_string()))?;
+    *state = next;
+    if events.is_empty() {
+        return Ok(0);
+    }
+    let mut tip = ChainTip::from_entries(
+        store.entries(),
+        obs.repo().as_str(),
+        obs.observed_at().as_offset_datetime(),
+        BTreeMap::new(),
+    );
+    tip.diffs = diffs_from_compare(compare);
+    let derived = derive(&tip, &events).map_err(|e| OnceError::Derive(e.to_string()))?;
+    let n = derived.len();
+    for entry in derived {
+        store.append_entry(entry)?;
+    }
+    Ok(n)
+}
+
+/// Classify → enrich → derive → append for one observation.
+///
+/// Caller must append the observation to the store first. Rebuild skips this
+/// observation's id so state reflects only prior sweeps.
+fn process_observation<T: Transport>(
+    store: &mut Store<OsVolume>,
+    states: &mut BTreeMap<String, RepoState>,
+    compare: &mut CompareCache,
+    transport: &T,
+    token: &str,
+    obs: &Observation,
+) -> Result<usize, OnceError> {
+    let repo = obs.repo().as_str().to_owned();
+    if !states.contains_key(&repo) {
+        let rebuilt = rebuild_repo_state(store, &repo, Some(obs.observation_id()))?;
+        states.insert(repo.clone(), rebuilt);
+    }
+    let state = states.get_mut(&repo).expect("just inserted");
+    classify_enrich_derive_append(store, state, compare, transport, token, obs)
+}
+
+fn diffs_from_compare(cache: &CompareCache) -> BTreeMap<(String, String), Diff> {
+    let mut m = BTreeMap::new();
+    for ((old, new), c) in cache.iter() {
+        m.insert(
+            (old.clone(), new.clone()),
+            Diff {
+                files_added: c.files_added,
+                files_removed: c.files_removed,
+                files_modified: c.files_modified,
+                files_renamed: c.files_renamed,
+                paths: c.paths.clone(),
+                diff_possibly_truncated: c.diff_possibly_truncated,
+            },
+        );
+    }
+    m
+}
+
+/// Replay Ok observations for `repo` to rebuild live classification state.
+fn rebuild_repo_state(
+    store: &Store<OsVolume>,
+    repo: &str,
+    exclude: Option<ulid::Ulid>,
+) -> Result<RepoState, OnceError> {
+    let mut state = RepoState::default();
+    for obs in store.ok_observations_chronological(repo)? {
+        if exclude.is_some_and(|id| obs.observation_id() == id) {
+            continue;
+        }
+        let (next, _) = classify(&state, &obs, &Enrichment::empty())
+            .map_err(|e| OnceError::Classify(e.to_string()))?;
+        state = next;
+    }
+    Ok(state)
 }
 
 /// Open the store, load watched groups, run one sweep with the live HTTP client.
@@ -423,6 +684,7 @@ pub fn run_once(opts: StoreOptions, args: OnceArgs) -> Result<OnceReport, OnceEr
     let mut store = Store::open(&args.data_dir, opts)?;
     // Queue the false-422 digest note before any seal of 2026-09-29.
     store.ensure_false_422_digest_note()?;
+    store.ensure_gap_no_derive_digest_note()?;
     // First durable chain rows: Added for every watched key that already has
     // an observation but no PopulationChange yet (including the canary and
     // subdirectory keys that share a poll group).
@@ -431,19 +693,36 @@ pub fn run_once(opts: StoreOptions, args: OnceArgs) -> Result<OnceReport, OnceEr
     run_once_with(&mut store, transport, &groups, &args)
 }
 
-fn movement_detected(obs: &Observation, prior: &BTreeSet<String>) -> bool {
+fn movement_target_count(obs: &Observation, prior: &BTreeSet<String>) -> usize {
     if prior.is_empty() {
-        return false;
+        return 0;
     }
     match obs.outcome() {
         Outcome::Ok { refs, .. } => {
-            let mut current = BTreeSet::new();
-            for r in refs {
-                current.insert(format!("{}:{}", r.name(), r.target_sha()));
+            let mut prior_map: BTreeMap<&str, &str> = BTreeMap::new();
+            for entry in prior {
+                if let Some((name, sha)) = entry.split_once(':') {
+                    prior_map.insert(name, sha);
+                }
             }
-            current != *prior
+            let mut n = 0usize;
+            for r in refs {
+                match prior_map.get(r.name()) {
+                    Some(old) if *old != r.target_sha() => n += 1,
+                    None => {} // creation: not a move
+                    _ => {}
+                }
+            }
+            // Deletions also count as movement for confirm.
+            let current: BTreeSet<&str> = refs.iter().map(|r| r.name()).collect();
+            for name in prior_map.keys() {
+                if !current.contains(name) {
+                    n += 1;
+                }
+            }
+            n
         }
-        _ => false,
+        _ => 0,
     }
 }
 
@@ -478,4 +757,16 @@ pub fn infer_scheduled_slot(actual: OffsetDateTime) -> OffsetDateTime {
             .and_then(|t| t.replace_nanosecond(0))
             .unwrap_or(actual),
     )
+}
+
+#[cfg(test)]
+mod movement_tests {
+    use super::*;
+
+    #[test]
+    fn reserve_covers_confirm_and_enrich() {
+        assert_eq!(reserved_budget(1, 1), 3);
+        assert_eq!(reserved_budget(2, 5), 9);
+        assert_eq!(reserved_budget(0, 0), 0);
+    }
 }

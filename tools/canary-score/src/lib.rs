@@ -51,6 +51,7 @@ pub struct ScoreReport {
     pub canary_repo: String,
     pub canary_added_at: Option<String>,
     pub scored: Vec<ScoredRow>,
+    pub creation_only: Vec<LedgerLine>,
     pub pre_genesis: Vec<LedgerLine>,
     pub during_gap: Vec<(LedgerLine, GapKind)>,
     pub detected: usize,
@@ -67,6 +68,29 @@ pub struct ScoredRow {
     pub note: String,
 }
 
+/// Patterns expected to produce a Move/Deletion/Recreation chain event.
+pub fn pattern_expects_chain_event(pattern: &str) -> bool {
+    matches!(
+        pattern,
+        "floating_major_forward"
+            | "exact_content_change"
+            | "commit_metadata_only"
+            | "lightweight_to_annotated"
+            | "annotated_to_lightweight"
+            | "lightweight_annotated_roundtrip"
+            | "delete"
+            | "recreate"
+            | "delete_recreate"
+            | "batch_exact_to_one"
+    )
+}
+
+/// Creation-only ledger rows (bootstrap / first-seen) are reported separately
+/// and never counted as detection misses.
+pub fn pattern_is_creation_only(pattern: &str) -> bool {
+    matches!(pattern, "bootstrap" | "creation" | "create")
+}
+
 pub fn score(
     ledger: &[LedgerLine],
     entries: &[Value],
@@ -76,6 +100,7 @@ pub fn score(
 ) -> ScoreReport {
     let added_at = canary_added_at(entries, canary_repo);
     let mut scored = Vec::new();
+    let mut creation_only = Vec::new();
     let mut pre_genesis = Vec::new();
     let mut during_gap = Vec::new();
     let mut detected = 0usize;
@@ -83,6 +108,11 @@ pub fn score(
     let mut latencies = Vec::new();
 
     for line in ledger {
+        if pattern_is_creation_only(&line.pattern) || !pattern_expects_chain_event(&line.pattern) {
+            creation_only.push(line.clone());
+            continue;
+        }
+
         match classify_eligibility(line, added_at, gaps) {
             Eligibility::PreGenesis => {
                 pre_genesis.push(line.clone());
@@ -114,6 +144,7 @@ pub fn score(
         canary_repo: canary_repo.to_owned(),
         canary_added_at: added_at.map(|t| t.format(&Rfc3339).unwrap_or_default()),
         scored,
+        creation_only,
         pre_genesis,
         during_gap,
         detected,
@@ -322,8 +353,11 @@ fn score_line(line: &LedgerLine, entries: &[Value], canary_repo: &str) -> Scored
     let expected_event = match line.pattern.as_str() {
         "commit_metadata_only" => "move",
         "exact_content_change" | "floating_major_forward" | "batch_exact_to_one" => "move",
-        "lightweight_annotated_roundtrip" => "move",
-        "delete_recreate" => "recreation",
+        "lightweight_annotated_roundtrip"
+        | "lightweight_to_annotated"
+        | "annotated_to_lightweight" => "move",
+        "delete_recreate" | "recreate" => "recreation",
+        "delete" => "deletion",
         _ => "move",
     };
     let hit = find_move_to(
@@ -414,7 +448,8 @@ ecosystem stats.
 | Metric | Value |
 |--------|-------|
 | Ledger actions | {total} |
-| Scored | {scored} |
+| Scored (event-producing) | {scored} |
+| Creation-only, not scored | {creation} |
 | Pre genesis, not scored | {pre} |
 | Performed during a recorded gap | {gap} |
 | Detected | {detected} |
@@ -430,6 +465,16 @@ This is the figure OPERATIONS.md §7 promises to publish.
 | pattern | tag | detected | classified | latency |
 |---------|-----|----------|------------|---------|
 {rows}
+
+## Creation-only (not scored)
+
+{creation_n} ledger row(s) whose pattern is not expected to produce a
+Move/Deletion/Recreation (bootstrap / first-seen create). Reported separately
+so they are never counted as detection misses.
+
+| pattern | tag | performed_at |
+|---------|-----|--------------|
+{creation_rows}
 
 ## Pre genesis, not scored
 
@@ -450,8 +495,12 @@ This is the figure OPERATIONS.md §7 promises to publish.
         repo = report.canary_repo,
         added = added,
         generated = report.generated_at,
-        total = report.scored.len() + report.pre_genesis.len() + report.during_gap.len(),
+        total = report.scored.len()
+            + report.creation_only.len()
+            + report.pre_genesis.len()
+            + report.during_gap.len(),
         scored = report.scored.len(),
+        creation = report.creation_only.len(),
         pre = report.pre_genesis.len(),
         gap = report.during_gap.len(),
         detected = report.detected,
@@ -463,6 +512,17 @@ This is the figure OPERATIONS.md §7 promises to publish.
             "| — | — | — | — | — |".into()
         } else {
             rows.join("\n")
+        },
+        creation_n = report.creation_only.len(),
+        creation_rows = if report.creation_only.is_empty() {
+            "| — | — | — |".into()
+        } else {
+            report
+                .creation_only
+                .iter()
+                .map(|l| format!("| {} | {} | {} |", l.pattern, l.tag, l.performed_at))
+                .collect::<Vec<_>>()
+                .join("\n")
         },
         pre_n = report.pre_genesis.len(),
         pre_rows = if report.pre_genesis.is_empty() {
