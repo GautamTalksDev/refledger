@@ -88,3 +88,5 @@
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"actions/cache","archived":false}
 {"repo":"azure/login","archived":false}
+{"repo":"actions/setup-node","archived":false}
+{"repo":"aquasecurity/trivy-action","archived":false}
