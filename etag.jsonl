@@ -240,3 +240,4 @@
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"cf8468bced95b9a2dd7779e7e0205a5e2a944e3b658ce2fc25dca5b207512d3e\"","stored_at":"2026-09-30T22:42:55.833Z"}
 {"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"06a03eff82a2b154e2bbbf3d9a8e23718beeab372b03c3b0026dcda15e786ebf\"","stored_at":"2026-09-30T22:47:55.699Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"6166be4353650389d0a6c521bc4af6715fbc273fcf8c3635d2120a6a358398e6\"","stored_at":"2026-09-30T22:52:52.948Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"56bbc388845b59409e54b0bb7175feb4ed0d251b6696ed024b45e70065a67429\"","stored_at":"2026-09-30T22:57:54.042Z"}
