@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **2026-09-30 - seal publish to main.** `.gitignore` no longer ignores
+  `data/log/` (it had blocked the first seal's `git add`). Pending publish
+  failures retry on every poll until fast-forward succeeds, then the next
+  ObservationDigest notes the recovery. CI guards `git check-ignore` for a
+  sample `data/log/` path.
+
 ### Changed
 
 - **2026-09-29 - genesis, clock, hardening, freeze.** First continuous M1 day:

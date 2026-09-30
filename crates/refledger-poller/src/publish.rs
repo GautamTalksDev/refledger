@@ -2,8 +2,9 @@
 //!
 //! After each seal, sealed `log/` bytes are copied into a dedicated publishing
 //! clone (or the Actions checkout), committed under `data/log/`, and
-//! fast-forward pushed. A git failure is recorded for the next
-//! ObservationDigest note and never stops polling.
+//! fast-forward pushed. A git failure is recorded, retried on every subsequent
+//! poll until it succeeds, then noted on the next ObservationDigest. Publish
+//! failure never stops polling.
 //!
 //! Authentication is either a deploy key (VM) or `GITHUB_TOKEN` (Actions).
 //! Never a personal access token.
@@ -242,11 +243,20 @@ fn porcelain_path(line: &str) -> Option<&str> {
     }
 }
 
-/// Persistent queue of publish failures awaiting a digest note.
+/// Persistent queue of publish failures awaiting retry and a digest note.
 #[derive(Debug, Clone)]
 pub struct PublishFailure {
     pub day: String,
+    /// ObservationDigest seq for `day`, when known.
+    pub seq: Option<u64>,
     pub error: String,
+}
+
+/// Successful retry of a previously failed publish, awaiting a digest note.
+#[derive(Debug, Clone)]
+pub struct PublishSuccess {
+    pub day: String,
+    pub seq: Option<u64>,
 }
 
 pub fn format_publish_failure_note(failure: &PublishFailure) -> String {
@@ -254,6 +264,19 @@ pub fn format_publish_failure_note(failure: &PublishFailure) -> String {
         "ledger publish failed for {}: {}",
         failure.day, failure.error
     )
+}
+
+pub fn format_publish_success_note(success: &PublishSuccess) -> String {
+    match success.seq {
+        Some(seq) => format!(
+            "ledger publish succeeded for {} seq {} (retry after earlier failure)",
+            success.day, seq
+        ),
+        None => format!(
+            "ledger publish succeeded for {} (retry after earlier failure)",
+            success.day
+        ),
+    }
 }
 
 /// Map a store-relative `log/…` path into the public tree `data/log/…`.

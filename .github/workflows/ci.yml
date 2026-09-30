@@ -72,6 +72,8 @@ jobs:
           persist-credentials: false
       - name: check workflow action pins
         run: bash tools/check-pins.sh
+      - name: data/log must not be gitignored
+        run: bash tools/check-data-log-not-ignored.sh
       - name: report transitive unpinned actions (non-blocking)
         run: bash tools/check-transitive.sh
 

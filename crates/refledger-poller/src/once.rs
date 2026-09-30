@@ -295,6 +295,9 @@ pub fn run_once_with<T: Transport>(
         .map_err(|e| OnceError::Observation(e.to_string()))?;
 
     let gaps = store.record_schedule_gaps(groups, M1_INTERVAL, scheduled_at, actual_start)?;
+    // Retry any pending ledger publish before the sweep so a failed seal
+    // reaches main on the next poll, not 24 hours later.
+    let _ = store.retry_pending_publishes()?;
     let days_sealed = store.seal_missed_days_before(actual_start)?;
 
     let token = AuthToken::new(&args.token).map_err(|e| OnceError::Message(e.to_string()))?;

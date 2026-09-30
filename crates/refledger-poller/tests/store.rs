@@ -1000,8 +1000,16 @@ fn rejected_publish_push_is_recorded_and_retried_next_seal() {
             .is_none(),
         "publish failure of D must not land in D's own digest"
     );
+    let failures = store
+        .read_rel("state/publish_failures.jsonl")
+        .unwrap()
+        .unwrap();
+    assert!(
+        String::from_utf8_lossy(&failures).contains("2026-01-02"),
+        "pending failure must persist for retry"
+    );
 
-    // Heal the publish clone so the next seal can FF-push again (retry path).
+    // Heal the publish clone so the next poll can FF-push again (retry path).
     assert!(Command::new("git")
         .args(["-C", clone.to_str().unwrap(), "fetch", "origin"])
         .status()
@@ -1019,23 +1027,155 @@ fn rejected_publish_push_is_recorded_and_retried_next_seal() {
         .unwrap()
         .success());
 
-    let jan3 = day(2026, Month::January, 3);
-    store.stop_dispatch(jan3);
-    let next = store.seal_day(jan3).unwrap();
-    let note = next.observation_digest.unwrap().note.unwrap();
+    // Mid-day retry (every poll), without waiting for the next seal.
     assert!(
-        note.contains("ledger publish failed for 2026-01-02"),
-        "expected publish failure in next digest, got {note}"
+        store.retry_pending_publishes().unwrap(),
+        "healed clone must publish on retry"
     );
-    // Retry of the healed clone succeeded: tip is a seal commit again.
+    assert!(
+        store
+            .read_rel("state/publish_failures.jsonl")
+            .unwrap()
+            .map(|b| b.is_empty())
+            .unwrap_or(true),
+        "pending failures cleared on success"
+    );
     let log = Command::new("git")
         .args(["-C", clone.to_str().unwrap(), "log", "-1", "--pretty=%s"])
         .output()
         .unwrap();
     let subject = String::from_utf8_lossy(&log.stdout);
     assert!(
-        subject.trim().starts_with("ledger: seal 2026-01-03"),
-        "retry must publish: {subject}"
+        subject.trim().starts_with("ledger: seal 2026-01-02"),
+        "retry must publish failed day: {subject}"
+    );
+
+    let jan3 = day(2026, Month::January, 3);
+    store.stop_dispatch(jan3);
+    let next = store.seal_day(jan3).unwrap();
+    let note = next.observation_digest.unwrap().note.unwrap();
+    assert!(
+        note.contains("ledger publish succeeded for 2026-01-02")
+            && note.contains("retry after earlier failure"),
+        "expected publish recovery in next digest, got {note}"
+    );
+    assert!(
+        !note.contains("ledger publish failed"),
+        "recovered publish must not keep the failure note: {note}"
+    );
+}
+
+#[test]
+fn gitignore_blocking_data_log_is_recorded_then_retry_publishes() {
+    use refledger_poller::GitLedgerPublisher;
+
+    let root = TempDir::new().unwrap();
+    let (_bare, clone) = setup_publish_clone(root.path());
+    // Reproduce the production bug: top-level /data/ ignores data/log.
+    fs::write(clone.join(".gitignore"), "/data/\n").unwrap();
+    assert!(Command::new("git")
+        .args([
+            "-C",
+            clone.to_str().unwrap(),
+            "-c",
+            "user.email=test@refledger.invalid",
+            "-c",
+            "user.name=refledger-test",
+            "add",
+            ".gitignore",
+        ])
+        .status()
+        .unwrap()
+        .success());
+    assert!(Command::new("git")
+        .args([
+            "-C",
+            clone.to_str().unwrap(),
+            "-c",
+            "user.email=test@refledger.invalid",
+            "-c",
+            "user.name=refledger-test",
+            "commit",
+            "-m",
+            "ignore data",
+        ])
+        .status()
+        .unwrap()
+        .success());
+    assert!(Command::new("git")
+        .args(["-C", clone.to_str().unwrap(), "push", "origin", "main"])
+        .status()
+        .unwrap()
+        .success());
+
+    let data = TempDir::new().unwrap();
+    let mut options = opts(static_rekor());
+    options.publisher = Box::new(GitLedgerPublisher::new(&clone, None));
+    let mut store = Store::open(data.path(), options).unwrap();
+    let jan1 = day(2026, Month::January, 1);
+    store.stop_dispatch(jan1);
+    store.seal_day(jan1).unwrap();
+
+    let failures = store
+        .read_rel("state/publish_failures.jsonl")
+        .unwrap()
+        .unwrap();
+    let text = String::from_utf8_lossy(&failures);
+    assert!(
+        text.contains("ignored by one of your .gitignore files") || text.contains("git add"),
+        "gitignore block must be recorded: {text}"
+    );
+
+    // Fix .gitignore the way main will after this change.
+    fs::write(
+        clone.join(".gitignore"),
+        "/data/**\n!/data/log/\n!/data/log/**\n",
+    )
+    .unwrap();
+    assert!(Command::new("git")
+        .args([
+            "-C",
+            clone.to_str().unwrap(),
+            "-c",
+            "user.email=test@refledger.invalid",
+            "-c",
+            "user.name=refledger-test",
+            "add",
+            ".gitignore",
+        ])
+        .status()
+        .unwrap()
+        .success());
+    assert!(Command::new("git")
+        .args([
+            "-C",
+            clone.to_str().unwrap(),
+            "-c",
+            "user.email=test@refledger.invalid",
+            "-c",
+            "user.name=refledger-test",
+            "commit",
+            "-m",
+            "allow data/log",
+        ])
+        .status()
+        .unwrap()
+        .success());
+    assert!(Command::new("git")
+        .args(["-C", clone.to_str().unwrap(), "push", "origin", "main"])
+        .status()
+        .unwrap()
+        .success());
+
+    assert!(store.retry_pending_publishes().unwrap());
+    let log = Command::new("git")
+        .args(["-C", clone.to_str().unwrap(), "log", "-1", "--pretty=%s"])
+        .output()
+        .unwrap();
+    let subject = String::from_utf8_lossy(&log.stdout);
+    assert!(
+        subject.trim().starts_with("ledger: seal 2026-01-01"),
+        "retry after gitignore fix must publish: {subject}"
     );
 }
 

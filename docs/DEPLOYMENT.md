@@ -67,8 +67,9 @@ Rules enforced in code:
 
 - Commits touch only `data/log/` on `main` (day JSONL and `heads.jsonl`).
 - Commit message is exactly `ledger: seal <YYYY-MM-DD> seq <n>`.
-- Push is fast-forward only. A rejected push is never force-pushed; it is recorded in the next ObservationDigest note and retried on the next seal.
+- Push is fast-forward only. A rejected push is never force-pushed; it is recorded in `state/publish_failures.jsonl`, retried on every subsequent poll until it succeeds, then noted on the next ObservationDigest (success after retry). Never wait for the next seal alone.
 - A dirty tree outside `data/log/` refuses to publish.
 - Publish failure never stops polling.
+- Repository `.gitignore` must never ignore `data/log/` (CI checks `git check-ignore`).
 
 Poller state (observations, ETag journal, object cache, in-progress day log) is committed on the separate `data` branch once per run with message `poll <actual start UTC> seq <n>`.

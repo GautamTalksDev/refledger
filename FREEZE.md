@@ -14,7 +14,7 @@ The freeze exists so the running poller, log format, and signatures stay the ins
 
 | Date (UTC) | Commit | Why |
 | --- | --- | --- |
-| _(none yet)_ | | |
+| 2026-09-30 | 81cb582 | Pre-freeze: first seal published on `data` and was signed/witnessed, but `main` publish failed because `.gitignore` ignored `data/`. Narrowed ignore rules, retry pending publishes every poll, and CI-guard `data/log`. Freeze had not started (starts at first clean seal on `main`). |
 
 ## Ends
 

@@ -1,6 +1,9 @@
 /target/
 **/target/
-/data/
+# Local poller scratch under data/. Never ignore the sealed ledger path.
+/data/**
+!/data/log/
+!/data/log/**
 *.age
 *.key
 *.seed

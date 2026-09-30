@@ -109,3 +109,8 @@ Amends the Actions-host entry above to match the system as it runs after genesis
 - **Budget:** per-run cap raised to **300** requests and **120** new peels; secondary governor still **300** points/minute. Each run is **two-phase**: phase 1 does conditional repo metadata + tag listing for every poll group; phase 2 spends the remainder on peels and `action.yml` / compare. Detection is never starved by warm-up.
 - **Population:** 36 poll groups (35 ecosystem repositories plus the canary).
 - **Freeze:** code on `main` is frozen for seven days from the first clean seal (`FREEZE.md`). Docs may still change.
+
+### 2026-09-30 - Seal publish retry
+
+- **`.gitignore`:** top-level `/data/` no longer ignores `data/log/` (negated so sealed ledger paths can be `git add`ed on `main`).
+- **Publish failures:** recorded under `state/publish_failures.jsonl` on the `data` branch; every poll retries a pending publish (fast-forward only) until it succeeds, then clears the pending entry and notes the recovery on the next ObservationDigest.

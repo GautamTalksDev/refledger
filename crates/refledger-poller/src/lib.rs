@@ -35,8 +35,8 @@ pub use once::{
     CountingTransport, OnceArgs, OnceError, OnceReport, UreqTransport, ENABLED_VAR,
 };
 pub use publish::{
-    format_publish_failure_note, GitLedgerPublisher, LedgerPublishPayload, LedgerPublisher,
-    NoopPublisher, PublishFailure,
+    format_publish_failure_note, format_publish_success_note, GitLedgerPublisher,
+    LedgerPublishPayload, LedgerPublisher, NoopPublisher, PublishFailure, PublishSuccess,
 };
 
 pub use derive::{derive, derive_observation_digest, ChainTip, DeriveError, ObservationDayStats};

@@ -22,6 +22,9 @@ cargo test --workspace --all-features
 echo "==> tools/check-pins.sh"
 bash tools/check-pins.sh
 
+echo "==> tools/check-data-log-not-ignored.sh"
+bash tools/check-data-log-not-ignored.sh
+
 if [[ -f clock/package.json ]]; then
   echo "==> clock: npm ci && npm test"
   (
