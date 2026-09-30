@@ -116,3 +116,4 @@
 {"repo":"actions/setup-python","archived":false}
 {"repo":"actions/attest-build-provenance","archived":false}
 {"repo":"aws-actions/configure-aws-credentials","archived":false}
+{"repo":"github/codeql-action","archived":false}

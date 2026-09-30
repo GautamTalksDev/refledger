@@ -223,3 +223,4 @@
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"87a25bfcae61b397f83559e31dbcfe7163dfe66772abd0e96d183d1d9220c131\"","stored_at":"2026-09-30T16:12:56.371Z"}
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"d9cfd0d592b42cbe63de1f76cb2b4c2d40a1721c879b3d9de0651d1b43ea4f0d\"","stored_at":"2026-09-30T17:07:59.628Z"}
 {"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"24e5b204f14cc3c3c8439210f80a4ac971bf2e48a9331101aab189e5d67e6bbf\"","stored_at":"2026-09-30T17:12:54.826Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"07c4048aa78b8ee560c8804c291350cdbb76f59f0ea8abdbaabcac0e25d08a5f\"","stored_at":"2026-09-30T17:57:57.269Z"}
