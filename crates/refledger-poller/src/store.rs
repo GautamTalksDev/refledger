@@ -1004,7 +1004,7 @@ impl<V: Volume> Store<V> {
     pub fn ensure_gap_no_derive_digest_note(&mut self) -> Result<(), StoreError> {
         const MARKER: &str = "gap-no-derive-2026-09-29";
         // Placeholder filled at commit time via docs; the note text is stable.
-        const NOTE: &str = "gap-no-derive-2026-09-29: from genesis until the once derive-wiring fix the runner stored observations but appended no Move, Deletion or Recreation entries; replay of the archive found 0 ecosystem tag moves in that window; canary patterns 3 and 4 were not observable";
+        const NOTE: &str = "gap-no-derive-2026-09-29: from genesis until fix commit 07c049c the runner stored observations but appended no Move, Deletion or Recreation entries; replay of the archive found 0 ecosystem tag moves in that window; canary patterns 3 and 4 were not observable";
         if self
             .pending_identity_warnings
             .iter()
