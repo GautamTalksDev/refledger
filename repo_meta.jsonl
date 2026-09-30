@@ -68,3 +68,4 @@
 {"repo":"actions/ai-inference","archived":false}
 {"repo":"actions/attest","archived":false}
 {"repo":"actions/attest-build-provenance","archived":false}
+{"repo":"aws-actions/amazon-ecr-login","archived":false}
