@@ -173,3 +173,4 @@
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"859fe6f4aac7deac191c337c31a7d6239b8e3010a5ccbb8a59b1fc3326d39514\"","stored_at":"2026-09-30T01:47:25.259Z"}
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"26f153ccee816fbd66deb963af52ba27d4753217c9e4155113edf159b495404c\"","stored_at":"2026-09-30T02:07:24.421Z"}
 {"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"de22be041eb565848843e181c5fa605ff56e1509d6779fc0a5879162aa2009a8\"","stored_at":"2026-09-30T02:22:24.656Z"}
+{"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"017ccb2d7295feb390fc9f7ae38428b3513ded29bb79fdbada45c45213a98c91\"","stored_at":"2026-09-30T02:57:25.612Z"}
