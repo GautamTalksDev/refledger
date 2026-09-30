@@ -197,3 +197,5 @@
 {"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"65759c66c446c89ed53ca91ccdfbc688edb9bf6977ab2dea5b4d4714331d8212\"","stored_at":"2026-09-30T06:33:03.723Z"}
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"4366f6083057650dda2c13cabc35815363a08964d56815cb9f9ba5e6fe23ab28\"","stored_at":"2026-09-30T06:59:53.562Z"}
 {"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"27837e123391653466d21165e701a8c4c60df44bdc1bd4c571d3bf7b8eee423a\"","stored_at":"2026-09-30T06:59:53.562Z"}
+{"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"e1264f34b3019a752730df0ac96b1e08aaa7232d297bb5c386b046626c085691\"","stored_at":"2026-09-30T07:07:58.378Z"}
+{"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"2b8f2b2eb886223b1777d984b90a18b7058ea8a4510b42512d6610faa243d5f4\"","stored_at":"2026-09-30T07:07:58.378Z"}

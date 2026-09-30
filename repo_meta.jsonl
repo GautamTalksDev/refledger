@@ -90,3 +90,5 @@
 {"repo":"azure/login","archived":false}
 {"repo":"actions/setup-node","archived":false}
 {"repo":"aquasecurity/trivy-action","archived":false}
+{"repo":"actions/download-artifact","archived":false}
+{"repo":"actions/upload-artifact","archived":false}
