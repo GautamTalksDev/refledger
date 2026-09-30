@@ -151,3 +151,5 @@
 {"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"eb59bd1e21ca28a957bb48e4c3f1278f5b7b454ca36f191be19af9edaa1d4c9b\"","stored_at":"2026-09-29T22:32:27.472Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"89ee6753e3b80ef4db0d116b3963205c236b9394b8dd0177d7fda26de7304cec\"","stored_at":"2026-09-29T23:07:21.746Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"ebf6d719fcd97c0978cd57d27af1f3d02ecb601aea4d183b97ae232c2d64842f\"","stored_at":"2026-09-29T23:37:27.353Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"9bb0898a1a3c40efdc902c1b23a336d644777391c693cedb98be0cc3f4b59d37\"","stored_at":"2026-09-30T00:02:31.539Z"}
+{"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"9cd3ec4c1b64acdcff3a9fc64a19491c1bb18307fe9625c9aa1a594650cff3b0\"","stored_at":"2026-09-30T00:02:31.539Z"}

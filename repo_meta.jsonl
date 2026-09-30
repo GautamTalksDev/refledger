@@ -48,3 +48,5 @@
 {"repo":"google-github-actions/auth","archived":false}
 {"repo":"github/codeql-action","archived":false}
 {"repo":"actions/checkout","archived":false}
+{"repo":"actions/attest-build-provenance","archived":false}
+{"repo":"aws-actions/amazon-ecr-login","archived":false}
