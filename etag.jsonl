@@ -216,3 +216,5 @@
 {"repo":"actions/labeler","template":"/repos/{owner}/{repo}","query":"","etag":"\"b45b98b170a38550090583fa56e27cac08faec1193b509bbcd5282269b924fc6\"","stored_at":"2026-09-30T13:07:55.513Z"}
 {"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"6c13d57ac2c918510398eb037c3273199e56865092d8e7ee38a3852c91aa3817\"","stored_at":"2026-09-30T13:20:59.463Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"d41e0161dfec82e056b2e0d5ce23b933ea373f36f05ac8f91c027158caf632d0\"","stored_at":"2026-09-30T13:22:57.488Z"}
+{"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"7c82257acfeedea273b5339b8455379ec709e492c1d853f1b66559321570af7a\"","stored_at":"2026-09-30T13:37:50.700Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"5d16b983f86d3f10b13032affaf851e63bcbf53d13cc3acb6bf6016e7e39751f\"","stored_at":"2026-09-30T13:37:50.700Z"}
