@@ -200,3 +200,5 @@
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"e1264f34b3019a752730df0ac96b1e08aaa7232d297bb5c386b046626c085691\"","stored_at":"2026-09-30T07:07:58.378Z"}
 {"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"2b8f2b2eb886223b1777d984b90a18b7058ea8a4510b42512d6610faa243d5f4\"","stored_at":"2026-09-30T07:07:58.378Z"}
 {"repo":"google-github-actions/setup-gcloud","template":"/repos/{owner}/{repo}","query":"","etag":"\"27cf2a0e10905ab58305a967b81833018eddd8cb645ce96487009846e69d80ec\"","stored_at":"2026-09-30T07:47:54.289Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"a4136a1493fdaee34994ac809388eb02067da19a8587ecb14d66abc8c478f9c3\"","stored_at":"2026-09-30T07:52:55.844Z"}
+{"repo":"actions/github-script","template":"/repos/{owner}/{repo}","query":"","etag":"\"1ed94a40299d7d08b4e7b69eddba3b58dad50152d2c7b61be262870b605328eb\"","stored_at":"2026-09-30T07:52:55.844Z"}

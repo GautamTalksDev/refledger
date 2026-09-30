@@ -93,3 +93,5 @@
 {"repo":"actions/download-artifact","archived":false}
 {"repo":"actions/upload-artifact","archived":false}
 {"repo":"google-github-actions/setup-gcloud","archived":false}
+{"repo":"actions/checkout","archived":false}
+{"repo":"actions/github-script","archived":false}
