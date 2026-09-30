@@ -125,13 +125,17 @@ impl GitLedgerPublisher {
     }
 
     /// Refuse if any path outside `data/log/` is dirty.
+    ///
+    /// Untracked parents (`data/`, `data/log`) are allowed: a fresh `main` has
+    /// no `data/` yet, and `git status --porcelain` reports `?? data/` for the
+    /// new tree before `git add`.
     fn refuse_if_dirty_outside_log(&self) -> Result<(), String> {
         let porcelain = self.git_ok(&["status", "--porcelain"])?;
         for line in porcelain.lines() {
             let Some(path) = porcelain_path(line) else {
                 continue;
             };
-            if !path.starts_with("data/log/") && path != "data/log" {
+            if !is_under_data_log(path) {
                 return Err(format!(
                     "publish clone has changes outside data/log/: {path}"
                 ));
@@ -243,6 +247,12 @@ fn porcelain_path(line: &str) -> Option<&str> {
     }
 }
 
+/// Paths the publisher may leave dirty: `data/log/**` and its parents.
+fn is_under_data_log(path: &str) -> bool {
+    let path = path.trim_end_matches('/');
+    path == "data" || path == "data/log" || path.starts_with("data/log/")
+}
+
 /// Persistent queue of publish failures awaiting retry and a digest note.
 #[derive(Debug, Clone)]
 pub struct PublishFailure {
@@ -296,5 +306,15 @@ mod tests {
             porcelain_path("R  data/log/a.jsonl -> data/log/b.jsonl"),
             Some("data/log/b.jsonl")
         );
+    }
+
+    #[test]
+    fn untracked_data_parent_is_allowed() {
+        assert!(is_under_data_log("data"));
+        assert!(is_under_data_log("data/"));
+        assert!(is_under_data_log("data/log"));
+        assert!(is_under_data_log("data/log/heads.jsonl"));
+        assert!(!is_under_data_log("data/observations"));
+        assert!(!is_under_data_log("README.md"));
     }
 }

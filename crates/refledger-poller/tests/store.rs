@@ -761,7 +761,11 @@ fn legacy_log_identity_warnings_migrate_into_digest_note() {
 }
 
 /// Build a bare remote + publishing clone under `root` for FF-only publish tests.
-fn setup_publish_clone(root: &std::path::Path) -> (std::path::PathBuf, std::path::PathBuf) {
+/// When `seed_data_log` is false, the clone has no `data/` yet (fresh main).
+fn setup_publish_clone_opts(
+    root: &std::path::Path,
+    seed_data_log: bool,
+) -> (std::path::PathBuf, std::path::PathBuf) {
     let bare = root.join("remote.git");
     let clone = root.join("publish-clone");
     assert!(Command::new("git")
@@ -775,15 +779,23 @@ fn setup_publish_clone(root: &std::path::Path) -> (std::path::PathBuf, std::path
         .status()
         .unwrap()
         .success());
-    // Seed an empty data/log so the first seal commits onto an existing branch tip.
-    let data_log = clone.join("data/log");
-    fs::create_dir_all(&data_log).unwrap();
-    fs::write(data_log.join(".gitkeep"), b"").unwrap();
-    assert!(Command::new("git")
-        .args(["-C", clone.to_str().unwrap(), "add", "data/log/.gitkeep"])
-        .status()
-        .unwrap()
-        .success());
+    if seed_data_log {
+        let data_log = clone.join("data/log");
+        fs::create_dir_all(&data_log).unwrap();
+        fs::write(data_log.join(".gitkeep"), b"").unwrap();
+        assert!(Command::new("git")
+            .args(["-C", clone.to_str().unwrap(), "add", "data/log/.gitkeep"])
+            .status()
+            .unwrap()
+            .success());
+    } else {
+        fs::write(clone.join("README.md"), b"refledger\n").unwrap();
+        assert!(Command::new("git")
+            .args(["-C", clone.to_str().unwrap(), "add", "README.md"])
+            .status()
+            .unwrap()
+            .success());
+    }
     assert!(Command::new("git")
         .args([
             "-C",
@@ -812,6 +824,10 @@ fn setup_publish_clone(root: &std::path::Path) -> (std::path::PathBuf, std::path
         .unwrap()
         .success());
     (bare, clone)
+}
+
+fn setup_publish_clone(root: &std::path::Path) -> (std::path::PathBuf, std::path::PathBuf) {
+    setup_publish_clone_opts(root, true)
 }
 
 #[test]
@@ -860,6 +876,40 @@ fn seal_publishes_data_log_to_dedicated_clone() {
     );
     // Live data dir is not the clone.
     assert_ne!(data.path(), clone.as_path());
+}
+
+#[test]
+fn first_seal_publishes_when_main_has_no_data_dir_yet() {
+    use refledger_poller::GitLedgerPublisher;
+
+    // Fresh main (no data/): git status reports `?? data/` before add.
+    let root = TempDir::new().unwrap();
+    let (_bare, clone) = setup_publish_clone_opts(root.path(), false);
+    let data = TempDir::new().unwrap();
+    let mut options = opts(static_rekor());
+    options.publisher = Box::new(GitLedgerPublisher::new(&clone, None));
+    let mut store = Store::open(data.path(), options).unwrap();
+    let jan1 = day(2026, Month::January, 1);
+    store.stop_dispatch(jan1);
+    let entry = store.seal_day(jan1).unwrap();
+
+    assert!(
+        store
+            .read_rel("state/publish_failures.jsonl")
+            .unwrap()
+            .map(|b| b.is_empty())
+            .unwrap_or(true),
+        "first seal onto empty main must not record a publish failure"
+    );
+    let log = Command::new("git")
+        .args(["-C", clone.to_str().unwrap(), "log", "-1", "--pretty=%s"])
+        .output()
+        .unwrap();
+    let subject = String::from_utf8_lossy(&log.stdout);
+    assert_eq!(
+        subject.trim(),
+        format!("ledger: seal 2026-01-01 seq {}", entry.seq)
+    );
 }
 
 #[test]
