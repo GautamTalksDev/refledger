@@ -16,10 +16,16 @@ The freeze exists so the running poller, log format, and signatures stay the ins
 | --- | --- | --- |
 | 2026-09-30 | 231b93e, 251fcdc, fe08b8f | Pre-freeze: first seal was signed/witnessed on `data` but never reached `main`. Causes fixed in order: `.gitignore` ignored `data/log/`; untracked parent `data/` refused; push auth double-credential (`origin` token URL + Authorization header). Pending publishes retry every poll. Freeze had not started (starts at first clean seal on `main`). |
 | 2026-09-30 | 07c049c | Emergency: `once` never ran classify→derive→append (ledger could not record moves); listing invented `tree_sha`; confirm starved by backfill; canary patterns 3/4 invisible within one poll. Option A forward-only; sealed days untouched. |
+| 2026-09-30 | (freeze-start commit) | Queue signed digest note for `docs/tree-sha-affected-observations.txt` (same class as the false-422 note). Freeze start recorded in this commit. |
 
-## Ends
+## Run window
 
-Seven full days after the first clean seal on `main` (operator records the start wall-clock here when the run begins):
+- **Freeze start (UTC):** 2026-09-30T05:24:40Z
+- **Freeze lifts (UTC):** 2026-10-07T05:24:40Z (start + 7 days)
 
-- **Run start (UTC):** _TBD (first clean seal)_
-- **Freeze lifts (UTC):** _TBD (start + 7 days)_
+## M1 measurement window
+
+The seven-day M1 exit is measured on sealed days in this closed interval:
+
+- **M1 start (UTC):** 2026-10-01T00:00:00Z
+- **M1 end (UTC):** seal at 2026-10-08T00:00:00Z (day 2026-10-07's ObservationDigest, stamped at the start of 2026-10-08)

@@ -25,7 +25,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   values were wrong. Listing now records cache trees only, otherwise
   listing-only refs with no invented tree. Affected archive observation
   ids are listed in `docs/tree-sha-affected-observations.txt` (not
-  rewritten).
+  rewritten). The next ObservationDigest also notes that those
+  `tree_sha` fields must not be relied on (same class as the false-422
+  note).
 
 - **2026-09-30 - seal publish to main.** `.gitignore` no longer ignores
   `data/log/` (it had blocked the first seal's `git add`). Pending publish

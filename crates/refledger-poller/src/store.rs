@@ -1005,10 +1005,24 @@ impl<V: Volume> Store<V> {
         const MARKER: &str = "gap-no-derive-2026-09-29";
         // Placeholder filled at commit time via docs; the note text is stable.
         const NOTE: &str = "gap-no-derive-2026-09-29: from genesis until fix commit 07c049c the runner stored observations but appended no Move, Deletion or Recreation entries; replay of the archive found 0 ecosystem tag moves in that window; canary patterns 3 and 4 were not observable";
+        self.ensure_digest_note_once(MARKER, NOTE)
+    }
+
+    /// 32 listing observations recorded incorrect tree_sha values (commit SHA
+    /// or annotated placeholders). Listed in docs/tree-sha-affected-observations.txt;
+    /// observations are unchanged; those tree_sha fields must not be relied on.
+    /// Fixed in 07c049c. Idempotent.
+    pub fn ensure_tree_sha_digest_note(&mut self) -> Result<(), StoreError> {
+        const MARKER: &str = "tree-sha-affected-observations";
+        const NOTE: &str = "docs/tree-sha-affected-observations.txt: 32 observations recorded incorrect tree_sha values due to a listing bug fixed in 07c049c; the observations are unchanged; their tree_sha fields should not be relied on";
+        self.ensure_digest_note_once(MARKER, NOTE)
+    }
+
+    fn ensure_digest_note_once(&mut self, marker: &str, note: &str) -> Result<(), StoreError> {
         if self
             .pending_identity_warnings
             .iter()
-            .any(|w| w.contains(MARKER))
+            .any(|w| w.contains(marker))
         {
             return Ok(());
         }
@@ -1017,12 +1031,12 @@ impl<V: Volume> Store<V> {
                 continue;
             }
             if let Some(d) = &entry.observation_digest {
-                if d.note.as_deref().is_some_and(|n| n.contains(MARKER)) {
+                if d.note.as_deref().is_some_and(|n| n.contains(marker)) {
                     return Ok(());
                 }
             }
         }
-        self.record_identity_warning(NOTE)
+        self.record_identity_warning(note)
     }
 
     /// Ok observations for `repo`, oldest first.

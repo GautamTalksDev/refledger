@@ -685,6 +685,7 @@ pub fn run_once(opts: StoreOptions, args: OnceArgs) -> Result<OnceReport, OnceEr
     // Queue the false-422 digest note before any seal of 2026-09-29.
     store.ensure_false_422_digest_note()?;
     store.ensure_gap_no_derive_digest_note()?;
+    store.ensure_tree_sha_digest_note()?;
     // First durable chain rows: Added for every watched key that already has
     // an observation but no PopulationChange yet (including the canary and
     // subdirectory keys that share a poll group).
