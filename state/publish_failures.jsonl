@@ -1,1 +1,1 @@
-{"day":"2026-09-29","error":"publish clone has changes outside data/log/: data/","seq":39}
+{"day":"2026-09-29","error":"fast-forward push rejected: remote: invalid credentials\nfatal: Authentication failed for 'https://github.com/GautamTalksDev/refledger.git/'\n","seq":39}
