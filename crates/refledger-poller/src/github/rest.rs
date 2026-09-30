@@ -29,7 +29,7 @@
 //! **not** followed. Quietly following transfers launders a change of ownership
 //! into continuity.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, OpenOptions};
 use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
@@ -821,6 +821,62 @@ fn fetch_repo_metadata<T: Transport>(
             format!("repo metadata status {other}"),
         )),
     }
+}
+
+/// Peel refs whose tip changed or reappeared (tombstone), bypassing the
+/// per-run warm-up peel budget. Used so brand-new attack commits are never
+/// left listing-only before classify.
+pub(crate) fn peel_priority_refs<T: Transport>(
+    ctx: &WarmUpContext,
+    priority_names: &BTreeSet<String>,
+    objects: &mut ObjectCache,
+    client: &Client<T>,
+) -> Result<Vec<ObservedRef>, ResolveFail> {
+    let (owner, name) = split_slug(&ctx.repo)?;
+    let path = ctx.path.as_deref();
+    let refs = if ctx.refs.is_empty() {
+        // Caller should pass refs; fall back empty.
+        Vec::new()
+    } else {
+        ctx.refs.clone()
+    };
+    for raw in &refs {
+        if !priority_names.contains(&raw.name) {
+            continue;
+        }
+        // Always peel priority tips — never leave an attack commit listing-only.
+        let peel = peel_ref(&owner, &name, raw, objects, client)?;
+        if let Peeled::Commit { commit_sha, .. } = &peel.peeled {
+            let _ = resolve_action_yml(&owner, &name, commit_sha, path, objects, client)?;
+        }
+    }
+    let mut observed = Vec::with_capacity(refs.len());
+    for raw in &refs {
+        observed.push(observed_ref_from_cache_or_listing(raw, objects)?);
+    }
+    Ok(observed)
+}
+
+/// Names that must be peeled before classify: target moved, or reappeared
+/// after a tombstone. Pure first-seen creations are not included.
+pub(crate) fn priority_peel_names(
+    state: &crate::classify::RepoState,
+    refs: &[RawRef],
+) -> BTreeSet<String> {
+    let mut out = BTreeSet::new();
+    for raw in refs {
+        let target = raw.object_sha.as_str();
+        if state.tombstone(&raw.name).is_some() {
+            out.insert(raw.name.clone());
+            continue;
+        }
+        if let Some(prev) = state.binding(&raw.name) {
+            if prev.target_sha() != target {
+                out.insert(raw.name.clone());
+            }
+        }
+    }
+    out
 }
 
 fn warm_up_refs<T: Transport>(

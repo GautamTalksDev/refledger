@@ -164,6 +164,10 @@ pub fn derive(
             } => {
                 ensure_sources(source_observations)?;
                 let mut entry = UnhashedEntry::empty(tip.recorded_at, Event::Deletion);
+                // LOG-FORMAT v1 requires classification on deletions; there is no
+                // deletion-specific value. ContentChange is the published-vector
+                // convention (see tests/vectors). It does not mean a tree diff
+                // was computed — see Correction on seq 40 for the live misread.
                 entry.classification = Some(Classification::ContentChange);
                 entry.severity = Some(map_severity(*severity));
                 entry.ref_form = Some(map_ref_form(*form));

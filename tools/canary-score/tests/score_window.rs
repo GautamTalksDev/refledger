@@ -194,3 +194,92 @@ fn load_gaps_reads_poller_down_from_observations() {
     assert_eq!(gaps[0].from, from);
     assert_eq!(gaps[0].to, to);
 }
+
+#[test]
+fn retired_patterns_are_not_scored() {
+    use refledger_canary_score::score_with_corrections;
+    let repo = "GautamTalksDev/canary";
+    let added = odt(2026, Month::October, 1, 0, 0, 0, 0);
+    let performed = odt(2026, Month::October, 1, 1, 0, 0, 0);
+    let entries = vec![added_entry(repo, added)];
+    let ledger = vec![
+        LedgerLine {
+            pattern: "lightweight_annotated_roundtrip".into(),
+            tag: "v2".into(),
+            from: "aaa".into(),
+            to: "bbb".into(),
+            performed_at: ts(performed),
+        },
+        LedgerLine {
+            pattern: "delete_recreate".into(),
+            tag: "v3.0.0".into(),
+            from: "ccc".into(),
+            to: "".into(),
+            performed_at: ts(performed),
+        },
+    ];
+    let report = score_with_corrections(
+        &ledger,
+        &[],
+        &entries,
+        &[],
+        repo,
+        odt(2026, Month::October, 2, 0, 0, 0, 0),
+    );
+    assert_eq!(report.scored.len(), 0);
+    assert_eq!(report.retired_pattern.len(), 2);
+    assert!(report.latencies.is_empty());
+}
+
+#[test]
+fn manual_intervention_correction_excludes_from_latency() {
+    use refledger_canary_score::{score_with_corrections, LedgerCorrection};
+    let repo = "GautamTalksDev/canary";
+    let added = odt(2026, Month::September, 29, 0, 0, 0, 0);
+    let performed = odt(2026, Month::September, 30, 4, 51, 14, 0);
+    let detected_at = odt(2026, Month::September, 30, 5, 7, 44, 0);
+    let entries = vec![
+        added_entry(repo, added),
+        json!({
+            "format_version": 1,
+            "seq": 40,
+            "prev_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "recorded_at": ts(detected_at),
+            "event": "deletion",
+            "repo": repo,
+            "ref": "refs/tags/v3.0.0",
+            "to": {
+                "commit_sha": "0000000000000000000000000000000000000000",
+                "first_observed": ts(detected_at)
+            },
+            "classification": "content_change"
+        }),
+    ];
+    let line = LedgerLine {
+        pattern: "delete".into(),
+        tag: "v3.0.0".into(),
+        from: "ca73a908125d15c79265e65fcb08c989849d547a".into(),
+        to: "".into(),
+        performed_at: ts(performed),
+    };
+    let corrections = vec![LedgerCorrection {
+        kind: "correction".into(),
+        corrects_performed_at: ts(performed),
+        pattern: "delete".into(),
+        tag: "v3.0.0".into(),
+        correction_kind: "manual_intervention".into(),
+        reason: "remote delete happened later by hand".into(),
+    }];
+    let report = score_with_corrections(
+        &[line],
+        &corrections,
+        &entries,
+        &[],
+        repo,
+        odt(2026, Month::October, 2, 0, 0, 0, 0),
+    );
+    assert_eq!(report.scored.len(), 0);
+    assert_eq!(report.manual_intervention.len(), 1);
+    assert!(report.latencies.is_empty());
+    assert_eq!(report.detected, 0);
+}

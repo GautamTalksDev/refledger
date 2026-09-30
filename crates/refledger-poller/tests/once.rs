@@ -1039,3 +1039,566 @@ fn confirm_and_enrich_run_despite_full_backfill_backlog() {
         "move must land despite backlog"
     );
 }
+
+/// Brand-new never-seen commit (attack shape): must peel before classify and
+/// emit Move ContentChange High on an exact tag.
+#[test]
+fn run_once_peels_never_seen_commit_before_classify_exact_move() {
+    use refledger_log::entry::{Classification, Event, Severity};
+
+    let dir = TempDir::new().unwrap();
+    let t0 = odt(2026, Month::January, 1, 12, 0, 0, 0);
+    let t1 = t0 + Duration::minutes(5);
+    const OLD: &str = "1111111111111111111111111111111111111111";
+    const NEW: &str = "cccccccccccccccccccccccccccccccccccccccc";
+    const TREE_NEW: &str = "dddddddddddddddddddddddddddddddddddddddd";
+
+    {
+        let mut store = Store::open(dir.path(), opts(t0)).unwrap();
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("acme/widgets")
+                    .unwrap()
+                    .observed_at(t0)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"old\"")),
+                        refs: vec![refledger_poller::observation::ObservedRef::new_lightweight(
+                            "refs/tags/v1.2.3",
+                            OLD,
+                            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                        )
+                        .unwrap()],
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+    }
+
+    #[derive(Clone, Default)]
+    struct AttackTransport {
+        log: Arc<Mutex<Vec<String>>>,
+    }
+    impl Transport for AttackTransport {
+        fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
+            self.log.lock().unwrap().push(request.target.clone());
+            let t = &request.target;
+            if t.contains("/repos/acme/widgets")
+                && !t.contains("/git/")
+                && !t.contains("/contents/")
+                && !t.contains("/compare/")
+            {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"repo\"".into())]),
+                    body: Some(serde_json::json!({"archived": false})),
+                });
+            }
+            if t.contains("matching-refs/tags") {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"moved\"".into())]),
+                    body: Some(serde_json::json!([{
+                        "ref": "refs/tags/v1.2.3",
+                        "object": {"type": "commit", "sha": NEW}
+                    }])),
+                });
+            }
+            if t.contains(&format!("/git/commits/{NEW}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"sha": NEW, "tree": {"sha": TREE_NEW}})),
+                });
+            }
+            if t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 404,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"message": "Not Found"})),
+                });
+            }
+            if t.contains("/compare/") {
+                return Ok(load_fixture("compare_ahead"));
+            }
+            Err(format!("unexpected {t}"))
+        }
+    }
+
+    let groups = vec![PollGroup {
+        repo: "acme/widgets".into(),
+        paths: vec![None],
+    }];
+    let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+    args.token = "ghp_test".into();
+    args.scheduled_at = t1;
+    args.actual_start = t1;
+    args.sleep = Box::new(|_| {});
+    args.confirm_delay = Duration::seconds(0);
+    args.max_requests = 150;
+    args.max_new_peels = 0; // warm-up peel budget zero — priority peel must still run
+
+    let mut store = Store::open(dir.path(), opts(t1)).unwrap();
+    let report = run_once_with(
+        &mut store,
+        CountingTransport::new(AttackTransport::default(), 150),
+        &groups,
+        &args,
+    )
+    .expect("once");
+    assert!(report.derived_events >= 1, "{report:?}");
+
+    let mv = store
+        .entries()
+        .iter()
+        .find(|e| e.event == Event::Move)
+        .expect("Move on chain");
+    assert_eq!(mv.r#ref.as_deref(), Some("refs/tags/v1.2.3"));
+    assert_eq!(mv.classification, Some(Classification::ContentChange));
+    assert_eq!(mv.severity, Some(Severity::High));
+    assert_eq!(mv.to.as_ref().map(|b| b.commit_sha.as_str()), Some(NEW));
+}
+
+#[test]
+fn run_once_batch_of_three_exact_to_never_seen_commit_emits_correlation() {
+    use refledger_log::entry::Event;
+
+    let dir = TempDir::new().unwrap();
+    let t0 = odt(2026, Month::January, 1, 12, 0, 0, 0);
+    let t1 = t0 + Duration::minutes(5);
+    const OLD: &str = "1111111111111111111111111111111111111111";
+    const NEW: &str = "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+    const TREE_NEW: &str = "ffffffffffffffffffffffffffffffffffffffff";
+
+    {
+        let mut store = Store::open(dir.path(), opts(t0)).unwrap();
+        let refs: Vec<_> = ["v9.0.0", "v9.0.1", "v9.0.2"]
+            .iter()
+            .map(|t| {
+                refledger_poller::observation::ObservedRef::new_lightweight(
+                    format!("refs/tags/{t}"),
+                    OLD,
+                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                )
+                .unwrap()
+            })
+            .collect();
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("acme/widgets")
+                    .unwrap()
+                    .observed_at(t0)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"old\"")),
+                        refs,
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+    }
+
+    #[derive(Clone, Default)]
+    struct BatchTransport;
+    impl Transport for BatchTransport {
+        fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
+            let t = &request.target;
+            if t.contains("/repos/acme/widgets")
+                && !t.contains("/git/")
+                && !t.contains("/contents/")
+                && !t.contains("/compare/")
+            {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"repo\"".into())]),
+                    body: Some(serde_json::json!({"archived": false})),
+                });
+            }
+            if t.contains("matching-refs/tags") {
+                let body: Vec<_> = ["v9.0.0", "v9.0.1", "v9.0.2"]
+                    .iter()
+                    .map(|tag| {
+                        serde_json::json!({
+                            "ref": format!("refs/tags/{tag}"),
+                            "object": {"type": "commit", "sha": NEW}
+                        })
+                    })
+                    .collect();
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"batch\"".into())]),
+                    body: Some(serde_json::json!(body)),
+                });
+            }
+            if t.contains(&format!("/git/commits/{NEW}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"sha": NEW, "tree": {"sha": TREE_NEW}})),
+                });
+            }
+            if t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 404,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"message": "Not Found"})),
+                });
+            }
+            if t.contains("/compare/") {
+                return Ok(load_fixture("compare_ahead"));
+            }
+            Err(format!("unexpected {t}"))
+        }
+    }
+
+    let groups = vec![PollGroup {
+        repo: "acme/widgets".into(),
+        paths: vec![None],
+    }];
+    let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+    args.token = "ghp_test".into();
+    args.scheduled_at = t1;
+    args.actual_start = t1;
+    args.sleep = Box::new(|_| {});
+    args.confirm_delay = Duration::seconds(0);
+    args.max_requests = 150;
+    args.max_new_peels = 0;
+
+    let mut store = Store::open(dir.path(), opts(t1)).unwrap();
+    run_once_with(
+        &mut store,
+        CountingTransport::new(BatchTransport, 150),
+        &groups,
+        &args,
+    )
+    .expect("once");
+
+    let moves: Vec<_> = store
+        .entries()
+        .iter()
+        .filter(|e| e.event == Event::Move)
+        .collect();
+    assert_eq!(moves.len(), 3, "three Moves");
+    assert!(
+        store
+            .entries()
+            .iter()
+            .any(|e| e.event == Event::Correlation),
+        "Correlation required"
+    );
+}
+
+#[test]
+fn run_once_recreation_to_never_seen_commit_is_peeled() {
+    use refledger_log::entry::Event;
+
+    let dir = TempDir::new().unwrap();
+    let t0 = odt(2026, Month::January, 1, 12, 0, 0, 0);
+    let t1 = t0 + Duration::minutes(5);
+    let t2 = t1 + Duration::minutes(5);
+    const OLD: &str = "1111111111111111111111111111111111111111";
+    const NEW: &str = "abababababababababababababababababababab";
+    const TREE_NEW: &str = "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd";
+
+    // Seed with tag present, then delete via empty Ok through store+classify path.
+    {
+        let mut store = Store::open(dir.path(), opts(t0)).unwrap();
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("acme/widgets")
+                    .unwrap()
+                    .observed_at(t0)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"old\"")),
+                        refs: vec![refledger_poller::observation::ObservedRef::new_lightweight(
+                            "refs/tags/v3.0.0",
+                            OLD,
+                            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                        )
+                        .unwrap()],
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+        // Deletion observation
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("acme/widgets")
+                    .unwrap()
+                    .observed_at(t1)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"gone\"")),
+                        refs: vec![],
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+    }
+
+    #[derive(Clone, Default)]
+    struct RecreateTransport;
+    impl Transport for RecreateTransport {
+        fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
+            let t = &request.target;
+            if t.contains("/repos/acme/widgets")
+                && !t.contains("/git/")
+                && !t.contains("/contents/")
+                && !t.contains("/compare/")
+            {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"repo\"".into())]),
+                    body: Some(serde_json::json!({"archived": false})),
+                });
+            }
+            if t.contains("matching-refs/tags") {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"back\"".into())]),
+                    body: Some(serde_json::json!([{
+                        "ref": "refs/tags/v3.0.0",
+                        "object": {"type": "commit", "sha": NEW}
+                    }])),
+                });
+            }
+            if t.contains(&format!("/git/commits/{NEW}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"sha": NEW, "tree": {"sha": TREE_NEW}})),
+                });
+            }
+            if t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 404,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"message": "Not Found"})),
+                });
+            }
+            Err(format!("unexpected {t}"))
+        }
+    }
+
+    let groups = vec![PollGroup {
+        repo: "acme/widgets".into(),
+        paths: vec![None],
+    }];
+    let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+    args.token = "ghp_test".into();
+    args.scheduled_at = t2;
+    args.actual_start = t2;
+    args.sleep = Box::new(|_| {});
+    args.confirm_delay = Duration::seconds(0);
+    args.max_requests = 150;
+    args.max_new_peels = 0;
+
+    let mut store = Store::open(dir.path(), opts(t2)).unwrap();
+    let report = run_once_with(
+        &mut store,
+        CountingTransport::new(RecreateTransport, 150),
+        &groups,
+        &args,
+    )
+    .expect("once");
+    assert!(
+        report.derived_events >= 1 || store.entries().iter().any(|e| e.event == Event::Recreation),
+        "Recreation expected: {report:?} events={:?}",
+        store.entries().iter().map(|e| e.event).collect::<Vec<_>>()
+    );
+    let rec = store
+        .entries()
+        .iter()
+        .find(|e| e.event == Event::Recreation)
+        .expect("Recreation on chain");
+    assert_eq!(
+        rec.to.as_ref().map(|b| b.commit_sha.as_str()),
+        Some(NEW),
+        "recreate must be peeled to never-seen commit"
+    );
+}
+
+#[test]
+fn run_once_priority_peels_50_tag_batch_despite_full_backfill_backlog() {
+    use refledger_log::entry::Event;
+    use serde_json::json;
+    use std::sync::atomic::{AtomicU32, Ordering as AtomicOrdering};
+
+    const N_BACKLOG: usize = 36;
+    const BATCH: usize = 50;
+
+    #[derive(Clone, Default)]
+    struct HugeBatch {
+        peels: Arc<AtomicU32>,
+    }
+    impl Transport for HugeBatch {
+        fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
+            let t = &request.target;
+            if t.contains("/compare/") {
+                return Ok(load_fixture("compare_ahead"));
+            }
+            if t.contains("/repos/") && !t.contains("/git/") && !t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"repo\"".into())]),
+                    body: Some(json!({"archived": false})),
+                });
+            }
+            if t.contains("matching-refs/tags") {
+                if t.contains("acme/batch") {
+                    let refs: Vec<_> = (0..BATCH)
+                        .map(|i| {
+                            json!({
+                                "ref": format!("refs/tags/v1.0.{i}"),
+                                "object": {
+                                    "type": "commit",
+                                    "sha": format!("b{:039x}", i + 1)
+                                }
+                            })
+                        })
+                        .collect();
+                    return Ok(RestResponse {
+                        status: 200,
+                        headers: BTreeMap::from([("etag".into(), "W/\"batch\"".into())]),
+                        body: Some(json!(refs)),
+                    });
+                }
+                // Backlog repos: many uncached tips
+                let refs: Vec<_> = (0..80)
+                    .map(|i| {
+                        json!({
+                            "ref": format!("refs/tags/v{i}"),
+                            "object": {"type": "commit", "sha": format!("{:040x}", i + 100)}
+                        })
+                    })
+                    .collect();
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"tags\"".into())]),
+                    body: Some(json!(refs)),
+                });
+            }
+            if t.contains("/git/commits/") {
+                self.peels.fetch_add(1, AtomicOrdering::Relaxed);
+                let sha = t.rsplit('/').next().unwrap_or("").to_owned();
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({
+                        "sha": sha,
+                        "tree": {"sha": "cccccccccccccccccccccccccccccccccccccccc"}
+                    })),
+                });
+            }
+            if t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 404,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({"message": "Not Found"})),
+                });
+            }
+            Err(format!("unexpected {t}"))
+        }
+    }
+
+    let dir = TempDir::new().unwrap();
+    let t0 = odt(2026, Month::January, 1, 12, 0, 0, 0);
+    let t1 = t0 + Duration::minutes(5);
+
+    let mut groups = vec![PollGroup {
+        repo: "acme/batch".into(),
+        paths: vec![None],
+    }];
+    for i in 0..N_BACKLOG {
+        groups.push(PollGroup {
+            repo: format!("org/backlog-{i}"),
+            paths: vec![None],
+        });
+    }
+
+    {
+        let mut store = Store::open(dir.path(), opts(t0)).unwrap();
+        let refs: Vec<_> = (0..BATCH)
+            .map(|i| {
+                refledger_poller::observation::ObservedRef::new_lightweight(
+                    format!("refs/tags/v1.0.{i}"),
+                    format!("a{:039x}", i + 1),
+                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                )
+                .unwrap()
+            })
+            .collect();
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("acme/batch")
+                    .unwrap()
+                    .observed_at(t0)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"old\"")),
+                        refs,
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+        for g in &groups[1..] {
+            store.append_observation(&ok_obs(&g.repo, t0)).unwrap();
+        }
+    }
+
+    let inner = HugeBatch::default();
+    let mut store = Store::open(dir.path(), opts(t1)).unwrap();
+    let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+    args.token = "ghp_test".into();
+    args.scheduled_at = t1;
+    args.actual_start = t1;
+    args.sleep = Box::new(|_| {});
+    args.confirm_delay = Duration::seconds(0);
+    // Enough for phase-1 listings + priority peels/enrich/confirm; max_new_peels
+    // is what starves ordinary backfill (must not starve the 50 moved tips).
+    args.max_requests = 400;
+    args.max_new_peels = 5;
+
+    let report = run_once_with(
+        &mut store,
+        CountingTransport::new(inner.clone(), 400),
+        &groups,
+        &args,
+    )
+    .expect("once");
+
+    let moves = store
+        .entries()
+        .iter()
+        .filter(|e| e.event == Event::Move)
+        .count();
+    assert_eq!(
+        moves, BATCH,
+        "all {BATCH} moved tags must classify this run; got {moves}; report={report:?}"
+    );
+    assert!(
+        inner.peels.load(AtomicOrdering::Relaxed) >= BATCH as u32,
+        "each moved tip must be peeled"
+    );
+}

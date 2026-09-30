@@ -8,7 +8,9 @@ use std::path::PathBuf;
 use anyhow::Result;
 use clap::Parser;
 use time::{OffsetDateTime, UtcOffset};
-use refledger_canary_score::{load_entries, load_gaps, load_ledger, render_markdown, score};
+use refledger_canary_score::{
+    load_entries, load_gaps, load_ledger, render_markdown, score_with_corrections,
+};
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -42,8 +44,9 @@ fn main() -> Result<()> {
             .unwrap_or_else(|| PathBuf::from("observations"))
     });
     let gaps = load_gaps(&obs_root, &args.canary_repo)?;
-    let report = score(
-        &ledger,
+    let report = score_with_corrections(
+        &ledger.actions,
+        &ledger.corrections,
         &entries,
         &gaps,
         &args.canary_repo,
@@ -56,9 +59,11 @@ fn main() -> Result<()> {
     fs::write(&args.out, md)?;
     println!("wrote {}", args.out.display());
     println!(
-        "scored={} creation_only={} pre_genesis={} during_gap={} detected={}",
+        "scored={} creation_only={} retired={} manual={} pre_genesis={} during_gap={} detected={}",
         report.scored.len(),
         report.creation_only.len(),
+        report.retired_pattern.len(),
+        report.manual_intervention.len(),
         report.pre_genesis.len(),
         report.during_gap.len(),
         report.detected

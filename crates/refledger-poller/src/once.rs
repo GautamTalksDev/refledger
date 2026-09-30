@@ -20,9 +20,9 @@ use crate::derive::{derive, ChainTip};
 use crate::enrich::{enrich, CompareCache};
 use crate::github::etag::{AuthToken, ETagStore};
 use crate::github::rest::{
-    build_obs_for_once, resolve_repo, resolve_repo_listing, resolve_repo_warm_up, Client,
-    ObjectCache, PageBodyCache, RepoMetaCache, ResolveFail, RestRequest, RestResponse, Transport,
-    WarmUpContext,
+    build_obs_for_once, peel_priority_refs, priority_peel_names, resolve_repo,
+    resolve_repo_listing, resolve_repo_warm_up, Client, ObjectCache, PageBodyCache, RepoMetaCache,
+    ResolveFail, RestRequest, RestResponse, Transport, WarmUpContext,
 };
 use crate::observation::{Observation, Outcome, RepoSlug, SkipReason, Timestamp};
 use crate::population::{load_watched, poll_groups, PollGroup};
@@ -301,7 +301,6 @@ fn truncate_chars(s: &str, max: usize) -> String {
 struct PendingOk {
     early: Observation,
     warm: WarmUpContext,
-    moved_targets: usize,
 }
 
 /// Run one full Actions sweep against an injectable transport (tests).
@@ -406,11 +405,7 @@ pub fn run_once_with<T: Transport>(
                     moved.push(g.repo.clone());
                 }
                 if let Some(w) = warm {
-                    pending_ok.push(PendingOk {
-                        early,
-                        warm: w,
-                        moved_targets: moved_n,
-                    });
+                    pending_ok.push(PendingOk { early, warm: w });
                 } else {
                     // Empty-repo Ok: nothing to peel.
                     store.append_observation(&early)?;
@@ -444,15 +439,19 @@ pub fn run_once_with<T: Transport>(
         }
     }
 
-    // Reserve confirm + enrich before phase-2 backfill takes anything.
-    let moved_tips: usize = pending_ok.iter().map(|p| p.moved_targets).sum();
-    let reserve = reserved_budget(moved.len(), moved_tips);
+    // Reserve confirm + enrich + priority peels (changed/reappeared tips) before
+    // phase-2 backfill takes anything. Priority peels are what make brand-new
+    // attack commits classifiable in the same run.
+    let mut priority_tip_count = 0usize;
+    for pending in &pending_ok {
+        let state = rebuild_repo_state(store, pending.warm.repo.as_str(), None)?;
+        priority_tip_count += priority_peel_names(&state, &pending.warm.refs).len();
+    }
+    let reserve = reserved_budget(moved.len(), priority_tip_count);
     let hard_max = args.max_requests;
     let phase1_used = client.transport().requests();
     let phase2_ceiling = hard_max.saturating_sub(reserve).max(phase1_used);
     client.transport().set_max(phase2_ceiling);
-
-    let mut deferred_ok: Vec<Observation> = Vec::new();
 
     // Phase 2a: warm object cache for 304s (no new observation).
     for w in warm_only {
@@ -462,66 +461,109 @@ pub fn run_once_with<T: Transport>(
         let _ = resolve_repo_warm_up(&w, &pages, &mut objects, &client);
     }
 
-    // Phase 2b: warm-up peels, append Ok observations (classify deferred so
-    // enrich compares spend from the reserved budget, not the backfill pool).
+    // Phase 2b: optional backfill peels only (may leave changed tips listing-only
+    // until priority peel below). Do not append yet.
+    let mut pending_after_warm: Vec<PendingOk> = Vec::new();
     for pending in pending_ok {
-        let obs = if client.transport().requests() >= phase2_ceiling {
-            pending.early
-        } else {
-            match resolve_repo_warm_up(&pending.warm, &pages, &mut objects, &client) {
-                Ok((observed, peel_budget_hit)) => {
-                    let (http_status, etag, archived) = match pending.early.outcome() {
-                        Outcome::Ok {
-                            http_status, etag, ..
-                        } => (*http_status, etag.clone(), pending.early.archived()),
-                        _ => (200, None, pending.early.archived()),
-                    };
-                    let etag = if peel_budget_hit { None } else { etag };
-                    let mut built = build_obs_for_once(
-                        pending.warm.repo.as_str(),
-                        pending.warm.path.as_deref(),
-                        pending.early.observed_at().as_offset_datetime(),
-                        Outcome::Ok {
-                            http_status,
-                            etag,
-                            refs: observed,
-                        },
-                        archived,
-                    )
-                    .unwrap_or(pending.early);
-                    built.stamp_schedule(scheduled_ts, actual_ts);
-                    built
-                }
-                Err(ResolveFail::BudgetExhausted) => pending.early,
-                Err(e) => {
-                    let msg = format!("{e:?}");
-                    if msg.contains("budget exhausted") {
-                        pending.early
-                    } else {
-                        return Err(OnceError::Rest(format!("warm-up: {e:?}")));
-                    }
-                }
-            }
-        };
-        store.append_observation(&obs)?;
-        observations += 1;
-        deferred_ok.push(obs);
+        if client.transport().requests() < phase2_ceiling {
+            let _ = resolve_repo_warm_up(&pending.warm, &pages, &mut objects, &client);
+        }
+        pending_after_warm.push(pending);
     }
 
-    // Restore reserved budget for enrich (deferred Ok) then confirmation.
-    client.transport().set_max(hard_max);
+    // Restore budget for priority peels + enrich, but hold confirm slots aside
+    // so optional backfill cannot climb into the re-poll reserve.
+    let confirm_reserve = (moved.len() as u32).saturating_mul(2);
+    let peel_enrich_max = hard_max.saturating_sub(confirm_reserve);
+    client.transport().set_max(peel_enrich_max);
 
-    for obs in &deferred_ok {
+    for pending in pending_after_warm {
+        let repo_key = pending.warm.repo.as_str().to_owned();
+        if !states.contains_key(&repo_key) {
+            let rebuilt = rebuild_repo_state(store, &repo_key, None)?;
+            states.insert(repo_key.clone(), rebuilt);
+        }
+        let state = states.get(&repo_key).expect("just inserted");
+        let priority = priority_peel_names(state, &pending.warm.refs);
+
+        let (http_status, etag, archived, at) = match pending.early.outcome() {
+            Outcome::Ok {
+                http_status, etag, ..
+            } => (
+                *http_status,
+                etag.clone(),
+                pending.early.archived(),
+                pending.early.observed_at().as_offset_datetime(),
+            ),
+            _ => (
+                200,
+                None,
+                pending.early.archived(),
+                pending.early.observed_at().as_offset_datetime(),
+            ),
+        };
+
+        let observed = if !priority.is_empty() {
+            // Peel every changed/reappeared tip before classify — even never-seen commits.
+            // Priority peels are mandatory: temporarily allow the full hard max
+            // minus confirm so a large batch move still completes this run.
+            client
+                .transport()
+                .set_max(peel_enrich_max.max(client.transport().requests()));
+            let peeled = peel_priority_refs(&pending.warm, &priority, &mut objects, &client)
+                .map_err(|e| OnceError::Rest(format!("priority peel: {e:?}")))?;
+            client.transport().set_max(peel_enrich_max);
+            peeled
+        } else if client.transport().requests() < peel_enrich_max {
+            match resolve_repo_warm_up(&pending.warm, &pages, &mut objects, &client) {
+                Ok((refs, _)) => refs,
+                Err(_) => {
+                    peel_priority_refs(&pending.warm, &BTreeSet::new(), &mut objects, &client)
+                        .unwrap_or_default()
+                }
+            }
+        } else {
+            peel_priority_refs(&pending.warm, &BTreeSet::new(), &mut objects, &client)
+                .unwrap_or_default()
+        };
+
+        let etag = if observed
+            .iter()
+            .any(|r| r.commit_sha().is_none() && r.tree_sha().is_none())
+        {
+            // Incomplete peels remaining: do not claim a stable ETag.
+            None
+        } else {
+            etag
+        };
+
+        let mut obs = build_obs_for_once(
+            pending.warm.repo.as_str(),
+            pending.warm.path.as_deref(),
+            at,
+            Outcome::Ok {
+                http_status,
+                etag,
+                refs: observed,
+            },
+            archived,
+        )
+        .unwrap_or(pending.early);
+        obs.stamp_schedule(scheduled_ts, actual_ts);
+        store.append_observation(&obs)?;
+        observations += 1;
         derived_events += process_observation(
             store,
             &mut states,
             &mut compare,
             client.transport(),
             &args.token,
-            obs,
+            &obs,
         )?;
     }
 
+    // Confirm re-polls get the held-back reserve.
+    client.transport().set_max(hard_max);
     let confirmations = if !moved.is_empty() {
         (args.sleep)(args.confirm_delay);
         let confirm_at = actual_start + args.confirm_delay;
@@ -574,13 +616,15 @@ pub fn run_once_with<T: Transport>(
     })
 }
 
-/// Requests held back from phase-2 backfill for confirm + enrich.
-fn reserved_budget(moved_repos: usize, moved_tips: usize) -> u32 {
+/// Requests held back from phase-2 backfill for confirm + enrich + priority peels.
+fn reserved_budget(moved_repos: usize, priority_tips: usize) -> u32 {
     // Confirm resolve_repo: repo metadata + tag listing (often 304) ≈ 2.
+    // Priority peel: git/commits (+ optional action.yml) ≈ 2 per tip.
     // Enrich: one compare per moved tip.
     let confirm = (moved_repos as u32).saturating_mul(2);
-    let enrich = moved_tips as u32;
-    confirm.saturating_add(enrich)
+    let peel = (priority_tips as u32).saturating_mul(2);
+    let enrich = priority_tips as u32;
+    confirm.saturating_add(peel).saturating_add(enrich)
 }
 
 /// Shared observe → enrich → classify → derive → append path.
@@ -686,6 +730,7 @@ pub fn run_once(opts: StoreOptions, args: OnceArgs) -> Result<OnceReport, OnceEr
     store.ensure_false_422_digest_note()?;
     store.ensure_gap_no_derive_digest_note()?;
     store.ensure_tree_sha_digest_note()?;
+    store.ensure_seq_40_deletion_classification_correction(args.actual_start)?;
     // First durable chain rows: Added for every watched key that already has
     // an observation but no PopulationChange yet (including the canary and
     // subdirectory keys that share a poll group).
@@ -765,9 +810,11 @@ mod movement_tests {
     use super::*;
 
     #[test]
-    fn reserve_covers_confirm_and_enrich() {
-        assert_eq!(reserved_budget(1, 1), 3);
-        assert_eq!(reserved_budget(2, 5), 9);
+    fn reserve_covers_confirm_enrich_and_priority_peels() {
+        // 1 repo, 1 tip: confirm=2 + peel=2 + enrich=1 = 5
+        assert_eq!(reserved_budget(1, 1), 5);
+        // 2 repos, 5 tips: confirm=4 + peel=10 + enrich=5 = 19
+        assert_eq!(reserved_budget(2, 5), 19);
         assert_eq!(reserved_budget(0, 0), 0);
     }
 }

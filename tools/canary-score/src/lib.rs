@@ -22,6 +22,26 @@ pub struct LedgerLine {
     pub performed_at: String,
 }
 
+/// Append-only correction for a prior ledger action row. Never edit the
+/// original row; append one of these instead.
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+pub struct LedgerCorrection {
+    /// Always `"correction"`.
+    pub kind: String,
+    pub corrects_performed_at: String,
+    pub pattern: String,
+    pub tag: String,
+    /// e.g. `"manual_intervention"`.
+    pub correction_kind: String,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct LoadedLedger {
+    pub actions: Vec<LedgerLine>,
+    pub corrections: Vec<LedgerCorrection>,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GapKind {
     PollerDown,
@@ -52,6 +72,8 @@ pub struct ScoreReport {
     pub canary_added_at: Option<String>,
     pub scored: Vec<ScoredRow>,
     pub creation_only: Vec<LedgerLine>,
+    pub retired_pattern: Vec<LedgerLine>,
+    pub manual_intervention: Vec<(LedgerLine, String)>,
     pub pre_genesis: Vec<LedgerLine>,
     pub during_gap: Vec<(LedgerLine, GapKind)>,
     pub detected: usize,
@@ -77,11 +99,18 @@ pub fn pattern_expects_chain_event(pattern: &str) -> bool {
             | "commit_metadata_only"
             | "lightweight_to_annotated"
             | "annotated_to_lightweight"
-            | "lightweight_annotated_roundtrip"
             | "delete"
             | "recreate"
-            | "delete_recreate"
             | "batch_exact_to_one"
+    )
+}
+
+/// Retired combined patterns: undetectable by design under the split-pattern
+/// canary. Listed separately; never counted as misses.
+pub fn pattern_is_retired(pattern: &str) -> bool {
+    matches!(
+        pattern,
+        "lightweight_annotated_roundtrip" | "delete_recreate"
     )
 }
 
@@ -91,8 +120,35 @@ pub fn pattern_is_creation_only(pattern: &str) -> bool {
     matches!(pattern, "bootstrap" | "creation" | "create")
 }
 
+fn is_manual_intervention(line: &LedgerLine, corrections: &[LedgerCorrection]) -> Option<String> {
+    corrections.iter().find_map(|c| {
+        if c.kind != "correction" || c.correction_kind != "manual_intervention" {
+            return None;
+        }
+        if c.pattern == line.pattern
+            && c.tag == line.tag
+            && c.corrects_performed_at == line.performed_at
+        {
+            Some(c.reason.clone())
+        } else {
+            None
+        }
+    })
+}
+
 pub fn score(
     ledger: &[LedgerLine],
+    entries: &[Value],
+    gaps: &[RecordedGap],
+    canary_repo: &str,
+    now: OffsetDateTime,
+) -> ScoreReport {
+    score_with_corrections(ledger, &[], entries, gaps, canary_repo, now)
+}
+
+pub fn score_with_corrections(
+    ledger: &[LedgerLine],
+    corrections: &[LedgerCorrection],
     entries: &[Value],
     gaps: &[RecordedGap],
     canary_repo: &str,
@@ -101,6 +157,8 @@ pub fn score(
     let added_at = canary_added_at(entries, canary_repo);
     let mut scored = Vec::new();
     let mut creation_only = Vec::new();
+    let mut retired_pattern = Vec::new();
+    let mut manual_intervention = Vec::new();
     let mut pre_genesis = Vec::new();
     let mut during_gap = Vec::new();
     let mut detected = 0usize;
@@ -108,6 +166,14 @@ pub fn score(
     let mut latencies = Vec::new();
 
     for line in ledger {
+        if let Some(reason) = is_manual_intervention(line, corrections) {
+            manual_intervention.push((line.clone(), reason));
+            continue;
+        }
+        if pattern_is_retired(&line.pattern) {
+            retired_pattern.push(line.clone());
+            continue;
+        }
         if pattern_is_creation_only(&line.pattern) || !pattern_expects_chain_event(&line.pattern) {
             creation_only.push(line.clone());
             continue;
@@ -145,6 +211,8 @@ pub fn score(
         canary_added_at: added_at.map(|t| t.format(&Rfc3339).unwrap_or_default()),
         scored,
         creation_only,
+        retired_pattern,
+        manual_intervention,
         pre_genesis,
         during_gap,
         detected,
@@ -439,7 +507,8 @@ Measured by joining `{repo}` ledger actions against the Refledger chain.
 Only actions the poller could have seen are scored (after the canary's
 PopulationChange Added at {added}; outside recorded PollerDown /
 SecondaryLimitBackoff gaps). Canary events are excluded from public
-ecosystem stats.
+ecosystem stats. Manual-intervention and retired-pattern rows are listed
+separately and never enter latency figures.
 
 **Generated:** {generated}
 
@@ -450,6 +519,8 @@ ecosystem stats.
 | Ledger actions | {total} |
 | Scored (event-producing) | {scored} |
 | Creation-only, not scored | {creation} |
+| Retired pattern, not scored | {retired} |
+| Manual intervention, not scored | {manual} |
 | Pre genesis, not scored | {pre} |
 | Performed during a recorded gap | {gap} |
 | Detected | {detected} |
@@ -476,6 +547,26 @@ so they are never counted as detection misses.
 |---------|-----|--------------|
 {creation_rows}
 
+## Retired pattern (not scored)
+
+{retired_n} ledger row(s) from retired combined patterns
+(`lightweight_annotated_roundtrip`, `delete_recreate`) that could not be
+detected by design under the split-pattern canary. Not counted as misses.
+
+| pattern | tag | performed_at |
+|---------|-----|--------------|
+{retired_rows}
+
+## Manual intervention (not scored)
+
+{manual_n} ledger row(s) marked by an appended correction as a manual
+intervention (for example a remote delete performed by hand after a push
+bug). Excluded from latency figures; the original ledger row is unchanged.
+
+| pattern | tag | performed_at | reason |
+|---------|-----|--------------|--------|
+{manual_rows}
+
 ## Pre genesis, not scored
 
 {pre_n} ledger row(s) with `performed_at` at or before the canary PopulationChange Added entry (or before that entry exists). They are listed so a reader can see where they went; they are not detection misses.
@@ -497,10 +588,14 @@ so they are never counted as detection misses.
         generated = report.generated_at,
         total = report.scored.len()
             + report.creation_only.len()
+            + report.retired_pattern.len()
+            + report.manual_intervention.len()
             + report.pre_genesis.len()
             + report.during_gap.len(),
         scored = report.scored.len(),
         creation = report.creation_only.len(),
+        retired = report.retired_pattern.len(),
+        manual = report.manual_intervention.len(),
         pre = report.pre_genesis.len(),
         gap = report.during_gap.len(),
         detected = report.detected,
@@ -521,6 +616,33 @@ so they are never counted as detection misses.
                 .creation_only
                 .iter()
                 .map(|l| format!("| {} | {} | {} |", l.pattern, l.tag, l.performed_at))
+                .collect::<Vec<_>>()
+                .join("\n")
+        },
+        retired_n = report.retired_pattern.len(),
+        retired_rows = if report.retired_pattern.is_empty() {
+            "| — | — | — |".into()
+        } else {
+            report
+                .retired_pattern
+                .iter()
+                .map(|l| format!("| {} | {} | {} |", l.pattern, l.tag, l.performed_at))
+                .collect::<Vec<_>>()
+                .join("\n")
+        },
+        manual_n = report.manual_intervention.len(),
+        manual_rows = if report.manual_intervention.is_empty() {
+            "| — | — | — | — |".into()
+        } else {
+            report
+                .manual_intervention
+                .iter()
+                .map(|(l, reason)| {
+                    format!(
+                        "| {} | {} | {} | {} |",
+                        l.pattern, l.tag, l.performed_at, reason
+                    )
+                })
                 .collect::<Vec<_>>()
                 .join("\n")
         },
@@ -555,16 +677,32 @@ so they are never counted as detection misses.
     )
 }
 
-pub fn load_ledger(source: &str) -> Result<Vec<LedgerLine>> {
+pub fn load_ledger(source: &str) -> Result<LoadedLedger> {
     let text = read_ledger_text(source)?;
-    let mut out = Vec::new();
+    let mut actions = Vec::new();
+    let mut corrections = Vec::new();
     for (i, line) in text.lines().enumerate() {
         if line.trim().is_empty() {
             continue;
         }
-        out.push(serde_json::from_str(line).with_context(|| format!("{source}:{}", i + 1))?);
+        let value: Value = serde_json::from_str(line)
+            .with_context(|| format!("{source}:{}", i + 1))?;
+        if value.get("kind").and_then(|v| v.as_str()) == Some("correction") {
+            corrections.push(
+                serde_json::from_value(value)
+                    .with_context(|| format!("{source}:{} correction", i + 1))?,
+            );
+        } else {
+            actions.push(
+                serde_json::from_value(value)
+                    .with_context(|| format!("{source}:{} action", i + 1))?,
+            );
+        }
     }
-    Ok(out)
+    Ok(LoadedLedger {
+        actions,
+        corrections,
+    })
 }
 
 fn read_ledger_text(source: &str) -> Result<String> {

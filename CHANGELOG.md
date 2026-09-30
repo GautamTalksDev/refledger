@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **2026-09-30 - attack-shaped tag moves would go unrecorded.** After the
+  tree-SHA listing fix, a ref whose target changed (or reappeared after a
+  tombstone) to a never-seen commit was stored listing-only, and classify
+  skipped unpeeled refs. The tj-actions / Trivy attack shape — tags moved to
+  a brand-new malicious commit — would therefore emit no Move. Every
+  changed or reappeared tip is now peeled from the reserved budget before
+  classify in the same run; confirm slots stay held aside from optional
+  backfill. Correction entry for seq 40 (Deletion carried meaningless
+  `content_change`; LOG-FORMAT v1 requires the field). Canary-score: retired
+  patterns and manual-intervention corrections are listed separately and
+  excluded from latency.
+
 - **2026-09-30 - once never derived moves (gap-no-derive-2026-09-29).** The
   Actions `once` runner stored observations but never ran
   classify → enrich → derive → append, so the chain recorded no

@@ -1008,6 +1008,30 @@ impl<V: Volume> Store<V> {
         self.ensure_digest_note_once(MARKER, NOTE)
     }
 
+    /// Append a Correction for seq 40 (Deletion mis-labelled content_change).
+    /// Idempotent: skips if a Correction with corrects_seq=40 already exists.
+    pub fn ensure_seq_40_deletion_classification_correction(
+        &mut self,
+        recorded_at: OffsetDateTime,
+    ) -> Result<(), StoreError> {
+        const SEQ: u64 = 40;
+        const REASON: &str = "seq 40 Deletion carried classification content_change, which is meaningless for a deletion (no content to compare); LOG-FORMAT v1 requires a classification field on deletions and has no deletion-specific value — content_change was the vector convention, not a computed tree diff";
+        for entry in self.chain.entries() {
+            if entry.event == Event::Correction && entry.corrects_seq == Some(SEQ) {
+                return Ok(());
+            }
+        }
+        // Only correct if seq 40 exists and is a Deletion.
+        let Some(target) = self.chain.entries().iter().find(|e| e.seq == SEQ) else {
+            return Ok(());
+        };
+        if target.event != Event::Deletion {
+            return Ok(());
+        }
+        self.append_entry(UnhashedEntry::correction(recorded_at, SEQ, REASON))?;
+        Ok(())
+    }
+
     /// 32 listing observations recorded incorrect tree_sha values (commit SHA
     /// or annotated placeholders). Listed in docs/tree-sha-affected-observations.txt;
     /// observations are unchanged; those tree_sha fields must not be relied on.
