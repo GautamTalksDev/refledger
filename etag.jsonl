@@ -226,3 +226,4 @@
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"07c4048aa78b8ee560c8804c291350cdbb76f59f0ea8abdbaabcac0e25d08a5f\"","stored_at":"2026-09-30T17:57:57.269Z"}
 {"repo":"azure/webapps-deploy","template":"/repos/{owner}/{repo}","query":"","etag":"\"e8c6a980629cac508fd25a6801c2e5e12193a9f5441bf50ae8282b1265a2def8\"","stored_at":"2026-09-30T18:03:10.171Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"999386e50048e82353a1ade5c574f671c393943fa1336baddcf5d2ffd575dc21\"","stored_at":"2026-09-30T18:38:04.293Z"}
+{"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"8b34e4e9c36de27f413854e2e59e5f4617ea506e60b15268d08d0db4535d1666\"","stored_at":"2026-09-30T18:52:53.520Z"}
