@@ -107,3 +107,4 @@
 {"repo":"actions/checkout","archived":false}
 {"repo":"aquasecurity/trivy-action","archived":false}
 {"repo":"actions/labeler","archived":false}
+{"repo":"aws-actions/configure-aws-credentials","archived":false}

@@ -214,3 +214,4 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"c05648b65d3db0d30f66326329f4f625dbab624b77672926fd8087b6466856f2\"","stored_at":"2026-09-30T12:19:52.669Z"}
 {"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"c0d0fcd5c2ac1e2fb217e716ae779533ff9b6d7d43f02c4193f36d5d7cb2b44a\"","stored_at":"2026-09-30T12:32:56.124Z"}
 {"repo":"actions/labeler","template":"/repos/{owner}/{repo}","query":"","etag":"\"b45b98b170a38550090583fa56e27cac08faec1193b509bbcd5282269b924fc6\"","stored_at":"2026-09-30T13:07:55.513Z"}
+{"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"6c13d57ac2c918510398eb037c3273199e56865092d8e7ee38a3852c91aa3817\"","stored_at":"2026-09-30T13:20:59.463Z"}
