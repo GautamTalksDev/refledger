@@ -71,3 +71,4 @@
 {"repo":"aws-actions/amazon-ecr-login","archived":false}
 {"repo":"actions/upload-artifact","archived":false}
 {"repo":"actions/setup-dotnet","archived":false}
+{"repo":"actions/labeler","archived":false}
