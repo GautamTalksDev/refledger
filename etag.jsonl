@@ -168,3 +168,6 @@
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"b017e03fb671cc9de455bb21ee62e0312e0012c078037e4b83f4fe14174a0717\"","stored_at":"2026-09-30T01:12:25.678Z"}
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"ce831b90a005e19e6c9050cc2c8ddac0b324dc9dff20460e1ca90e8fff692bf3\"","stored_at":"2026-09-30T01:15:06.637Z"}
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"292c31f5f381980071ce35227adad23a42e12c2d3aadc08079e117b4a7921b2a\"","stored_at":"2026-09-30T01:22:21.643Z"}
+{"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"826d44608d0925ed793fa2774bcc3590a4a90b54f282599c64cc3209658e79d2\"","stored_at":"2026-09-30T01:47:25.259Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"cc1b8e76988e8420a3b2f60f0e87f3464497cafae8c8d97bc41f938f8dbc2089\"","stored_at":"2026-09-30T01:47:25.259Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"859fe6f4aac7deac191c337c31a7d6239b8e3010a5ccbb8a59b1fc3326d39514\"","stored_at":"2026-09-30T01:47:25.259Z"}
