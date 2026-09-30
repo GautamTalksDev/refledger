@@ -13,7 +13,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   failures retry on every poll until fast-forward succeeds, then the next
   ObservationDigest notes the recovery. CI guards `git check-ignore` for a
   sample `data/log/` path. Untracked parent `data/` on a fresh `main` is
-  allowed during publish (git reports `?? data/` before `git add`).
+  allowed during publish (git reports `?? data/` before `git add`). Publish
+  auth strips embedded credentials from `origin` and uses
+  `AUTHORIZATION: basic` (x-access-token) so the workflow's token URL and
+  the header do not fight.
 
 ### Changed
 

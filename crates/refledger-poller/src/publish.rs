@@ -102,12 +102,15 @@ impl GitLedgerPublisher {
             );
         }
         // Prefer header auth so the token never appears in the remote URL.
+        // Use basic x-access-token (same as actions/checkout); bearer alone can
+        // fail when the remote URL already embeds credentials.
         if let Some(token) = &self.github_token {
+            let basic = base64_basic_github_token(token);
             cmd.env("GIT_CONFIG_COUNT", "1");
             cmd.env("GIT_CONFIG_KEY_0", "http.https://github.com/.extraheader");
             cmd.env(
                 "GIT_CONFIG_VALUE_0",
-                format!("AUTHORIZATION: bearer {token}"),
+                format!("AUTHORIZATION: basic {basic}"),
             );
         }
         cmd.output()
@@ -166,6 +169,19 @@ impl GitLedgerPublisher {
         }
         Ok(())
     }
+
+    /// Drop embedded credentials from `origin` when using header auth.
+    fn sanitize_origin_for_header_auth(&self) -> Result<(), String> {
+        if self.github_token.is_none() {
+            return Ok(());
+        }
+        let url = self.git_ok(&["remote", "get-url", "origin"])?;
+        let clean = strip_url_userinfo(&url);
+        if clean != url {
+            self.git_ok(&["remote", "set-url", "origin", &clean])?;
+        }
+        Ok(())
+    }
 }
 
 impl LedgerPublisher for GitLedgerPublisher {
@@ -176,6 +192,9 @@ impl LedgerPublisher for GitLedgerPublisher {
                 self.clone_dir.display()
             ));
         }
+        // Workflow may have set origin to https://x-access-token:…@…. Combining
+        // that with an Authorization header yields "invalid credentials".
+        self.sanitize_origin_for_header_auth()?;
         self.refuse_if_dirty_outside_log()?;
         self.write_files(&payload.files)?;
         self.refuse_if_dirty_outside_log()?;
@@ -222,6 +241,51 @@ impl LedgerPublisher for GitLedgerPublisher {
         }
         Ok(())
     }
+}
+
+/// `AUTHORIZATION: basic` value for `x-access-token:<GITHUB_TOKEN>`.
+fn base64_basic_github_token(token: &str) -> String {
+    base64_encode(format!("x-access-token:{token}").as_bytes())
+}
+
+fn base64_encode(bytes: &[u8]) -> String {
+    const TABLE: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let b0 = chunk[0] as u32;
+        let b1 = chunk.get(1).copied().unwrap_or(0) as u32;
+        let b2 = chunk.get(2).copied().unwrap_or(0) as u32;
+        let n = (b0 << 16) | (b1 << 8) | b2;
+        out.push(TABLE[((n >> 18) & 63) as usize] as char);
+        out.push(TABLE[((n >> 12) & 63) as usize] as char);
+        if chunk.len() > 1 {
+            out.push(TABLE[((n >> 6) & 63) as usize] as char);
+        } else {
+            out.push('=');
+        }
+        if chunk.len() > 2 {
+            out.push(TABLE[(n & 63) as usize] as char);
+        } else {
+            out.push('=');
+        }
+    }
+    out
+}
+
+/// `https://user:pass@host/path` → `https://host/path`.
+fn strip_url_userinfo(url: &str) -> String {
+    let Some(scheme_end) = url.find("://") else {
+        return url.to_owned();
+    };
+    let after = &url[scheme_end + 3..];
+    let Some(at) = after.find('@') else {
+        return url.to_owned();
+    };
+    // Only strip when '@' is in the authority, not in the path.
+    if after[..at].contains('/') {
+        return url.to_owned();
+    }
+    format!("{}{}", &url[..=scheme_end + 2], &after[at + 1..])
 }
 
 fn porcelain_path(line: &str) -> Option<&str> {
@@ -316,5 +380,26 @@ mod tests {
         assert!(is_under_data_log("data/log/heads.jsonl"));
         assert!(!is_under_data_log("data/observations"));
         assert!(!is_under_data_log("README.md"));
+    }
+
+    #[test]
+    fn strip_embedded_github_token_from_origin() {
+        assert_eq!(
+            strip_url_userinfo(
+                "https://x-access-token:ghs_example@github.com/GautamTalksDev/refledger.git"
+            ),
+            "https://github.com/GautamTalksDev/refledger.git"
+        );
+        assert_eq!(
+            strip_url_userinfo("https://github.com/GautamTalksDev/refledger.git"),
+            "https://github.com/GautamTalksDev/refledger.git"
+        );
+    }
+
+    #[test]
+    fn basic_auth_header_matches_checkout_shape() {
+        let encoded = base64_basic_github_token("ghs_test");
+        assert_eq!(encoded, base64_encode(b"x-access-token:ghs_test"));
+        assert!(!encoded.contains("ghs_test"));
     }
 }
