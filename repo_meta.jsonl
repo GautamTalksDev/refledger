@@ -115,3 +115,4 @@
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/setup-python","archived":false}
 {"repo":"actions/attest-build-provenance","archived":false}
+{"repo":"aws-actions/configure-aws-credentials","archived":false}
