@@ -237,3 +237,4 @@
 {"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"0688878a30ac02221cbc55032967b730b26fca3e0ce0054b223228034ac93304\"","stored_at":"2026-09-30T20:57:56.973Z"}
 {"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"9f6e8ce097f3e554fa76ef76d121a78786b77fc4f1612695a55b40465e982d6f\"","stored_at":"2026-09-30T21:47:54.130Z"}
 {"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"7f65b329c5f29bb7d349e0d03c128dac8cb6e4a48701b5afc0e6685822a06218\"","stored_at":"2026-09-30T21:52:54.472Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"cf8468bced95b9a2dd7779e7e0205a5e2a944e3b658ce2fc25dca5b207512d3e\"","stored_at":"2026-09-30T22:42:55.833Z"}
