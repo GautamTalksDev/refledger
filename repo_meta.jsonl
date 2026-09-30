@@ -106,3 +106,4 @@
 {"repo":"tj-actions/changed-files","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"aquasecurity/trivy-action","archived":false}
+{"repo":"actions/labeler","archived":false}
