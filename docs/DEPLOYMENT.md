@@ -25,15 +25,22 @@ M1 measures the seven-day exit on this Actions cadence (every 5 minutes). **Code
 
 ## Clock
 
-GitHub's Actions scheduler alone was not enough for M1. After genesis, scheduled `poll` runs were unreliable while the canary rotator also missed slots. Archive days cannot be recovered, so an external clock triggers each poll.
+GitHub's Actions scheduler alone was not enough for M1. After genesis, scheduled `poll` runs were unreliable while the canary rotator also missed slots. Archive days cannot be recovered, so an external clock triggers each poll and each canary rotation.
 
-`clock/` is a Cloudflare Worker (`refledger-clock`) on the operator's main Cloudflare account. It has no `workers.dev` hostname, no routes, and no public HTTP API: every `fetch` returns 404. Its only job is a cron matching poll.yml (`2-57/5 * * * *`, never the `:00` minute) that POSTs `workflow_dispatch` for `poll.yml` on `main`.
+`clock/` is a Cloudflare Worker (`refledger-clock`) on the operator's main Cloudflare account. It has no `workers.dev` hostname, no routes, and no public HTTP API: every `fetch` returns 404. It registers two crons and switches on `event.cron`:
 
-The Actions `schedule` trigger in `.github/workflows/poll.yml` stays as a backup. Concurrency group `refledger-poller` with `cancel-in-progress: false` already prevents overlapping writers if both fire.
+| Cron | Dispatches |
+|---|---|
+| `2-57/5 * * * *` (never the `:00` minute) | `GautamTalksDev/refledger` → `poll.yml` on `main` |
+| `17 */4 * * *` | `GautamTalksDev/canary` → `canary.yml` on `main` |
+
+Same `DISPATCH_TOKEN`, same retry (one retry after 5s on 5xx or network error; never on 4xx), same logging rules (status, target, attempt only; never the token).
+
+The Actions `schedule` trigger in `.github/workflows/poll.yml` stays as a backup. Concurrency group `refledger-poller` with `cancel-in-progress: false` already prevents overlapping writers if both fire. The canary workflow has **no** Actions `schedule:`; only `workflow_dispatch` from this clock (plus manual runs).
 
 ### Token (`DISPATCH_TOKEN`)
 
-Fine-grained personal access token, repository access limited to `GautamTalksDev/refledger` only:
+Fine-grained personal access token with repository access to **both** `GautamTalksDev/refledger` and `GautamTalksDev/canary`:
 
 | Permission | Access |
 |---|---|
@@ -41,7 +48,7 @@ Fine-grained personal access token, repository access limited to `GautamTalksDev
 | Contents | No access |
 | Metadata | Read-only (required by GitHub) |
 
-That is enough for `POST .../actions/workflows/poll.yml/dispatches` and nothing else. Do not use `GITHUB_TOKEN` from Actions here; this secret lives in the Worker. Never commit the token. Never log it.
+That is enough for `POST .../actions/workflows/{poll,canary}.yml/dispatches` and nothing else. Do not use `GITHUB_TOKEN` from Actions here; this secret lives in the Worker. Never commit the token. Never log it.
 
 Fine-grained tokens expire in at most one year. Before expiry: mint a replacement with the same scope, set it with `wrangler secret put DISPATCH_TOKEN` from inside `clock/`, then revoke the old token.
 

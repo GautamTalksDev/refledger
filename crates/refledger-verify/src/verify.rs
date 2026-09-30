@@ -78,7 +78,10 @@ pub struct ChainVerdict {
     pub span_start: Option<String>,
     pub span_end: Option<String>,
     pub head: Option<HeadStatus>,
-    pub coverage_gaps: u64,
+    /// Sum of `observation_digest.skipped` across digests in range.
+    pub coverage_skipped: u64,
+    /// Sum of `observation_digest.failed` across digests in range.
+    pub coverage_failed: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub failure: Option<FailureReport>,
 }
@@ -238,12 +241,14 @@ pub fn verify_chain(entries: &[Value]) -> Result<ChainVerdict, VerifyError> {
             span_start: None,
             span_end: None,
             head: None,
-            coverage_gaps: 0,
+            coverage_skipped: 0,
+            coverage_failed: 0,
             failure: None,
         });
     }
 
-    let mut coverage_gaps = 0u64;
+    let mut coverage_skipped = 0u64;
+    let mut coverage_failed = 0u64;
     let mut span_start: Option<String> = None;
     let mut span_end: Option<String> = None;
     let mut prev_hash: Option<String> = None;
@@ -307,8 +312,11 @@ pub fn verify_chain(entries: &[Value]) -> Result<ChainVerdict, VerifyError> {
             });
         }
 
-        if obj.get("event").and_then(|v| v.as_str()) == Some("coverage_gap") {
-            coverage_gaps += 1;
+        if obj.get("event").and_then(|v| v.as_str()) == Some("observation_digest") {
+            if let Some(digest) = obj.get("observation_digest") {
+                coverage_skipped += digest.get("skipped").and_then(|v| v.as_u64()).unwrap_or(0);
+                coverage_failed += digest.get("failed").and_then(|v| v.as_u64()).unwrap_or(0);
+            }
         }
 
         let stored_hash =
@@ -381,7 +389,8 @@ pub fn verify_chain(entries: &[Value]) -> Result<ChainVerdict, VerifyError> {
         span_start,
         span_end,
         head: None,
-        coverage_gaps,
+        coverage_skipped,
+        coverage_failed,
         failure: None,
     })
 }

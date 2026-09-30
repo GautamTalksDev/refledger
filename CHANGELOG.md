@@ -18,6 +18,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `AUTHORIZATION: basic` (x-access-token) so the workflow's token URL and
   the header do not fight.
 
+- **2026-09-30 - canary clock and verifier coverage line.** `refledger-clock`
+  also dispatches the canary rotation (`17 */4 * * *`). Verifier coverage
+  line sums `skipped`/`failed` from signed ObservationDigests.
+
 ### Changed
 
 - **2026-09-29 - genesis, clock, hardening, freeze.** First continuous M1 day:

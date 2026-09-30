@@ -114,3 +114,8 @@ Amends the Actions-host entry above to match the system as it runs after genesis
 
 - **`.gitignore`:** top-level `/data/` no longer ignores `data/log/` (negated so sealed ledger paths can be `git add`ed on `main`).
 - **Publish failures:** recorded under `state/publish_failures.jsonl` on the `data` branch; every poll retries a pending publish (fast-forward only) until it succeeds, then clears the pending entry and notes the recovery on the next ObservationDigest.
+
+### 2026-09-30 - Canary on the external clock
+
+- **Clock:** `refledger-clock` also fires `workflow_dispatch` for `GautamTalksDev/canary` `canary.yml` on cron `17 */4 * * *`.
+- **Canary workflow:** Actions `schedule:` removed so rotations are not doubled; only `workflow_dispatch` (clock + manual).

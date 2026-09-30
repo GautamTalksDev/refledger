@@ -22,7 +22,17 @@ cargo run --locked --release -p refledger-verify -- data/log --strict \
   --pubkey b3e7e795c35dee53731e039b76da930fc54e87e2edc632449a8a2e55252e276a
 ```
 
-Pin the key from [`PUBLIC-KEY.md`](PUBLIC-KEY.md). On success the tool prints at most five lines: chain status, entry count and sequence range, time span, signed head status, and how many coverage gaps were recorded. On failure it names the check and, when possible, the sequence number.
+Pin the key from [`PUBLIC-KEY.md`](PUBLIC-KEY.md). On success the tool prints at most five lines, for example:
+
+```
+chain: OK
+entries: 40 (seq 0 .. 39)
+span: 2026-09-29 .. 2026-09-30
+head: signed, valid, key b3e7...
+coverage gaps recorded: 215 skipped, 1 failed polls (from signed digests)
+```
+
+The coverage line sums `skipped` and `failed` from every `ObservationDigest` in range (the signed counts), not a separate gap-event tally. On failure it names the check and, when possible, the sequence number.
 
 Exit code `0` means the verdict is OK. Exit code `1` means a verification failure. Exit code `2` means I/O, parse, or usage error.
 

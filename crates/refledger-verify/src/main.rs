@@ -134,7 +134,8 @@ fn run(args: Args) -> Result<ExitCode, VerifyError> {
                 v.seq_last = verdict.seq_last;
                 v.span_start = verdict.span_start;
                 v.span_end = verdict.span_end;
-                v.coverage_gaps = verdict.coverage_gaps;
+                v.coverage_skipped = verdict.coverage_skipped;
+                v.coverage_failed = verdict.coverage_failed;
                 print_verdict(&v, args.json);
                 return Ok(ExitCode::from(1));
             }
@@ -156,7 +157,8 @@ fn run(args: Args) -> Result<ExitCode, VerifyError> {
                 v.seq_last = verdict.seq_last;
                 v.span_start = verdict.span_start;
                 v.span_end = verdict.span_end;
-                v.coverage_gaps = verdict.coverage_gaps;
+                v.coverage_skipped = verdict.coverage_skipped;
+                v.coverage_failed = verdict.coverage_failed;
                 v.head = verdict.head;
                 print_verdict(&v, args.json);
                 return Ok(ExitCode::from(1));
@@ -225,7 +227,8 @@ fn run(args: Args) -> Result<ExitCode, VerifyError> {
                         v.seq_last = verdict.seq_last;
                         v.span_start = verdict.span_start;
                         v.span_end = verdict.span_end;
-                        v.coverage_gaps = verdict.coverage_gaps;
+                        v.coverage_skipped = verdict.coverage_skipped;
+                        v.coverage_failed = verdict.coverage_failed;
                         print_verdict(&v, args.json);
                         return Ok(ExitCode::from(1));
                     }
@@ -242,6 +245,8 @@ fn run(args: Args) -> Result<ExitCode, VerifyError> {
                 v.seq_last = verdict.seq_last;
                 v.span_start = verdict.span_start;
                 v.span_end = verdict.span_end;
+                v.coverage_skipped = verdict.coverage_skipped;
+                v.coverage_failed = verdict.coverage_failed;
                 v.head = verdict.head.clone();
                 print_verdict(&v, args.json);
                 return Ok(ExitCode::from(1));
@@ -255,7 +260,8 @@ fn run(args: Args) -> Result<ExitCode, VerifyError> {
                     v.seq_last = verdict.seq_last;
                     v.span_start = verdict.span_start;
                     v.span_end = verdict.span_end;
-                    v.coverage_gaps = verdict.coverage_gaps;
+                    v.coverage_skipped = verdict.coverage_skipped;
+                    v.coverage_failed = verdict.coverage_failed;
                     v.head = verdict.head;
                     print_verdict(&v, args.json);
                     return Ok(ExitCode::from(1));
@@ -285,7 +291,8 @@ fn fail_verdict(failure: &Failure) -> ChainVerdict {
         span_start: None,
         span_end: None,
         head: None,
-        coverage_gaps: 0,
+        coverage_skipped: 0,
+        coverage_failed: 0,
         failure: Some(report),
     }
 }
@@ -334,5 +341,8 @@ fn print_verdict(v: &ChainVerdict, as_json: bool) {
         Some(_) => println!("head: present, invalid"),
         None => println!("head: (not checked)"),
     }
-    println!("coverage gaps recorded: {}", v.coverage_gaps);
+    println!(
+        "coverage gaps recorded: {} skipped, {} failed polls (from signed digests)",
+        v.coverage_skipped, v.coverage_failed
+    );
 }

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Cloudflare Worker cron that dispatches the Refledger poll workflow",
+  "description": "Cloudflare Worker crons that dispatch Refledger poll and canary workflows",
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
