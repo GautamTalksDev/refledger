@@ -7,14 +7,14 @@ SecondaryLimitBackoff gaps). Canary events are excluded from public
 ecosystem stats. Manual-intervention and retired-pattern rows are listed
 separately and never enter latency figures.
 
-**Generated:** 2026-09-30T05:44:01.626Z
+**Generated:** 2026-09-30T05:46:48.333Z
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Ledger actions | 8 |
-| Scored (event-producing) | 0 |
+| Ledger actions | 9 |
+| Scored (event-producing) | 1 |
 | Creation-only, not scored | 0 |
 | Retired pattern, not scored | 4 |
 | Manual intervention, not scored | 1 |
@@ -32,7 +32,7 @@ This is the figure OPERATIONS.md §7 promises to publish.
 
 | pattern | tag | detected | classified | latency |
 |---------|-----|----------|------------|---------|
-| — | — | — | — | — |
+| recreate | v3.0.0 | no | — | recreate half |
 
 ## Creation-only (not scored)
 
