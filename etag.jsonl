@@ -259,3 +259,5 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"07c931be879468559fc35b041b9d0b821f102ac4c700ed57f8ed251615a2e637\"","stored_at":"2026-10-01T02:18:39.455Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"e20e460041cfd2306b8d2e564cbb2a167410319570f4ad940db768fc1655b1d5\"","stored_at":"2026-10-01T02:18:39.455Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"0484c5b3ec41214e25ece3d028372888598f2c506386f95a958345ef0c16859d\"","stored_at":"2026-10-01T02:21:03.977Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"ef1b9f5f8fcf2e84f7c1f0a7b5a4e31165fad661848f6c1dcfd8124363a817f7\"","stored_at":"2026-10-01T02:42:56.106Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"219e7cd545af66428b83c7c92e618c8d31533888858d52756d0a94c75ab01a12\"","stored_at":"2026-10-01T02:42:56.106Z"}
