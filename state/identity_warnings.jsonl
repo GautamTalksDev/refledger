@@ -1,0 +1,1 @@
+{"warning":"invented-placeholder-shas: Sep 29 listing observations also carry invented commit_sha=000…001 and tree_sha=000…002 for unpeeled annotated tags (see docs/tree-sha-affected-observations.txt placeholder column); those values are not git objects and must not be relied on"}
