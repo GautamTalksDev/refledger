@@ -1,24 +1,16 @@
-//! Enrichment between observe and classify.
-//!
-//! Moves are rare relative to the poll budget: the steady state is 304s on tag
-//! listings. This module is the **only** network-touching step between a raw
-//! [`Observation`] and pure [`crate::classify::classify`]. Do not fold these
-//! fetches into classify later as an "optimisation" — that would destroy
-//! replayability.
+//! Ancestry enrichment via GitHub's compare API.
 //!
 //! For each detected tip move, we fetch `GET /repos/{owner}/{repo}/compare/{old}...{new}`
-//! once. Results are cached by `(old, new)` forever — the same content-addressed
-//! immutability argument as [`crate::github::rest::ObjectCache`].
+//! and map the `status` field onto [`Ancestry`]. File counts feed optional Diff
+//! blocks on Move entries.
 //!
-//! # Compare file cap
+//! Enrichment is **optional**. Classification needs only peeled trees. A failed
+//! compare (404 for an orphan/attack tip, 5xx, timeout, malformed body) must
+//! never abort the observatory: the Move still lands with `ancestry`/`diff`
+//! omitted.
 //!
 //! GitHub's compare endpoint returns at most 300 changed files on page 1 (documented)
-//! and silently truncates beyond that — there is no top-level `truncated` field.
-//! Live check 2026-09-28 (`torvalds/linux`, `v5.0...v6.0`) returned exactly 300
-//! files. [`COMPARE_FILE_CAP`] records that observed cap; when
-//! `files.len() >= COMPARE_FILE_CAP` we set `diff_possibly_truncated: true`
-//! because we cannot distinguish "exactly 300 files changed" from "truncated
-//! at 300". That precision is the whole point of the flag's name.
+//! — when the array length is exactly 300 we set `diff_possibly_truncated`.
 
 use std::collections::BTreeMap;
 use std::fs::{self, OpenOptions};
@@ -34,10 +26,16 @@ use crate::github::rest::{RestRequest, RestResponse, Transport};
 use crate::observation::{Observation, Outcome, RepoSlug};
 
 /// Documented and live-observed maximum length of `files` on a compare response.
-///
-/// Encoded from docs ("up to 300 changed files") and a 2026-09-28 capture of
-/// `torvalds/linux` `v5.0...v6.0` which returned `files_len == 300`.
 pub const COMPARE_FILE_CAP: usize = 300;
+
+/// Invented SHAs written by the pre-fix listing path for unpeeled annotated
+/// tags. They are not git objects; comparing against them always 404s.
+pub const INVENTED_ANNOTATED_COMMIT: &str = "0000000000000000000000000000000000000001";
+pub const INVENTED_ANNOTATED_TREE: &str = "0000000000000000000000000000000000000002";
+
+pub fn is_invented_placeholder(sha: &str) -> bool {
+    sha == INVENTED_ANNOTATED_COMMIT || sha == INVENTED_ANNOTATED_TREE
+}
 
 /// Cached compare result. Append-only; never expires.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -51,28 +49,22 @@ pub struct CompareResult {
     pub diff_possibly_truncated: bool,
 }
 
-/// Persist forever: `(old_sha, new_sha) -> CompareResult`.
-#[derive(Debug)]
-pub struct CompareCache {
-    path: PathBuf,
-    entries: BTreeMap<(String, String), CompareResult>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct CompareRecord {
     old_sha: String,
     new_sha: String,
     result: CompareResult,
 }
 
+#[derive(Debug)]
+pub struct CompareCache {
+    path: PathBuf,
+    entries: BTreeMap<(String, String), CompareResult>,
+}
+
 impl CompareCache {
     pub fn open(path: impl AsRef<Path>) -> Result<Self, EnrichError> {
         let path = path.as_ref().to_path_buf();
-        if let Some(parent) = path.parent() {
-            if !parent.as_os_str().is_empty() {
-                fs::create_dir_all(parent).map_err(|e| EnrichError::Io(e.to_string()))?;
-            }
-        }
         let mut cache = Self {
             path,
             entries: BTreeMap::new(),
@@ -155,23 +147,44 @@ pub enum EnrichError {
     Protocol(String),
 }
 
+/// Outcome of an enrich pass: ancestry map plus an optional note when any
+/// compare was skipped or failed (attached to derived Moves as
+/// `detection_latency_note` — the only free-text note field format v1 allows
+/// on binding events).
+#[derive(Debug, Clone, Default)]
+pub struct EnrichOutcome {
+    pub enrichment: Enrichment,
+    pub note: Option<String>,
+}
+
 /// Detect tip moves against `state` and fetch any missing compares.
 ///
-/// Returns an [`Enrichment`] suitable for [`crate::classify::classify`]. Does
-/// nothing (and costs nothing) when the observation is not `Ok` or no tips moved.
+/// Never fails the caller on a compare problem: classification only needs
+/// trees. Invented placeholder SHAs from the listing bug are skipped (they
+/// are not git objects). Network/protocol failures are logged and noted.
 pub fn enrich<T: Transport>(
     state: &RepoState,
     observation: &Observation,
     cache: &mut CompareCache,
     transport: &T,
     token: &str,
-) -> Result<Enrichment, EnrichError> {
+) -> EnrichOutcome {
     let Outcome::Ok { refs, .. } = observation.outcome() else {
-        return Ok(Enrichment::empty());
+        return EnrichOutcome::default();
     };
 
-    let (owner, name) = split_slug(observation.repo())?;
+    let (owner, name) = match split_slug(observation.repo()) {
+        Ok(pair) => pair,
+        Err(e) => {
+            eprintln!("enrich: skip repo={}: {e}", observation.repo().as_str());
+            return EnrichOutcome {
+                enrichment: Enrichment::empty(),
+                note: Some(format!("enrich_failed: {e}")),
+            };
+        }
+    };
     let mut enrichment = Enrichment::empty();
+    let mut notes: Vec<String> = Vec::new();
 
     for r in refs {
         let (Some(new_commit), Some(_tree)) = (r.commit_sha(), r.tree_sha()) else {
@@ -184,15 +197,43 @@ pub fn enrich<T: Transport>(
             continue;
         }
         let old = prev.commit_sha();
+        if is_invented_placeholder(old) || is_invented_placeholder(new_commit) {
+            let msg = format!(
+                "enrich_skipped: invented placeholder compare {old}...{new_commit} for {}",
+                r.name()
+            );
+            eprintln!("{msg}");
+            notes.push(msg);
+            continue;
+        }
         if let Some(cached) = cache.get(old, new_commit) {
             enrichment = enrichment.with_ancestry(old, new_commit, cached.ancestry);
             continue;
         }
-        let result = fetch_compare(transport, token, &owner, &name, old, new_commit)?;
-        enrichment = enrichment.with_ancestry(old, new_commit, result.ancestry);
-        cache.put(old, new_commit, result)?;
+        match fetch_compare(transport, token, &owner, &name, old, new_commit) {
+            Ok(result) => {
+                enrichment = enrichment.with_ancestry(old, new_commit, result.ancestry);
+                if let Err(e) = cache.put(old, new_commit, result) {
+                    eprintln!("enrich: cache put failed: {e}");
+                    notes.push(format!("enrich_cache_failed: {e}"));
+                }
+            }
+            Err(e) => {
+                let msg =
+                    format!("enrich_failed: compare {owner}/{name} {old}...{new_commit}: {e}");
+                eprintln!("{msg}");
+                notes.push(msg);
+            }
+        }
     }
-    Ok(enrichment)
+    EnrichOutcome {
+        enrichment,
+        note: if notes.is_empty() {
+            None
+        } else {
+            Some(notes.join("; "))
+        },
+    }
 }
 
 fn fetch_compare<T: Transport>(
@@ -285,7 +326,10 @@ fn split_slug(repo: &RepoSlug) -> Result<(String, String), EnrichError> {
     let mut parts = repo.as_str().split('/');
     match (parts.next(), parts.next(), parts.next()) {
         (Some(o), Some(n), None) => Ok((o.to_owned(), n.to_owned())),
-        _ => Err(EnrichError::Protocol("invalid repo slug".into())),
+        _ => Err(EnrichError::Protocol(format!(
+            "invalid repo slug {}",
+            repo.as_str()
+        ))),
     }
 }
 
@@ -293,9 +337,6 @@ fn split_slug(repo: &RepoSlug) -> Result<(String, String), EnrichError> {
 pub fn test_compare_body(status: &str, files: Vec<Value>) -> Value {
     serde_json::json!({
         "status": status,
-        "ahead_by": 0,
-        "behind_by": 0,
-        "total_commits": 1,
         "files": files,
     })
 }

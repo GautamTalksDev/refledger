@@ -1602,3 +1602,196 @@ fn run_once_priority_peels_50_tag_batch_despite_full_backfill_backlog() {
         "each moved tip must be peeled"
     );
 }
+
+/// Enrich compare failures must not abort the run: observations commit, Move
+/// lands (without ancestry/diff), sibling groups still poll, exit Ok.
+fn enrich_fail_transport(
+    status: u16,
+    body: Option<serde_json::Value>,
+    transport_err: Option<&str>,
+) {
+    use refledger_log::entry::Event;
+    use refledger_poller::github::rest::{RestRequest, RestResponse, Transport};
+    use serde_json::json;
+    use std::sync::atomic::{AtomicU32, Ordering as AtomicOrdering};
+
+    #[derive(Clone)]
+    struct T {
+        status: u16,
+        body: Option<serde_json::Value>,
+        transport_err: Option<String>,
+        other_listed: Arc<AtomicU32>,
+    }
+    impl Transport for T {
+        fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
+            let t = &request.target;
+            if t.contains("/compare/") {
+                if let Some(ref e) = self.transport_err {
+                    return Err(e.clone());
+                }
+                return Ok(RestResponse {
+                    status: self.status,
+                    headers: BTreeMap::new(),
+                    body: self.body.clone(),
+                });
+            }
+            if t.contains("org/sibling") {
+                self.other_listed.fetch_add(1, AtomicOrdering::Relaxed);
+            }
+            if t.contains("/repos/")
+                && !t.contains("/git/")
+                && !t.contains("/contents/")
+                && !t.contains("/compare/")
+            {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"repo\"".into())]),
+                    body: Some(json!({"archived": false})),
+                });
+            }
+            if t.contains("matching-refs/tags") {
+                if t.contains("acme/moved") {
+                    return Ok(RestResponse {
+                        status: 200,
+                        headers: BTreeMap::from([("etag".into(), "W/\"moved\"".into())]),
+                        body: Some(json!([{
+                            "ref": "refs/tags/v1.0.0",
+                            "object": {"type": "commit", "sha": "cccccccccccccccccccccccccccccccccccccccc"}
+                        }])),
+                    });
+                }
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"sib\"".into())]),
+                    body: Some(json!([])),
+                });
+            }
+            if t.contains("/git/commits/") {
+                let sha = t.rsplit('/').next().unwrap_or("").to_owned();
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({
+                        "sha": sha,
+                        "tree": {"sha": "dddddddddddddddddddddddddddddddddddddddd"}
+                    })),
+                });
+            }
+            if t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 404,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({"message": "Not Found"})),
+                });
+            }
+            Err(format!("unexpected {t}"))
+        }
+    }
+
+    let dir = TempDir::new().unwrap();
+    let t0 = odt(2026, Month::January, 1, 12, 0, 0, 0);
+    let t1 = t0 + Duration::minutes(5);
+    {
+        let mut store = Store::open(dir.path(), opts(t0)).unwrap();
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("acme/moved")
+                    .unwrap()
+                    .observed_at(t0)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"old\"")),
+                        refs: vec![refledger_poller::observation::ObservedRef::new_lightweight(
+                            "refs/tags/v1.0.0",
+                            "1111111111111111111111111111111111111111",
+                            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                        )
+                        .unwrap()],
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+        store
+            .append_observation(&ok_obs("org/sibling", t0))
+            .unwrap();
+    }
+
+    let inner = T {
+        status,
+        body,
+        transport_err: transport_err.map(|s| s.to_owned()),
+        other_listed: Arc::new(AtomicU32::new(0)),
+    };
+    let listed = inner.other_listed.clone();
+    let groups = vec![
+        PollGroup {
+            repo: "acme/moved".into(),
+            paths: vec![None],
+        },
+        PollGroup {
+            repo: "org/sibling".into(),
+            paths: vec![None],
+        },
+    ];
+    let mut store = Store::open(dir.path(), opts(t1)).unwrap();
+    let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+    args.token = "ghp_test".into();
+    args.scheduled_at = t1;
+    args.actual_start = t1;
+    args.sleep = Box::new(|_| {});
+    args.confirm_delay = Duration::seconds(0);
+    args.max_requests = 150;
+    args.max_new_peels = 50;
+
+    let report = run_once_with(
+        &mut store,
+        CountingTransport::new(inner, 150),
+        &groups,
+        &args,
+    )
+    .expect("once must exit 0 despite enrich failure");
+    assert!(
+        report.observations >= 2,
+        "both groups must commit observations: {report:?}"
+    );
+    assert!(
+        listed.load(AtomicOrdering::Relaxed) >= 1,
+        "sibling group must still be listed"
+    );
+    let mv = store
+        .entries()
+        .iter()
+        .find(|e| e.event == Event::Move)
+        .expect("Move must still be appended");
+    assert!(mv.ancestry.is_none(), "ancestry omitted when enrich failed");
+    assert!(mv.diff.is_none(), "diff omitted when enrich failed");
+    assert_eq!(
+        mv.to.as_ref().map(|b| b.commit_sha.as_str()),
+        Some("cccccccccccccccccccccccccccccccccccccccc")
+    );
+}
+
+#[test]
+fn run_once_survives_compare_404() {
+    enrich_fail_transport(404, Some(serde_json::json!({"message": "Not Found"})), None);
+}
+
+#[test]
+fn run_once_survives_compare_500() {
+    enrich_fail_transport(500, Some(serde_json::json!({"message": "boom"})), None);
+}
+
+#[test]
+fn run_once_survives_compare_timeout() {
+    enrich_fail_transport(0, None, Some("timeout waiting for compare"));
+}
+
+#[test]
+fn run_once_survives_compare_malformed_json() {
+    // 200 with body missing required `status` field.
+    enrich_fail_transport(200, Some(serde_json::json!({"files": []})), None);
+}

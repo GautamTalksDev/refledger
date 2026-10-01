@@ -18,6 +18,7 @@ The freeze exists so the running poller, log format, and signatures stay the ins
 | 2026-09-30 | 07c049c | Emergency: `once` never ran classify→derive→append (ledger could not record moves); listing invented `tree_sha`; confirm starved by backfill; canary patterns 3/4 invisible within one poll. Option A forward-only; sealed days untouched. |
 | 2026-09-30 | ce469fd | Queue signed digest note for `docs/tree-sha-affected-observations.txt` (same class as the false-422 note). Freeze start recorded in this commit. |
 | 2026-09-30 | 6ec4dde | Emergency before M1 window (starts 2026-10-01T00:00:00Z): changed/reappeared refs stored listing-only when the new tip was uncached, and classify skipped unpeeled refs — a tag moved to a brand-new malicious commit (tj-actions / Trivy shape) would produce no Move. Priority-peel those tips from the reserved budget before classify. Also: Correction for seq 40 Deletion `content_change`; canary-score retired-pattern + manual-intervention sections. |
+| 2026-10-01 | (this commit) | Emergency: every poll since 00:02Z aborted on enrich compare failure (`compare status 404` / budget exhaustion). One repo's optional compare must never abort the observatory; invented listing placeholders (`000…001`) made peels look like Moves. Isolation + skip invented SHAs. M1 window restarted (instrument changed mid-window). |
 
 ## Run window
 
@@ -26,7 +27,9 @@ The freeze exists so the running poller, log format, and signatures stay the ins
 
 ## M1 measurement window
 
-The seven-day M1 exit is measured on sealed days in this closed interval:
+The seven-day M1 exit is measured on sealed days in this closed interval.
 
-- **M1 start (UTC):** 2026-10-01T00:00:00Z
-- **M1 end (UTC):** seal at 2026-10-08T00:00:00Z (day 2026-10-07's ObservationDigest, stamped at the start of 2026-10-08)
+**Restarted 2026-10-01:** the first M1 start (2026-10-01T00:00:00Z) was voided when an emergency enrich-isolation fix landed inside that window — seven days must be measured on one unchanged instrument.
+
+- **M1 start (UTC):** first UTC midnight after this enrich-isolation fix lands on `main` (recorded in the Exceptions table)
+- **M1 end (UTC):** seal at start+7 days (that day's ObservationDigest, stamped at the following midnight)

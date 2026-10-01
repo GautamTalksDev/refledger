@@ -366,14 +366,25 @@ pub fn run_once_with<T: Transport>(
         ) {
             Ok(p) => p,
             Err(e) => {
+                eprintln!("listing failed repo={} path={:?}: {e:?}", g.repo, path);
                 let obs = match e {
                     ResolveFail::BudgetExhausted => {
                         skip_observation(&g.repo, actual_start, SkipReason::BudgetExhausted)
                             .map_err(|e| OnceError::Observation(e.to_string()))?
                     }
-                    _ => {
-                        return Err(OnceError::Rest(format!("listing: {e:?}")));
-                    }
+                    _ => Observation::builder()
+                        .repo(g.repo.as_str())
+                        .map_err(|e| OnceError::Observation(e.to_string()))?
+                        .observed_at(actual_start)
+                        .map_err(|e| OnceError::Observation(e.to_string()))?
+                        .method(crate::observation::Method::Rest)
+                        .outcome(Outcome::Failed {
+                            http_status: 0,
+                            error_class: crate::observation::ErrorClass::Network,
+                            backoff_applied: Duration::seconds(0),
+                        })
+                        .build()
+                        .map_err(|e| OnceError::Observation(e.to_string()))?,
                 };
                 let mut obs = obs;
                 obs.stamp_schedule(scheduled_ts, actual_ts);
@@ -480,8 +491,15 @@ pub fn run_once_with<T: Transport>(
     for pending in pending_after_warm {
         let repo_key = pending.warm.repo.as_str().to_owned();
         if !states.contains_key(&repo_key) {
-            let rebuilt = rebuild_repo_state(store, &repo_key, None)?;
-            states.insert(repo_key.clone(), rebuilt);
+            match rebuild_repo_state(store, &repo_key, None) {
+                Ok(rebuilt) => {
+                    states.insert(repo_key.clone(), rebuilt);
+                }
+                Err(e) => {
+                    eprintln!("rebuild_repo_state failed repo={repo_key}: {e}");
+                    states.insert(repo_key.clone(), RepoState::default());
+                }
+            }
         }
         let state = states.get(&repo_key).expect("just inserted");
         let priority = priority_peel_names(state, &pending.warm.refs);
@@ -505,13 +523,17 @@ pub fn run_once_with<T: Transport>(
 
         let observed = if !priority.is_empty() {
             // Peel every changed/reappeared tip before classify — even never-seen commits.
-            // Priority peels are mandatory: temporarily allow the full hard max
-            // minus confirm so a large batch move still completes this run.
             client
                 .transport()
                 .set_max(peel_enrich_max.max(client.transport().requests()));
-            let peeled = peel_priority_refs(&pending.warm, &priority, &mut objects, &client)
-                .map_err(|e| OnceError::Rest(format!("priority peel: {e:?}")))?;
+            let peeled = match peel_priority_refs(&pending.warm, &priority, &mut objects, &client) {
+                Ok(refs) => refs,
+                Err(e) => {
+                    eprintln!("priority peel failed repo={repo_key}: {e:?}");
+                    peel_priority_refs(&pending.warm, &BTreeSet::new(), &mut objects, &client)
+                        .unwrap_or_default()
+                }
+            };
             client.transport().set_max(peel_enrich_max);
             peeled
         } else if client.transport().requests() < peel_enrich_max {
@@ -632,6 +654,10 @@ fn reserved_budget(moved_repos: usize, priority_tips: usize) -> u32 {
 /// [`run_once_with`] calls this after every stored observation. Replay tests
 /// must use this helper (not a hand-rolled classify/derive loop) so the
 /// Actions path and the library path cannot diverge again.
+///
+/// Enrichment failures never abort: classification uses peeled trees; optional
+/// `ancestry`/`diff` are omitted and a `detection_latency_note` records the
+/// enrich problem (the only free-text note field format v1 allows on Moves).
 pub fn classify_enrich_derive_append<T: Transport>(
     store: &mut Store<OsVolume>,
     state: &mut RepoState,
@@ -640,10 +666,9 @@ pub fn classify_enrich_derive_append<T: Transport>(
     token: &str,
     obs: &Observation,
 ) -> Result<usize, OnceError> {
-    let enrichment = enrich(state, obs, compare, transport, token)
-        .map_err(|e| OnceError::Enrich(e.to_string()))?;
-    let (next, events) =
-        classify(state, obs, &enrichment).map_err(|e| OnceError::Classify(e.to_string()))?;
+    let outcome = enrich(state, obs, compare, transport, token);
+    let (next, events) = classify(state, obs, &outcome.enrichment)
+        .map_err(|e| OnceError::Classify(e.to_string()))?;
     *state = next;
     if events.is_empty() {
         return Ok(0);
@@ -657,7 +682,18 @@ pub fn classify_enrich_derive_append<T: Transport>(
     tip.diffs = diffs_from_compare(compare);
     let derived = derive(&tip, &events).map_err(|e| OnceError::Derive(e.to_string()))?;
     let n = derived.len();
-    for entry in derived {
+    for mut entry in derived {
+        if let Some(ref note) = outcome.note {
+            if matches!(
+                entry.event,
+                refledger_log::entry::Event::Move
+                    | refledger_log::entry::Event::Deletion
+                    | refledger_log::entry::Event::Recreation
+            ) && entry.detection_latency_note.is_none()
+            {
+                entry.detection_latency_note = Some(note.clone());
+            }
+        }
         store.append_entry(entry)?;
     }
     Ok(n)
@@ -667,6 +703,9 @@ pub fn classify_enrich_derive_append<T: Transport>(
 ///
 /// Caller must append the observation to the store first. Rebuild skips this
 /// observation's id so state reflects only prior sweeps.
+///
+/// Per-repo classify/derive failures are logged and swallowed so one bad repo
+/// cannot abort the observatory.
 fn process_observation<T: Transport>(
     store: &mut Store<OsVolume>,
     states: &mut BTreeMap<String, RepoState>,
@@ -677,11 +716,27 @@ fn process_observation<T: Transport>(
 ) -> Result<usize, OnceError> {
     let repo = obs.repo().as_str().to_owned();
     if !states.contains_key(&repo) {
-        let rebuilt = rebuild_repo_state(store, &repo, Some(obs.observation_id()))?;
-        states.insert(repo.clone(), rebuilt);
+        match rebuild_repo_state(store, &repo, Some(obs.observation_id())) {
+            Ok(rebuilt) => {
+                states.insert(repo.clone(), rebuilt);
+            }
+            Err(e) => {
+                eprintln!("rebuild_repo_state failed repo={repo}: {e}");
+                states.insert(repo.clone(), RepoState::default());
+            }
+        }
     }
     let state = states.get_mut(&repo).expect("just inserted");
-    classify_enrich_derive_append(store, state, compare, transport, token, obs)
+    match classify_enrich_derive_append(store, state, compare, transport, token, obs) {
+        Ok(n) => Ok(n),
+        Err(e) => {
+            eprintln!(
+                "process_observation failed repo={repo} obs={}: {e}",
+                obs.observation_id()
+            );
+            Ok(0)
+        }
+    }
 }
 
 fn diffs_from_compare(cache: &CompareCache) -> BTreeMap<(String, String), Diff> {

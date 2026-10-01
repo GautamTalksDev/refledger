@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **2026-10-01 - enrich compare abort took down every poll.** Since ~00:02Z
+  each `once` run failed on enrich (`compare status 404` or budget exhaustion)
+  and committed nothing — no Sep 30 seal, no watching. Root causes: (1) one
+  failed compare aborted the whole run; (2) invented listing placeholders
+  `000…001`/`000…002` in archived Ok observations made real peels look like
+  Moves and produced compares against non-objects. Enrichment is optional
+  (classification uses trees); compare failures omit `ancestry`/`diff` and
+  note via `detection_latency_note`. Invented placeholders are not bindings.
+  Per-repo listing/peel/classify errors no longer abort the run. M1 window
+  restarted (instrument changed mid-window).
+
 - **2026-09-30 - attack-shaped tag moves would go unrecorded.** After the
   tree-SHA listing fix, a ref whose target changed (or reappeared after a
   tombstone) to a never-seen commit was stored listing-only, and classify

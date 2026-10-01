@@ -727,9 +727,17 @@ fn binding_from_ref(
     count: u64,
 ) -> Result<Option<BindingSnapshot>, ClassifyError> {
     let (Some(commit), Some(tree)) = (r.commit_sha(), r.tree_sha()) else {
-        // Non-commit peels are recorded elsewhere; classification skips them.
+        // Non-commit peels / listing-only stubs: classification skips them.
         return Ok(None);
     };
+    // Pre-fix listing invented these SHAs for unpeeled annotated tags. They
+    // are not git objects; treating them as bindings produced mass false Moves
+    // and fatal compare 404s (2026-10-01 outage).
+    if crate::enrich::is_invented_placeholder(commit)
+        || crate::enrich::is_invented_placeholder(tree)
+    {
+        return Ok(None);
+    }
     Ok(Some(BindingSnapshot {
         target_sha: r.target_sha().to_owned(),
         commit_sha: commit.to_owned(),
