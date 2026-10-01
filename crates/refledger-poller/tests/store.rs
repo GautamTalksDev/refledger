@@ -1466,6 +1466,85 @@ fn rekor_409_records_existing_log_index() {
     assert!(line["rekor"].get("error").is_none());
 }
 
+#[test]
+fn append_only_prefix_allows_extension_refuses_rewrite() {
+    use refledger_poller::require_append_only_prefix;
+
+    let base = b"line-one\n";
+    let extended = b"line-one\nline-two\n";
+    require_append_only_prefix("log/heads.jsonl", base, extended).unwrap();
+    require_append_only_prefix("log/heads.jsonl", b"", extended).unwrap();
+
+    let changed = b"line-ONE\nline-two\n";
+    let err = require_append_only_prefix("log/heads.jsonl", base, changed).unwrap_err();
+    assert!(err.contains("first differing byte offset"), "{err}");
+    assert!(err.contains("5") || err.contains("offset 5"), "{err}"); // 'o' vs 'O' at index 5
+
+    let removed = b"line-on"; // truncated mid-line
+    let err = require_append_only_prefix("log/heads.jsonl", base, removed).unwrap_err();
+    assert!(err.contains("shorter") || err.contains("prefix"), "{err}");
+
+    let truncated = b"li";
+    let err = require_append_only_prefix("log/2026/01/02.jsonl", extended, truncated).unwrap_err();
+    assert!(err.contains("shorter"), "{err}");
+}
+
+#[test]
+fn publish_refuses_when_main_heads_would_rewrite_a_line() {
+    use refledger_poller::GitLedgerPublisher;
+
+    let root = TempDir::new().unwrap();
+    let (_bare, clone) = setup_publish_clone(root.path());
+    let data = TempDir::new().unwrap();
+    let mut options = opts(static_rekor());
+    options.publisher = Box::new(GitLedgerPublisher::new(&clone, None));
+    let mut store = Store::open(data.path(), options).unwrap();
+    let jan1 = day(2026, Month::January, 1);
+    store.stop_dispatch(jan1);
+    store.seal_day(jan1).unwrap();
+
+    // Simulate main already having a witnessed heads line that data then
+    // "loses" (rewrites to an error) — the publisher must refuse.
+    let heads_path = clone.join("data/log/heads.jsonl");
+    let good = fs::read(&heads_path).unwrap();
+    let mut rewritten = good.clone();
+    // Flip one byte inside the first line (after the opening brace) without
+    // changing length, so this is a same-length rewrite rather than truncate.
+    if let Some(b) = rewritten.iter_mut().find(|b| **b == b'0') {
+        *b = b'1';
+    }
+    // Put the rewritten content into the store's heads and try to republish.
+    store
+        .read_rel("log/heads.jsonl")
+        .unwrap()
+        .expect("heads present");
+    // Write rewritten bytes as the "new" publish payload via a second seal
+    // attempt: replace store heads with rewritten, then force publish.
+    fs::write(data.path().join("log/heads.jsonl"), &rewritten).unwrap();
+    // Re-open so publisher reads rewritten heads from the store volume.
+    drop(store);
+    let mut options = opts(static_rekor());
+    options.publisher = Box::new(GitLedgerPublisher::new(&clone, None));
+    // Restore good content on the clone (main), leave rewritten in data.
+    fs::write(&heads_path, &good).unwrap();
+    let mut store = Store::open(data.path(), options).unwrap();
+    assert!(
+        !store.republish_sealed_tip().unwrap(),
+        "prefix refusal records a publish failure; tip_republished should be false"
+    );
+    let failures = store
+        .read_rel("state/publish_failures.jsonl")
+        .unwrap()
+        .unwrap_or_default();
+    let text = String::from_utf8_lossy(&failures);
+    assert!(
+        text.contains("append-only publish refused") || text.contains("prefix"),
+        "expected prefix refusal in publish failures, got {text}"
+    );
+    // Main clone must still hold the original good bytes.
+    assert_eq!(fs::read(&heads_path).unwrap(), good);
+}
+
 fn verify_bin() -> PathBuf {
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let target = std::env::var_os("CARGO_TARGET_DIR")

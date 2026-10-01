@@ -63,6 +63,14 @@ pub enum Failure {
     HeadKeyIdMismatch,
     #[error("head seq {seq} is not in the log")]
     HeadSeqMissing { seq: u64 },
+    #[error(
+        "heads.jsonl: lines for seq {seq} disagree on head or signature (lines {first} and {second})"
+    )]
+    HeadWitnessIdentityMismatch {
+        seq: u64,
+        first: usize,
+        second: usize,
+    },
     #[error("witness backlog: head seq {seq} has no Rekor log_index after 48h")]
     WitnessBacklog { seq: u64 },
     #[error("entry seq {seq} is more than 48h older than {relative_to}")]
@@ -590,6 +598,7 @@ fn verify_entries_not_stale(
 /// `rekor.log_index`, or if any ObservationDigest note records a witness
 /// backlog. Does not call Rekor — resolution of indexes is an ops check.
 pub fn verify_strict(entries: &[Value], heads_raw: &str) -> Result<(), VerifyError> {
+    verify_heads_witness_identity(heads_raw)?;
     let tip_at = entries
         .iter()
         .rev()
@@ -598,7 +607,6 @@ pub fn verify_strict(entries: &[Value], heads_raw: &str) -> Result<(), VerifyErr
     let tip = parse_rfc3339(tip_at)?;
     let cutoff = tip - (WITNESS_BACKLOG_HOURS * 3600);
 
-    let mut latest: std::collections::BTreeMap<u64, &str> = std::collections::BTreeMap::new();
     let mut lines: Vec<Value> = Vec::new();
     for (lineno, line) in heads_raw.lines().enumerate() {
         let line = line.trim();
@@ -607,7 +615,7 @@ pub fn verify_strict(entries: &[Value], heads_raw: &str) -> Result<(), VerifyErr
         }
         let value: Value = serde_json::from_str(line)
             .map_err(|e| VerifyError::Parse(format!("heads.jsonl:{}: {e}", lineno + 1)))?;
-        let seq = value
+        let _seq = value
             .get("head")
             .and_then(|h| h.get("seq"))
             .and_then(|v| v.as_u64())
@@ -615,16 +623,13 @@ pub fn verify_strict(entries: &[Value], heads_raw: &str) -> Result<(), VerifyErr
                 VerifyError::Parse(format!("heads.jsonl:{}: missing seq", lineno + 1))
             })?;
         lines.push(value);
-        latest.insert(seq, ""); // placeholder; rewrite below
     }
-    // Re-key to owned values
     let mut latest_line: std::collections::BTreeMap<u64, &Value> =
         std::collections::BTreeMap::new();
     for value in &lines {
         let seq = value["head"]["seq"].as_u64().unwrap();
         latest_line.insert(seq, value);
     }
-    let _ = latest;
 
     for (seq, value) in &latest_line {
         let recorded = value
@@ -662,6 +667,50 @@ pub fn verify_strict(entries: &[Value], heads_raw: &str) -> Result<(), VerifyErr
             return Err(VerifyError::Failed {
                 failure: Failure::WitnessBacklog { seq },
             });
+        }
+    }
+    Ok(())
+}
+
+/// `heads.jsonl` may append several witness attempts for one seq. Under
+/// `--strict`, every line for the same seq must carry identical `head` and
+/// `signature` bytes; only `rekor` (and attempts) may differ.
+pub fn verify_heads_witness_identity(heads_raw: &str) -> Result<(), VerifyError> {
+    use std::collections::BTreeMap;
+    let mut first: BTreeMap<u64, (Value, Value, usize)> = BTreeMap::new();
+    for (lineno, line) in heads_raw.lines().enumerate() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let value: Value = serde_json::from_str(line)
+            .map_err(|e| VerifyError::Parse(format!("heads.jsonl:{}: {e}", lineno + 1)))?;
+        let seq = value
+            .get("head")
+            .and_then(|h| h.get("seq"))
+            .and_then(|v| v.as_u64())
+            .ok_or_else(|| {
+                VerifyError::Parse(format!("heads.jsonl:{}: missing seq", lineno + 1))
+            })?;
+        let head = value.get("head").cloned().ok_or_else(|| {
+            VerifyError::Parse(format!("heads.jsonl:{}: missing head", lineno + 1))
+        })?;
+        let signature = value.get("signature").cloned().ok_or_else(|| {
+            VerifyError::Parse(format!("heads.jsonl:{}: missing signature", lineno + 1))
+        })?;
+        let line_no = lineno + 1;
+        if let Some((prev_head, prev_sig, prev_line)) = first.get(&seq) {
+            if prev_head != &head || prev_sig != &signature {
+                return Err(VerifyError::Failed {
+                    failure: Failure::HeadWitnessIdentityMismatch {
+                        seq,
+                        first: *prev_line,
+                        second: line_no,
+                    },
+                });
+            }
+        } else {
+            first.insert(seq, (head, signature, line_no));
         }
     }
     Ok(())
@@ -859,6 +908,7 @@ pub fn failure_report(failure: &Failure) -> FailureReport {
         | Failure::HeadPubkeyMismatch
         | Failure::HeadKeyIdMismatch => None,
         Failure::HeadSeqMissing { seq }
+        | Failure::HeadWitnessIdentityMismatch { seq, .. }
         | Failure::WitnessBacklog { seq }
         | Failure::EntryTooOld { seq, .. } => Some(*seq),
     };

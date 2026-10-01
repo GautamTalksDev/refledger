@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **2026-10-01 - heads.jsonl line rewrite on main (disclosed, not erased).**
+  Commit `ff75e915` replaced the seq 42 heads line published in `0800c1f5`
+  (which had Rekor `log_index` 3027764712) with a 409 error line, because
+  seal publish copied `heads.jsonl` wholesale from a data tip that lacked
+  the witnessed line. Head and signature bytes were identical in both
+  versions; the Rekor entry was never lost; `93211084` re-appended the
+  index. Both versions remain in git history (no force-push). Publishing
+  now refuses any file that is not a byte-for-byte prefix of what is
+  already on `main`. Digest note `heads-line-rewrite-2026-10-01`; see
+  [`docs/INCIDENTS.md`](docs/INCIDENTS.md). `--strict` requires identical
+  `head`+`signature` across witness attempt lines for the same seq.
+
 - **2026-10-01 - outage Move lost; Rekor 409; publish-before-data.** Canary
   `exact_content_change` (v1.0.0→7272eeb at 00:41Z) was observed and peeled at
   01:07 but never a Move: derived entries buffered while Sep 30 was unsealed

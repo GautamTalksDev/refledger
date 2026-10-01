@@ -1153,6 +1153,13 @@ impl<V: Volume> Store<V> {
         self.ensure_digest_note_once(MARKER, NOTE)
     }
 
+    /// Disclose the 2026-10-01 main heads.jsonl line rewrite. Idempotent.
+    pub fn ensure_heads_line_rewrite_digest_note(&mut self) -> Result<(), StoreError> {
+        const MARKER: &str = "heads-line-rewrite-2026-10-01";
+        const NOTE: &str = "heads-line-rewrite-2026-10-01: on main, commit ff75e915 replaced the seq 42 line written in 0800c1f5 (which had log_index 3027764712) with a 409 error line; the head and signature bytes were identical in both; the Rekor entry was never lost; commit 93211084 re-appended the index; both versions remain in git history; publishing is now prefix-checked";
+        self.ensure_digest_note_once(MARKER, NOTE)
+    }
+
     fn ensure_digest_note_once(&mut self, marker: &str, note: &str) -> Result<(), StoreError> {
         if self
             .pending_identity_warnings

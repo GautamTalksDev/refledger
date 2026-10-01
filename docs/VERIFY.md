@@ -36,6 +36,10 @@ The coverage line sums `skipped` and `failed` from every `ObservationDigest` in 
 
 Exit code `0` means the verdict is OK. Exit code `1` means a verification failure. Exit code `2` means I/O, parse, or usage error.
 
+### `heads.jsonl` witness attempts
+
+`heads.jsonl` is append-only. A later Rekor submission for the same tip adds a **new line** (higher `rekor.attempts`); it must never edit an earlier line. Under `--strict`, every line that shares a `head.seq` must carry **identical** `head` and `signature` JSON values. Only the unsigned `rekor` object may differ (for example a first line with `error` and a later line with `log_index`). If two lines for the same seq disagree on head or signature, verification fails with `heads.jsonl: lines for seq N disagree on head or signature`.
+
 ### Before the first seal
 
 ```bash

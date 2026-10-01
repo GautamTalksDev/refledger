@@ -153,6 +153,11 @@ impl GitLedgerPublisher {
                 .strip_prefix("log/")
                 .ok_or_else(|| format!("publish path must be under log/: {rel}"))?;
             let dest = self.clone_dir.join("data/log").join(under_log);
+            if dest.is_file() {
+                let existing =
+                    fs::read(&dest).map_err(|e| format!("read {}: {e}", dest.display()))?;
+                require_append_only_prefix(rel, &existing, bytes)?;
+            }
             if let Some(parent) = dest.parent() {
                 fs::create_dir_all(parent).map_err(|e| e.to_string())?;
             }
@@ -309,6 +314,37 @@ fn porcelain_path(line: &str) -> Option<&str> {
     } else {
         Some(path)
     }
+}
+
+/// Existing bytes already on `main` must be a byte-for-byte prefix of the
+/// candidate. Day files and `heads.jsonl` only ever grow; a shrink or in-place
+/// change is refused so a wholesale copy cannot rewrite the public record.
+pub fn require_append_only_prefix(
+    rel: &str,
+    on_main: &[u8],
+    incoming: &[u8],
+) -> Result<(), String> {
+    if on_main.is_empty() {
+        return Ok(());
+    }
+    if incoming.len() < on_main.len() {
+        return Err(format!(
+            "append-only publish refused for {rel}: new file shorter ({} < {} bytes); first differing byte offset 0",
+            incoming.len(),
+            on_main.len()
+        ));
+    }
+    if !incoming.starts_with(on_main) {
+        let offset = on_main
+            .iter()
+            .zip(incoming.iter())
+            .position(|(a, b)| a != b)
+            .unwrap_or(on_main.len());
+        return Err(format!(
+            "append-only publish refused for {rel}: existing content is not a prefix of new (first differing byte offset {offset})"
+        ));
+    }
+    Ok(())
 }
 
 /// Paths the publisher may leave dirty: `data/log/**` and its parents.

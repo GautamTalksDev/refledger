@@ -37,8 +37,8 @@ pub use once::{
 };
 pub use publish::{
     format_publish_failure_note, format_publish_success_note, is_deferred_publish,
-    GitLedgerPublisher, LedgerPublishPayload, LedgerPublisher, NoopPublisher, PublishFailure,
-    PublishSuccess, DEFERRED_PUBLISH_MARKER,
+    require_append_only_prefix, GitLedgerPublisher, LedgerPublishPayload, LedgerPublisher,
+    NoopPublisher, PublishFailure, PublishSuccess, DEFERRED_PUBLISH_MARKER,
 };
 
 pub use derive::{derive, derive_observation_digest, ChainTip, DeriveError, ObservationDayStats};

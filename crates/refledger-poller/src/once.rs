@@ -838,6 +838,7 @@ pub fn run_once(opts: StoreOptions, args: OnceArgs) -> Result<OnceReport, OnceEr
     store.ensure_gap_no_derive_digest_note()?;
     store.ensure_tree_sha_digest_note()?;
     store.ensure_invented_placeholder_digest_note()?;
+    store.ensure_heads_line_rewrite_digest_note()?;
     store.ensure_seq_40_deletion_classification_correction(args.actual_start)?;
     // First durable chain rows: Added for every watched key that already has
     // an observation but no PopulationChange yet (including the canary and
