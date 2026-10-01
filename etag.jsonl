@@ -273,3 +273,5 @@
 {"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"14438f515ff833f907ba9c68b2bc77c36620330d60bd5568c1da6a69c93d5b00\"","stored_at":"2026-10-01T07:49:16.553Z"}
 {"repo":"google-github-actions/setup-gcloud","template":"/repos/{owner}/{repo}","query":"","etag":"\"3e2e3a98fcf92376690204aebc7ebfa9cdc65a0540f9e12bfe87148cc796c3de\"","stored_at":"2026-10-01T07:49:16.553Z"}
 {"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"563365370662bec995b061e3e14385c8b2ab23cf2c378b5c7322e1c195c51c27\"","stored_at":"2026-10-01T07:57:57.824Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"1b6c978d55b943ce35901f43c0ef3a469a05e0ae90f964774477556f966644f4\"","stored_at":"2026-10-01T08:18:01.410Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"c11fb5a57169ba964c375717d778aa0c53c9fc4bf68b134de1bb5bc37e83e357\"","stored_at":"2026-10-01T08:18:01.410Z"}
