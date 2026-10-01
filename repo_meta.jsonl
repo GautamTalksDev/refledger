@@ -165,3 +165,4 @@
 {"repo":"tj-actions/changed-files","archived":false}
 {"repo":"aws-actions/configure-aws-credentials","archived":false}
 {"repo":"github/codeql-action","archived":false}
+{"repo":"actions/upload-artifact","archived":false}
