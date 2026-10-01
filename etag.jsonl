@@ -389,3 +389,4 @@
 {"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"9283c38fdf02c5c244007909ed1912b877f4c2dcb0dcdc118f986747fe183e04\"","stored_at":"2026-10-01T23:23:03.725Z"}
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"a491ff5dd7768391c3284ab0d99ac673d32a1e562e68b6a090eb87070c7890c1\"","stored_at":"2026-10-01T23:38:02.448Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"a7df66fb855ec3ceabaf1b88422ed8b1830025eaa83c099777d18ae351c29304\"","stored_at":"2026-10-01T23:42:56.492Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"f2003708ebbfa9a9d65d17f41fd531db2fa9aac544c61bf505844e853903d61a\"","stored_at":"2026-10-01T23:48:02.163Z"}
