@@ -309,3 +309,5 @@
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"ea5e79c3c16e6a2f24c8013cacadc60c74563d35d7791892b9568b5322e3805c\"","stored_at":"2026-10-01T13:33:18.629Z"}
 {"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"b7ac7a0807c8c2f13a6626d878b90938b064ee800574c846fd8780e82e5b13ed\"","stored_at":"2026-10-01T13:38:00.570Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"21b1a2c2f9ac57a6032dfee7d894be5eca195954f8f219e0ffc004a7a8b5d3e5\"","stored_at":"2026-10-01T13:38:00.570Z"}
+{"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"454edd03766134806a44be9da5d0bf2b4c192a60018ece446d6744b495fed737\"","stored_at":"2026-10-01T13:42:57.780Z"}
+{"repo":"docker/metadata-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"be07c5d4e7b5f31cc313c70619bc2f10ed8b5fab5b6427732d687f776938079d\"","stored_at":"2026-10-01T13:42:57.780Z"}
