@@ -237,3 +237,4 @@
 {"repo":"actions/setup-node","archived":false}
 {"repo":"actions/dependency-review-action","archived":false}
 {"repo":"aquasecurity/trivy-action","archived":false}
+{"repo":"actions/attest","archived":false}
