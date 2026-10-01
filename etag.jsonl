@@ -313,3 +313,5 @@
 {"repo":"docker/metadata-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"be07c5d4e7b5f31cc313c70619bc2f10ed8b5fab5b6427732d687f776938079d\"","stored_at":"2026-10-01T13:42:57.780Z"}
 {"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"143c7338699af5d2ba8aaecf97087cd03c9a3fe9195349b3e18311cd400eeb44\"","stored_at":"2026-10-01T13:58:01.596Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"ce3c52f5cd1858380a1cbb6b52b77adef47f10ac196adac2f3408d3ea2fa9494\"","stored_at":"2026-10-01T14:13:04.250Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"612b96a91c4287be78f16045e35c76e76796cfd3f5cd28558b2fc9fe47a7dac1\"","stored_at":"2026-10-01T14:17:57.033Z"}
+{"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"fa607faa2c5266f4f1dc907714fa4813dfa3472647b0d724b8b730907ed5512b\"","stored_at":"2026-10-01T14:17:57.033Z"}
