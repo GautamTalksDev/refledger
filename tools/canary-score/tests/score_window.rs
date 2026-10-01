@@ -196,6 +196,55 @@ fn load_gaps_reads_poller_down_from_observations() {
 }
 
 #[test]
+fn load_gaps_reads_scheduler_lag_as_prior_obs_to_skip() {
+    let dir = TempDir::new().unwrap();
+    let path = dir
+        .path()
+        .join("2026/10/01/GautamTalksDev--canary.jsonl");
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    let prev = odt(2026, Month::September, 30, 23, 57, 57, 0);
+    let skip_at = odt(2026, Month::October, 1, 1, 7, 0, 405);
+    let lines = [
+        json!({
+            "id": "01PREV",
+            "repo": "GautamTalksDev/canary",
+            "observed_at": ts(prev),
+            "poller_version": "0.1.0",
+            "method": "rest",
+            "outcome": {"type": "not_modified"}
+        }),
+        json!({
+            "id": "01LAG",
+            "repo": "GautamTalksDev/canary",
+            "observed_at": ts(skip_at),
+            "poller_version": "0.1.0",
+            "method": "rest",
+            "outcome": {
+                "type": "skipped",
+                "reason": {
+                    "scheduler_lag": {
+                        "scheduled": "2026-10-01T01:07:00.000Z",
+                        "actual": ts(skip_at)
+                    }
+                }
+            }
+        }),
+    ];
+    let body = lines
+        .iter()
+        .map(|v| v.to_string())
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n";
+    std::fs::write(&path, body).unwrap();
+    let gaps = load_gaps(dir.path(), "GautamTalksDev/canary").unwrap();
+    assert_eq!(gaps.len(), 1);
+    assert_eq!(gaps[0].kind, GapKind::SchedulerLag);
+    assert_eq!(gaps[0].from, prev);
+    assert_eq!(gaps[0].to, skip_at);
+}
+
+#[test]
 fn retired_patterns_are_not_scored() {
     use refledger_canary_score::score_with_corrections;
     let repo = "GautamTalksDev/canary";

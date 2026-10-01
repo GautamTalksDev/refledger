@@ -358,6 +358,14 @@ impl RepoState {
     pub fn tombstone(&self, name: &str) -> Option<&BindingSnapshot> {
         self.tombstones.get(name).map(|t| &t.last)
     }
+
+    /// Seed a binding that archive listing-only stubs never recorded, after the
+    /// prior tip SHA has been peeled into the object cache.
+    pub fn insert_binding_if_absent(&mut self, name: String, snap: BindingSnapshot) {
+        self.bindings
+            .entry(name)
+            .or_insert_with(|| LiveBinding { snap });
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]

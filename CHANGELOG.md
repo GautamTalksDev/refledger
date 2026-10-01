@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **2026-10-01 - batch Move missed when prior tip was listing-only.** Live poll
+  `2026-10-01T02:18:39Z` saw `v9.0.0/1/2` move `5f7797a7…`→`9501ea4a…`
+  (`confirm=1`) but left all three listing-only: priority-peel only selected
+  refs that already had a *peeled* binding. Any tip whose `target_sha` differs
+  from the previous observation is now priority-peeled from the reserve, and
+  a never-peeled FROM commit is peeled too so classify has both trees.
+  Recovery re-derives the same shape from the archive. `canary-score` counts
+  `SchedulerLag` as a recorded gap (previous obs → skip). Canary rotate that
+  bootstraps tags stops before the pattern so bootstrap and move never share
+  one push.
+
 - **2026-10-01 - heads.jsonl line rewrite on main (disclosed, not erased).**
   Commit `ff75e915` replaced the seq 42 heads line published in `0800c1f5`
   (which had Rekor `log_index` 3027764712) with a 409 error line, because

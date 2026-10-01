@@ -581,9 +581,9 @@ pub enum RestError {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub(crate) struct RawRef {
-    name: String,
-    object_type: String,
-    object_sha: String,
+    pub name: String,
+    pub object_type: String,
+    pub object_sha: String,
 }
 
 #[derive(Debug, Clone)]
@@ -826,16 +826,19 @@ fn fetch_repo_metadata<T: Transport>(
 /// Peel refs whose tip changed or reappeared (tombstone), bypassing the
 /// per-run warm-up peel budget. Used so brand-new attack commits are never
 /// left listing-only before classify.
+///
+/// `also_peel_shas` are prior tip SHAs that were never peeled (listing-only
+/// previous observation) but are still needed as Move `from` bindings.
 pub(crate) fn peel_priority_refs<T: Transport>(
     ctx: &WarmUpContext,
     priority_names: &BTreeSet<String>,
+    also_peel_shas: &BTreeSet<String>,
     objects: &mut ObjectCache,
     client: &Client<T>,
 ) -> Result<Vec<ObservedRef>, ResolveFail> {
     let (owner, name) = split_slug(&ctx.repo)?;
     let path = ctx.path.as_deref();
     let refs = if ctx.refs.is_empty() {
-        // Caller should pass refs; fall back empty.
         Vec::new()
     } else {
         ctx.refs.clone()
@@ -850,6 +853,21 @@ pub(crate) fn peel_priority_refs<T: Transport>(
             let _ = resolve_action_yml(&owner, &name, commit_sha, path, objects, client)?;
         }
     }
+    for sha in also_peel_shas {
+        if objects.contains(sha) {
+            continue;
+        }
+        // Prior tip was listing-only; peel the old commit so classify has FROM trees.
+        let raw = RawRef {
+            name: format!("refs/internal/prior/{sha}"),
+            object_type: "commit".into(),
+            object_sha: sha.clone(),
+        };
+        let peel = peel_ref(&owner, &name, &raw, objects, client)?;
+        if let Peeled::Commit { commit_sha, .. } = &peel.peeled {
+            let _ = resolve_action_yml(&owner, &name, commit_sha, path, objects, client)?;
+        }
+    }
     let mut observed = Vec::with_capacity(refs.len());
     for raw in &refs {
         observed.push(observed_ref_from_cache_or_listing(raw, objects)?);
@@ -857,26 +875,98 @@ pub(crate) fn peel_priority_refs<T: Transport>(
     Ok(observed)
 }
 
-/// Names that must be peeled before classify: target moved, or reappeared
-/// after a tombstone. Pure first-seen creations are not included.
-pub(crate) fn priority_peel_names(
+/// Plan of peels required before classify for one Ok listing.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct PriorityPeelPlan {
+    /// Current tip names whose `target_sha` moved (or reappeared).
+    pub names: BTreeSet<String>,
+    /// Prior tip SHAs that were never peeled but are needed as Move `from`.
+    pub prior_shas: BTreeSet<String>,
+}
+
+impl PriorityPeelPlan {
+    pub fn tip_count(&self) -> usize {
+        self.names.len() + self.prior_shas.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.names.is_empty() && self.prior_shas.is_empty()
+    }
+}
+
+/// Names (and prior SHAs) that must be peeled before classify.
+///
+/// A ref is priority-peeled when its `target_sha` differs from the previous
+/// observation's target — **including when that previous binding was
+/// listing-only** (no commit/tree). Pure first-seen creations (no prior
+/// target) are not included; tombstones still are.
+pub(crate) fn priority_peel_plan(
     state: &crate::classify::RepoState,
     refs: &[RawRef],
-) -> BTreeSet<String> {
-    let mut out = BTreeSet::new();
+    prior_targets: &BTreeMap<String, String>,
+) -> PriorityPeelPlan {
+    let mut plan = PriorityPeelPlan::default();
     for raw in refs {
         let target = raw.object_sha.as_str();
         if state.tombstone(&raw.name).is_some() {
-            out.insert(raw.name.clone());
+            plan.names.insert(raw.name.clone());
             continue;
         }
+        if let Some(prev_target) = prior_targets.get(&raw.name) {
+            if prev_target.as_str() != target {
+                plan.names.insert(raw.name.clone());
+                // FROM side never peeled → no binding in classify state.
+                if state.binding(&raw.name).is_none() {
+                    plan.prior_shas.insert(prev_target.clone());
+                }
+            }
+            continue;
+        }
+        // Fall back: peeled binding with a moved tip (warm test fixtures).
         if let Some(prev) = state.binding(&raw.name) {
             if prev.target_sha() != target {
-                out.insert(raw.name.clone());
+                plan.names.insert(raw.name.clone());
             }
         }
     }
-    out
+    plan
+}
+
+/// Insert peeled prior tips into `state` so classify has FROM bindings when
+/// the archive only held listing-only stubs.
+///
+/// `prior_at` must be strictly before the current observation time so Move
+/// windows are non-zero.
+pub(crate) fn hydrate_prior_bindings(
+    state: &mut crate::classify::RepoState,
+    prior_targets: &BTreeMap<String, String>,
+    objects: &ObjectCache,
+    prior_at: time::OffsetDateTime,
+) {
+    for (name, sha) in prior_targets {
+        if state.binding(name).is_some() {
+            continue;
+        }
+        let Some(cached) = objects.get(sha) else {
+            continue;
+        };
+        let CacheEntry::Commit { tree_sha, .. } = cached else {
+            continue;
+        };
+        state.insert_binding_if_absent(
+            name.clone(),
+            crate::classify::BindingSnapshot {
+                target_sha: sha.clone(),
+                commit_sha: sha.clone(),
+                tree_sha: tree_sha.clone(),
+                ref_type: crate::observation::RefType::Lightweight,
+                first_observed: prior_at,
+                last_observed: prior_at,
+                observation_count: 1,
+                action_yml_sha: None,
+            },
+        );
+    }
 }
 
 fn warm_up_refs<T: Transport>(

@@ -1296,6 +1296,472 @@ fn run_once_batch_of_three_exact_to_never_seen_commit_emits_correlation() {
     );
 }
 
+/// Live failure shape (2026-10-01T02:18Z): v9 tips first met listing-only at
+/// `5f7797a7…`, then moved listing-only to `9501ea4a…`. Prior binding was never
+/// peeled, so priority-peel must key off target_sha change alone and peel the
+/// FROM commit too. SHAs and trees match the archived canary observations.
+#[test]
+fn run_once_batch_listing_only_prior_matches_live_v9_archive() {
+    use refledger_log::entry::{Classification, Event, Severity};
+    use refledger_poller::observation::{ObservedRef, RefType};
+
+    let dir = TempDir::new().unwrap();
+    // Times mirror the archive: first listing-only Ok, then the confirm move.
+    let t_bootstrap = odt(2026, Month::October, 1, 1, 57, 51, 55);
+    let t_move = odt(2026, Month::October, 1, 2, 18, 39, 455);
+    const OLD: &str = "5f7797a750e27645b21d80f89c20e006e9f8da65";
+    const TREE_OLD: &str = "6a3e03f7367bbcc085dadbe3871e43bb5b47b0d4";
+    const NEW: &str = "9501ea4aa193609399ba0e66a5248432246ad445";
+    const TREE_NEW: &str = "c9d38f5feafb6da041f61a783e068ec752312225";
+
+    {
+        let mut store = Store::open(dir.path(), opts(t_bootstrap)).unwrap();
+        let refs: Vec<_> = ["v9.0.0", "v9.0.1", "v9.0.2"]
+            .iter()
+            .map(|t| {
+                ObservedRef::new_unpeeled(format!("refs/tags/{t}"), RefType::Lightweight, OLD)
+                    .unwrap()
+            })
+            .collect();
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("GautamTalksDev/canary")
+                    .unwrap()
+                    .observed_at(t_bootstrap)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"v9-bootstrap\"")),
+                        refs,
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+    }
+
+    #[derive(Clone, Default)]
+    struct LiveBatchTransport;
+    impl Transport for LiveBatchTransport {
+        fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
+            let t = &request.target;
+            if t.contains("/repos/GautamTalksDev/canary")
+                && !t.contains("/git/")
+                && !t.contains("/contents/")
+                && !t.contains("/compare/")
+            {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"repo\"".into())]),
+                    body: Some(serde_json::json!({"archived": false})),
+                });
+            }
+            if t.contains("matching-refs/tags") {
+                let body: Vec<_> = ["v9.0.0", "v9.0.1", "v9.0.2"]
+                    .iter()
+                    .map(|tag| {
+                        serde_json::json!({
+                            "ref": format!("refs/tags/{tag}"),
+                            "object": {"type": "commit", "sha": NEW}
+                        })
+                    })
+                    .collect();
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"batch-moved\"".into())]),
+                    body: Some(serde_json::json!(body)),
+                });
+            }
+            if t.contains(&format!("/git/commits/{NEW}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"sha": NEW, "tree": {"sha": TREE_NEW}})),
+                });
+            }
+            if t.contains(&format!("/git/commits/{OLD}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"sha": OLD, "tree": {"sha": TREE_OLD}})),
+                });
+            }
+            if t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 404,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"message": "Not Found"})),
+                });
+            }
+            if t.contains("/compare/") {
+                return Ok(load_fixture("compare_ahead"));
+            }
+            Err(format!("unexpected {t}"))
+        }
+    }
+
+    let groups = vec![PollGroup {
+        repo: "GautamTalksDev/canary".into(),
+        paths: vec![None],
+    }];
+    let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+    args.token = "ghp_test".into();
+    args.scheduled_at = t_move;
+    args.actual_start = t_move;
+    args.sleep = Box::new(|_| {});
+    args.confirm_delay = Duration::seconds(0);
+    args.max_requests = 150;
+    // Cold peel budget: warm backfill must not be required for the attack tips.
+    args.max_new_peels = 0;
+
+    let mut store = Store::open(dir.path(), opts(t_move)).unwrap();
+    run_once_with(
+        &mut store,
+        CountingTransport::new(LiveBatchTransport, 150),
+        &groups,
+        &args,
+    )
+    .expect("once");
+
+    let moves: Vec<_> = store
+        .entries()
+        .iter()
+        .filter(|e| e.event == Event::Move)
+        .collect();
+    assert_eq!(
+        moves.len(),
+        3,
+        "three Moves from listing-only prior: {moves:?}"
+    );
+    for mv in &moves {
+        assert_eq!(mv.classification, Some(Classification::ContentChange));
+        assert_eq!(mv.severity, Some(Severity::High));
+        assert_eq!(mv.from.as_ref().map(|b| b.target_sha.as_str()), Some(OLD));
+        assert_eq!(mv.to.as_ref().map(|b| b.target_sha.as_str()), Some(NEW));
+    }
+    assert!(
+        store
+            .entries()
+            .iter()
+            .any(|e| e.event == Event::Correlation),
+        "Correlation required"
+    );
+}
+
+/// Cold-state twin of `run_once_peels_never_seen_commit_before_classify_exact_move`:
+/// previous observation was listing-only (never peeled), matching first contact
+/// with an already-moved tip.
+#[test]
+fn run_once_peels_never_seen_commit_cold_listing_only_prior() {
+    use refledger_log::entry::{Classification, Event, Severity};
+    use refledger_poller::observation::{ObservedRef, RefType};
+
+    let dir = TempDir::new().unwrap();
+    let t0 = odt(2026, Month::January, 1, 12, 0, 0, 0);
+    let t1 = t0 + Duration::minutes(5);
+    const OLD: &str = "1111111111111111111111111111111111111111";
+    const TREE_OLD: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    const NEW: &str = "cccccccccccccccccccccccccccccccccccccccc";
+    const TREE_NEW: &str = "dddddddddddddddddddddddddddddddddddddddd";
+
+    {
+        let mut store = Store::open(dir.path(), opts(t0)).unwrap();
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("acme/widgets")
+                    .unwrap()
+                    .observed_at(t0)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"old\"")),
+                        refs: vec![ObservedRef::new_unpeeled(
+                            "refs/tags/v1.2.3",
+                            RefType::Lightweight,
+                            OLD,
+                        )
+                        .unwrap()],
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+    }
+
+    #[derive(Clone, Default)]
+    struct ColdAttackTransport;
+    impl Transport for ColdAttackTransport {
+        fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
+            let t = &request.target;
+            if t.contains("/repos/acme/widgets")
+                && !t.contains("/git/")
+                && !t.contains("/contents/")
+                && !t.contains("/compare/")
+            {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"repo\"".into())]),
+                    body: Some(serde_json::json!({"archived": false})),
+                });
+            }
+            if t.contains("matching-refs/tags") {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"moved\"".into())]),
+                    body: Some(serde_json::json!([{
+                        "ref": "refs/tags/v1.2.3",
+                        "object": {"type": "commit", "sha": NEW}
+                    }])),
+                });
+            }
+            if t.contains(&format!("/git/commits/{NEW}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"sha": NEW, "tree": {"sha": TREE_NEW}})),
+                });
+            }
+            if t.contains(&format!("/git/commits/{OLD}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"sha": OLD, "tree": {"sha": TREE_OLD}})),
+                });
+            }
+            if t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 404,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"message": "Not Found"})),
+                });
+            }
+            if t.contains("/compare/") {
+                return Ok(load_fixture("compare_ahead"));
+            }
+            Err(format!("unexpected {t}"))
+        }
+    }
+
+    let groups = vec![PollGroup {
+        repo: "acme/widgets".into(),
+        paths: vec![None],
+    }];
+    let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+    args.token = "ghp_test".into();
+    args.scheduled_at = t1;
+    args.actual_start = t1;
+    args.sleep = Box::new(|_| {});
+    args.confirm_delay = Duration::seconds(0);
+    args.max_requests = 150;
+    args.max_new_peels = 0;
+
+    let mut store = Store::open(dir.path(), opts(t1)).unwrap();
+    run_once_with(
+        &mut store,
+        CountingTransport::new(ColdAttackTransport, 150),
+        &groups,
+        &args,
+    )
+    .expect("once");
+
+    let mv = store
+        .entries()
+        .iter()
+        .find(|e| e.event == Event::Move)
+        .expect("Move on chain");
+    assert_eq!(mv.r#ref.as_deref(), Some("refs/tags/v1.2.3"));
+    assert_eq!(mv.classification, Some(Classification::ContentChange));
+    assert_eq!(mv.severity, Some(Severity::High));
+    assert_eq!(mv.from.as_ref().map(|b| b.target_sha.as_str()), Some(OLD));
+    assert_eq!(mv.to.as_ref().map(|b| b.commit_sha.as_str()), Some(NEW));
+}
+
+/// Recovery re-derive: archive already holds the listing-only batch move
+/// (02:18 shape) but no Moves were written. Next run must peel both sides and
+/// append 3 Moves + Correlation without another tip change.
+#[test]
+fn run_once_recovers_listing_only_batch_move_from_archive() {
+    use refledger_log::entry::Event;
+    use refledger_poller::observation::{ObservedRef, RefType};
+    use serde_json::json;
+
+    let dir = TempDir::new().unwrap();
+    const OLD: &str = "5f7797a750e27645b21d80f89c20e006e9f8da65";
+    const TREE_OLD: &str = "6a3e03f7367bbcc085dadbe3871e43bb5b47b0d4";
+    const NEW: &str = "9501ea4aa193609399ba0e66a5248432246ad445";
+    const TREE_NEW: &str = "c9d38f5feafb6da041f61a783e068ec752312225";
+
+    let t0 = odt(2026, Month::October, 1, 1, 0, 0, 0);
+    let t_list = odt(2026, Month::October, 1, 1, 57, 51, 55);
+    let t_move = odt(2026, Month::October, 1, 2, 18, 39, 455);
+    let t_recover = odt(2026, Month::October, 1, 2, 40, 0, 0);
+
+    {
+        let mut store = Store::open(dir.path(), opts(t0)).unwrap();
+        // Chain tip before the missed observations so recovery considers them.
+        store
+            .append_entry(refledger_log::chain::UnhashedEntry::correction(
+                t0,
+                0,
+                "recovery-tip",
+            ))
+            .unwrap();
+        let listing: Vec<_> = ["v9.0.0", "v9.0.1", "v9.0.2"]
+            .iter()
+            .map(|t| {
+                ObservedRef::new_unpeeled(format!("refs/tags/{t}"), RefType::Lightweight, OLD)
+                    .unwrap()
+            })
+            .collect();
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("GautamTalksDev/canary")
+                    .unwrap()
+                    .observed_at(t_list)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"list\"")),
+                        refs: listing,
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+        let moved: Vec<_> = ["v9.0.0", "v9.0.1", "v9.0.2"]
+            .iter()
+            .map(|t| {
+                ObservedRef::new_unpeeled(format!("refs/tags/{t}"), RefType::Lightweight, NEW)
+                    .unwrap()
+            })
+            .collect();
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("GautamTalksDev/canary")
+                    .unwrap()
+                    .observed_at(t_move)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"moved\"")),
+                        refs: moved,
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+    }
+
+    #[derive(Clone, Default)]
+    struct RecoverListingTransport;
+    impl Transport for RecoverListingTransport {
+        fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
+            let t = &request.target;
+            if t.contains("/repos/GautamTalksDev/canary")
+                && !t.contains("/git/")
+                && !t.contains("/contents/")
+                && !t.contains("/compare/")
+            {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"repo\"".into())]),
+                    body: Some(json!({"archived": false})),
+                });
+            }
+            if t.contains("matching-refs/tags") {
+                // Still at NEW — recovery must not require another move.
+                let body: Vec<_> = ["v9.0.0", "v9.0.1", "v9.0.2"]
+                    .iter()
+                    .map(|tag| {
+                        json!({
+                            "ref": format!("refs/tags/{tag}"),
+                            "object": {"type": "commit", "sha": NEW}
+                        })
+                    })
+                    .collect();
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"moved\"".into())]),
+                    body: Some(json!(body)),
+                });
+            }
+            if t.contains(&format!("/git/commits/{NEW}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({"sha": NEW, "tree": {"sha": TREE_NEW}})),
+                });
+            }
+            if t.contains(&format!("/git/commits/{OLD}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({"sha": OLD, "tree": {"sha": TREE_OLD}})),
+                });
+            }
+            if t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 404,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({"message": "Not Found"})),
+                });
+            }
+            if t.contains("/compare/") {
+                return Ok(load_fixture("compare_ahead"));
+            }
+            Err(format!("unexpected {t}"))
+        }
+    }
+
+    let groups = vec![PollGroup {
+        repo: "GautamTalksDev/canary".into(),
+        paths: vec![None],
+    }];
+    let mut store = Store::open(dir.path(), opts(t_recover)).unwrap();
+    let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+    args.token = "ghp_test".into();
+    args.scheduled_at = t_recover;
+    args.actual_start = t_recover;
+    args.sleep = Box::new(|_| {});
+    args.confirm_delay = Duration::seconds(0);
+    args.max_requests = 150;
+    args.max_new_peels = 0;
+
+    run_once_with(
+        &mut store,
+        CountingTransport::new(RecoverListingTransport, 150),
+        &groups,
+        &args,
+    )
+    .expect("recovery once");
+
+    let moves: Vec<_> = store
+        .entries()
+        .iter()
+        .filter(|e| e.event == Event::Move)
+        .collect();
+    assert_eq!(
+        moves.len(),
+        3,
+        "recovery must record the missed batch: {moves:?}"
+    );
+    assert!(
+        store
+            .entries()
+            .iter()
+            .any(|e| e.event == Event::Correlation),
+        "Correlation required on recovery"
+    );
+}
+
 #[test]
 fn run_once_recreation_to_never_seen_commit_is_peeled() {
     use refledger_log::entry::Event;

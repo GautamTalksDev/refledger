@@ -21,7 +21,7 @@ struct Args {
     /// Directory of chain JSONL day files.
     #[arg(long)]
     log_dir: PathBuf,
-    /// Observation JSONL root (for PollerDown / SecondaryLimitBackoff gaps).
+    /// Observation JSONL root (for PollerDown / SecondaryLimitBackoff / SchedulerLag gaps).
     /// Defaults to `<log_dir>/../observations` when that directory exists.
     #[arg(long)]
     observations: Option<PathBuf>,

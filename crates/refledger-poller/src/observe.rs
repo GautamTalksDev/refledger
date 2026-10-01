@@ -580,6 +580,12 @@ impl Observation {
         self.observation_id
     }
 
+    /// Replace the auto-assigned id (recovery re-derive must cite the archive row).
+    pub fn with_observation_id(mut self, id: Ulid) -> Self {
+        self.observation_id = id;
+        self
+    }
+
     pub fn repo(&self) -> &RepoSlug {
         &self.repo
     }

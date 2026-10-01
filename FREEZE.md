@@ -21,6 +21,7 @@ The freeze exists so the running poller, log format, and signatures stay the ins
 | 2026-10-01 | b5e1b05 | Emergency: every poll since 00:02Z aborted on enrich compare failure (`compare status 404` / budget exhaustion). One repo's optional compare must never abort the observatory; invented listing placeholders (`000…001`) made peels look like Moves. Isolation + skip invented SHAs. M1 window restarted (instrument changed mid-window). |
 | 2026-10-01 | ea8aefb | Emergency: canary Move buffered during Sep 30 outage was lost on process exit (in-memory only); Rekor 409 treated as hard failure instead of lookup; seal could publish to main before data-branch commit. Durable entry buffer + outage re-derive; 409→lookup; publish after data commit. |
 | 2026-10-01 | fcaecb5 | Emergency before M1 (starts 2026-10-02T00:00:00Z): disclose `heads.jsonl` line rewrite on main (`ff75e915` replaced seq 42 witnessed line from `0800c1f5`); refuse non-prefix publish; `--strict` requires identical head+signature across witness lines for one seq. No force-push. |
+| 2026-10-01 | (this commit) | Emergency: batch proof (`v9.0.0/1/2` 5f7797a7→9501ea4a at 02:18Z, confirm=1) stayed listing-only — priority-peel required a *peeled* prior binding, so never-peeled FROM sides were skipped. Any target_sha change is priority-peeled (and never-peeled FROM tips too); recovery re-derives; `canary-score` treats SchedulerLag as a gap; canary rotate stops after bootstrap. |
 
 ## Run window
 

@@ -938,6 +938,36 @@ impl<V: Volume> Store<V> {
         Ok(best.map(|(_, t)| t).unwrap_or_default())
     }
 
+    /// `observed_at` of the latest Ok observation for `repo`, if any.
+    pub fn latest_ok_observed_at(&self, repo: &str) -> Result<Option<OffsetDateTime>, StoreError> {
+        let segment = crate::observation::RepoSlug::parse(repo)
+            .map_err(StoreError::Observation)?
+            .path_segment();
+        let suffix = format!("/{segment}.jsonl");
+        let mut best: Option<OffsetDateTime> = None;
+        for path in self.vol.list("observations")? {
+            if !path.ends_with(&suffix) || path.contains(".torn.") {
+                continue;
+            }
+            let bytes = self.vol.read(&path)?.unwrap_or_default();
+            for line in bytes.split(|b| *b == b'\n') {
+                if line.is_empty() {
+                    continue;
+                }
+                let obs: Observation = serde_json::from_slice(line)
+                    .map_err(|e| StoreError::Corrupt(format!("{path}: {e}")))?;
+                if !matches!(obs.outcome(), Outcome::Ok { .. }) {
+                    continue;
+                }
+                let at = obs.observed_at().as_offset_datetime();
+                if best.map(|prev| at > prev).unwrap_or(true) {
+                    best = Some(at);
+                }
+            }
+        }
+        Ok(best)
+    }
+
     /// Latest `observed_at` for `repo` across all observation files, if any.
     pub fn latest_observed_at(&self, repo: &str) -> Result<Option<OffsetDateTime>, StoreError> {
         let segment = crate::observation::RepoSlug::parse(repo)

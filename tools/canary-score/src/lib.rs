@@ -2,7 +2,7 @@
 //!
 //! Only actions the poller was in a position to detect are scored: after the
 //! canary's PopulationChange Added entry, and outside recorded PollerDown /
-//! SecondaryLimitBackoff gaps for that poll group.
+//! SecondaryLimitBackoff / SchedulerLag gaps for that poll group.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -46,6 +46,9 @@ pub struct LoadedLedger {
 pub enum GapKind {
     PollerDown,
     SecondaryLimitBackoff,
+    /// Actions `once` wrote a Skipped row because the prior poll was overdue.
+    /// The outage window is previous observation → this skip (not scheduled≈actual).
+    SchedulerLag,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -274,7 +277,8 @@ pub fn canary_added_at(entries: &[Value], repo: &str) -> Option<OffsetDateTime> 
     best
 }
 
-/// Collect PollerDown and SecondaryLimitBackoff gaps for `repo` from observation JSONL.
+/// Collect PollerDown, SecondaryLimitBackoff, and SchedulerLag gaps for `repo`
+/// from observation JSONL.
 pub fn load_gaps(observations_root: &Path, repo: &str) -> Result<Vec<RecordedGap>> {
     if !observations_root.is_dir() {
         return Ok(Vec::new());
@@ -324,6 +328,9 @@ pub fn load_gaps(observations_root: &Path, repo: &str) -> Result<Vec<RecordedGap
                 Some(SkipParsed::SecondaryLimitBackoff) => {
                     skips.push((at, GapKind::SecondaryLimitBackoff, None));
                 }
+                Some(SkipParsed::SchedulerLag) => {
+                    skips.push((at, GapKind::SchedulerLag, None));
+                }
                 None => {}
             }
         }
@@ -352,6 +359,21 @@ pub fn load_gaps(observations_root: &Path, repo: &str) -> Result<Vec<RecordedGap
                     to,
                 });
             }
+            GapKind::SchedulerLag => {
+                // Outage was before the skip: previous observation → recovery.
+                // (scheduled≈actual on the skip row does not span the miss.)
+                let from = all_times
+                    .iter()
+                    .copied()
+                    .rev()
+                    .find(|t| *t < at)
+                    .unwrap_or(at);
+                gaps.push(RecordedGap {
+                    kind,
+                    from,
+                    to: at,
+                });
+            }
         }
     }
     gaps.sort_by_key(|g| g.from);
@@ -364,6 +386,7 @@ enum SkipParsed {
         to: OffsetDateTime,
     },
     SecondaryLimitBackoff,
+    SchedulerLag,
 }
 
 fn parse_skip_reason(reason: Option<&Value>) -> Option<SkipParsed> {
@@ -371,6 +394,7 @@ fn parse_skip_reason(reason: Option<&Value>) -> Option<SkipParsed> {
     if let Some(s) = reason.as_str() {
         return match s {
             "secondary_limit_backoff" => Some(SkipParsed::SecondaryLimitBackoff),
+            "scheduler_lag" => Some(SkipParsed::SchedulerLag),
             "poller_down" => None, // malformed without range
             _ => None,
         };
@@ -383,6 +407,9 @@ fn parse_skip_reason(reason: Option<&Value>) -> Option<SkipParsed> {
         }
         if obj.contains_key("secondary_limit_backoff") {
             return Some(SkipParsed::SecondaryLimitBackoff);
+        }
+        if obj.contains_key("scheduler_lag") {
+            return Some(SkipParsed::SchedulerLag);
         }
     }
     None
@@ -506,7 +533,7 @@ pub fn render_markdown(report: &ScoreReport) -> String {
 Measured by joining `{repo}` ledger actions against the Refledger chain.
 Only actions the poller could have seen are scored (after the canary's
 PopulationChange Added at {added}; outside recorded PollerDown /
-SecondaryLimitBackoff gaps). Canary events are excluded from public
+SecondaryLimitBackoff / SchedulerLag gaps). Canary events are excluded from public
 ecosystem stats. Manual-intervention and retired-pattern rows are listed
 separately and never enter latency figures.
 
@@ -577,7 +604,7 @@ bug). Excluded from latency figures; the original ledger row is unchanged.
 
 ## Performed during a recorded gap
 
-{gap_n} ledger row(s) whose `performed_at` falls inside a recorded PollerDown or SecondaryLimitBackoff gap for the canary poll group. Excluded from scoring is not the same as hidden.
+{gap_n} ledger row(s) whose `performed_at` falls inside a recorded PollerDown, SecondaryLimitBackoff, or SchedulerLag gap for the canary poll group. Excluded from scoring is not the same as hidden.
 
 | pattern | tag | performed_at | gap |
 |---------|-----|--------------|-----|
@@ -668,6 +695,7 @@ bug). Excluded from latency figures; the original ledger row is unchanged.
                     let kind = match k {
                         GapKind::PollerDown => "PollerDown",
                         GapKind::SecondaryLimitBackoff => "SecondaryLimitBackoff",
+                        GapKind::SchedulerLag => "SchedulerLag",
                     };
                     format!("| {} | {} | {} | {} |", l.pattern, l.tag, l.performed_at, kind)
                 })

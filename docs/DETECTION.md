@@ -3,24 +3,24 @@
 Measured by joining `GautamTalksDev/canary` ledger actions against the Refledger chain.
 Only actions the poller could have seen are scored (after the canary's
 PopulationChange Added at 2026-09-29T18:53:44.59Z; outside recorded PollerDown /
-SecondaryLimitBackoff gaps). Canary events are excluded from public
+SecondaryLimitBackoff / SchedulerLag gaps). Canary events are excluded from public
 ecosystem stats. Manual-intervention and retired-pattern rows are listed
 separately and never enter latency figures.
 
-**Generated:** 2026-09-30T05:46:48.333Z
+**Generated:** 2026-10-01T02:44:50.789Z
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Ledger actions | 9 |
-| Scored (event-producing) | 1 |
-| Creation-only, not scored | 0 |
+| Ledger actions | 19 |
+| Scored (event-producing) | 7 |
+| Creation-only, not scored | 3 |
 | Retired pattern, not scored | 4 |
 | Manual intervention, not scored | 1 |
 | Pre genesis, not scored | 3 |
-| Performed during a recorded gap | 0 |
-| Detected | 0 |
+| Performed during a recorded gap | 1 |
+| Detected | 1 |
 | Misclassified | 0 |
 | p50 latency | — |
 | p95 latency | — |
@@ -32,17 +32,25 @@ This is the figure OPERATIONS.md §7 promises to publish.
 
 | pattern | tag | detected | classified | latency |
 |---------|-----|----------|------------|---------|
-| recreate | v3.0.0 | no | — | recreate half |
+| recreate | v3.0.0 | yes | — | recreate half |
+| batch_exact_to_one | v9.0.0 | no | no | — |
+| batch_exact_to_one | v9.0.1 | no | no | — |
+| batch_exact_to_one | v9.0.2 | no | no | — |
+| batch_exact_to_one | v9.0.0 | no | no | — |
+| batch_exact_to_one | v9.0.1 | no | no | — |
+| batch_exact_to_one | v9.0.2 | no | no | — |
 
 ## Creation-only (not scored)
 
-0 ledger row(s) whose pattern is not expected to produce a
+3 ledger row(s) whose pattern is not expected to produce a
 Move/Deletion/Recreation (bootstrap / first-seen create). Reported separately
 so they are never counted as detection misses.
 
 | pattern | tag | performed_at |
 |---------|-----|--------------|
-| — | — | — |
+| creation | v9.0.0 | 2026-10-01T01:57:13.000Z |
+| creation | v9.0.1 | 2026-10-01T01:57:13.000Z |
+| creation | v9.0.2 | 2026-10-01T01:57:13.000Z |
 
 ## Retired pattern (not scored)
 
@@ -79,8 +87,8 @@ bug). Excluded from latency figures; the original ledger row is unchanged.
 
 ## Performed during a recorded gap
 
-0 ledger row(s) whose `performed_at` falls inside a recorded PollerDown or SecondaryLimitBackoff gap for the canary poll group. Excluded from scoring is not the same as hidden.
+1 ledger row(s) whose `performed_at` falls inside a recorded PollerDown, SecondaryLimitBackoff, or SchedulerLag gap for the canary poll group. Excluded from scoring is not the same as hidden.
 
 | pattern | tag | performed_at | gap |
 |---------|-----|--------------|-----|
-| — | — | — | — |
+| exact_content_change | v1.0.0 | 2026-10-01T00:41:28.000Z | SchedulerLag |

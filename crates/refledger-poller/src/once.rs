@@ -20,9 +20,9 @@ use crate::derive::{derive, ChainTip};
 use crate::enrich::{enrich, CompareCache};
 use crate::github::etag::{AuthToken, ETagStore};
 use crate::github::rest::{
-    build_obs_for_once, peel_priority_refs, priority_peel_names, resolve_repo,
-    resolve_repo_listing, resolve_repo_warm_up, Client, ObjectCache, PageBodyCache, RepoMetaCache,
-    ResolveFail, RestRequest, RestResponse, Transport, WarmUpContext,
+    build_obs_for_once, hydrate_prior_bindings, peel_priority_refs, priority_peel_plan,
+    resolve_repo, resolve_repo_listing, resolve_repo_warm_up, Client, ObjectCache, PageBodyCache,
+    RepoMetaCache, ResolveFail, RestRequest, RestResponse, Transport, WarmUpContext,
 };
 use crate::observation::{Observation, Outcome, RepoSlug, SkipReason, Timestamp};
 use crate::population::{load_watched, poll_groups, PollGroup};
@@ -359,7 +359,8 @@ pub fn run_once_with<T: Transport>(
         groups,
         &mut states,
         &mut compare,
-        client.transport(),
+        &client,
+        &mut objects,
         &args.token,
     )?;
 
@@ -466,11 +467,13 @@ pub fn run_once_with<T: Transport>(
 
     // Reserve confirm + enrich + priority peels (changed/reappeared tips) before
     // phase-2 backfill takes anything. Priority peels are what make brand-new
-    // attack commits classifiable in the same run.
+    // attack commits classifiable in the same run — including when the previous
+    // observation was listing-only.
     let mut priority_tip_count = 0usize;
     for pending in &pending_ok {
         let state = rebuild_repo_state(store, pending.warm.repo.as_str(), None)?;
-        priority_tip_count += priority_peel_names(&state, &pending.warm.refs).len();
+        let prior = prior_target_map(&store.latest_ok_targets(pending.warm.repo.as_str())?);
+        priority_tip_count += priority_peel_plan(&state, &pending.warm.refs, &prior).tip_count();
     }
     let reserve = reserved_budget(moved.len(), priority_tip_count);
     let hard_max = args.max_requests;
@@ -516,7 +519,8 @@ pub fn run_once_with<T: Transport>(
             }
         }
         let state = states.get(&repo_key).expect("just inserted");
-        let priority = priority_peel_names(state, &pending.warm.refs);
+        let prior = prior_target_map(&store.latest_ok_targets(&repo_key)?);
+        let plan = priority_peel_plan(state, &pending.warm.refs, &prior);
 
         let (http_status, etag, archived, at) = match pending.early.outcome() {
             Outcome::Ok {
@@ -535,17 +539,29 @@ pub fn run_once_with<T: Transport>(
             ),
         };
 
-        let observed = if !priority.is_empty() {
-            // Peel every changed/reappeared tip before classify — even never-seen commits.
+        let observed = if !plan.is_empty() {
+            // Peel every changed tip (and never-peeled FROM tips) before classify.
             client
                 .transport()
                 .set_max(peel_enrich_max.max(client.transport().requests()));
-            let peeled = match peel_priority_refs(&pending.warm, &priority, &mut objects, &client) {
+            let peeled = match peel_priority_refs(
+                &pending.warm,
+                &plan.names,
+                &plan.prior_shas,
+                &mut objects,
+                &client,
+            ) {
                 Ok(refs) => refs,
                 Err(e) => {
                     eprintln!("priority peel failed repo={repo_key}: {e:?}");
-                    peel_priority_refs(&pending.warm, &BTreeSet::new(), &mut objects, &client)
-                        .unwrap_or_default()
+                    peel_priority_refs(
+                        &pending.warm,
+                        &BTreeSet::new(),
+                        &BTreeSet::new(),
+                        &mut objects,
+                        &client,
+                    )
+                    .unwrap_or_default()
                 }
             };
             client.transport().set_max(peel_enrich_max);
@@ -553,15 +569,35 @@ pub fn run_once_with<T: Transport>(
         } else if client.transport().requests() < peel_enrich_max {
             match resolve_repo_warm_up(&pending.warm, &pages, &mut objects, &client) {
                 Ok((refs, _)) => refs,
-                Err(_) => {
-                    peel_priority_refs(&pending.warm, &BTreeSet::new(), &mut objects, &client)
-                        .unwrap_or_default()
-                }
+                Err(_) => peel_priority_refs(
+                    &pending.warm,
+                    &BTreeSet::new(),
+                    &BTreeSet::new(),
+                    &mut objects,
+                    &client,
+                )
+                .unwrap_or_default(),
             }
         } else {
-            peel_priority_refs(&pending.warm, &BTreeSet::new(), &mut objects, &client)
-                .unwrap_or_default()
+            peel_priority_refs(
+                &pending.warm,
+                &BTreeSet::new(),
+                &BTreeSet::new(),
+                &mut objects,
+                &client,
+            )
+            .unwrap_or_default()
         };
+
+        if !plan.prior_shas.is_empty() {
+            if let Some(st) = states.get_mut(&repo_key) {
+                let prior_at = store
+                    .latest_ok_observed_at(&repo_key)?
+                    .filter(|t| *t < at)
+                    .unwrap_or_else(|| at - Duration::seconds(1));
+                hydrate_prior_bindings(st, &prior, &objects, prior_at);
+            }
+        }
 
         let etag = if observed
             .iter()
@@ -754,14 +790,15 @@ fn process_observation<T: Transport>(
 }
 
 /// Re-derive from Ok observations after the chain tip that are not yet cited
-/// as `source_observations`. Covers Moves detected during an outage whose
-/// in-memory buffer was lost before the prior-day seal.
+/// as `source_observations`. Peels listing-only changed tips (and never-peeled
+/// FROM SHAs) before classify so a live miss can recover on the next run.
 fn recover_outage_moves<T: Transport>(
     store: &mut Store<OsVolume>,
     groups: &[PollGroup],
     states: &mut BTreeMap<String, RepoState>,
     compare: &mut CompareCache,
-    transport: &T,
+    client: &Client<T>,
+    objects: &mut ObjectCache,
     token: &str,
 ) -> Result<usize, OnceError> {
     let Some(tip_at) = store.tip_recorded_at() else {
@@ -771,7 +808,7 @@ fn recover_outage_moves<T: Transport>(
     let mut n = 0usize;
     for g in groups {
         let ok = store.ok_observations_chronological(&g.repo)?;
-        for obs in ok {
+        for (idx, obs) in ok.iter().enumerate() {
             let id = obs.observation_id().to_string();
             if sourced.contains(&id) {
                 continue;
@@ -779,9 +816,110 @@ fn recover_outage_moves<T: Transport>(
             if obs.observed_at().as_offset_datetime() <= tip_at {
                 continue;
             }
-            // Force rebuild excluding this obs so tip comparison is honest.
+            let Outcome::Ok { refs, .. } = obs.outcome() else {
+                continue;
+            };
+            // Prior targets from the latest Ok strictly before this observation.
+            let (prior, prior_at) = {
+                let mut map = BTreeMap::new();
+                let mut prior_at = None;
+                for earlier in ok[..idx].iter().rev() {
+                    if let Outcome::Ok {
+                        refs: earlier_refs, ..
+                    } = earlier.outcome()
+                    {
+                        for r in earlier_refs {
+                            map.entry(r.name().to_owned())
+                                .or_insert_with(|| r.target_sha().to_owned());
+                        }
+                        prior_at = Some(earlier.observed_at().as_offset_datetime());
+                        break;
+                    }
+                }
+                (map, prior_at)
+            };
+            let raws: Vec<_> = refs
+                .iter()
+                .map(|r| {
+                    let object_type = match r.ref_type() {
+                        crate::observation::RefType::Annotated => "tag",
+                        _ => "commit",
+                    };
+                    crate::github::rest::RawRef {
+                        name: r.name().to_owned(),
+                        object_type: object_type.into(),
+                        object_sha: r.target_sha().to_owned(),
+                    }
+                })
+                .collect();
             states.remove(g.repo.as_str());
-            let added = process_observation(store, states, compare, transport, token, &obs)?;
+            let state = match rebuild_repo_state(store, &g.repo, Some(obs.observation_id())) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("rebuild_repo_state failed repo={}: {e}", g.repo);
+                    RepoState::default()
+                }
+            };
+            let plan = priority_peel_plan(&state, &raws, &prior);
+            states.insert(g.repo.clone(), state);
+            let at = obs.observed_at().as_offset_datetime();
+            let peeled_refs = if !plan.is_empty() {
+                let slug =
+                    RepoSlug::parse(&g.repo).map_err(|e| OnceError::Observation(e.to_string()))?;
+                let warm = WarmUpContext {
+                    repo: slug,
+                    path: obs.action_path().map(|s| s.to_owned()),
+                    refs: raws,
+                };
+                match peel_priority_refs(&warm, &plan.names, &plan.prior_shas, objects, client) {
+                    Ok(r) => r,
+                    Err(e) => {
+                        eprintln!("recovery peel failed repo={}: {e:?}", g.repo);
+                        refs.to_vec()
+                    }
+                }
+            } else {
+                refs.to_vec()
+            };
+            if !plan.prior_shas.is_empty() {
+                if let Some(st) = states.get_mut(g.repo.as_str()) {
+                    let prior_at = prior_at
+                        .filter(|t| *t < at)
+                        .unwrap_or_else(|| at - Duration::seconds(1));
+                    hydrate_prior_bindings(st, &prior, objects, prior_at);
+                }
+            }
+            // Classify against peeled refs without rewriting the archive row.
+            let peeled_obs = match Observation::builder()
+                .repo(g.repo.as_str())
+                .map_err(|e| OnceError::Observation(e.to_string()))?
+                .observed_at(at)
+                .map_err(|e| OnceError::Observation(e.to_string()))?
+                .method(obs.method())
+                .outcome(Outcome::Ok {
+                    http_status: match obs.outcome() {
+                        Outcome::Ok { http_status, .. } => *http_status,
+                        _ => 200,
+                    },
+                    etag: None,
+                    refs: peeled_refs,
+                })
+                .build()
+            {
+                Ok(o) => o.with_observation_id(obs.observation_id()),
+                Err(e) => {
+                    eprintln!("recovery obs rebuild failed: {e}");
+                    continue;
+                }
+            };
+            let added = process_observation(
+                store,
+                states,
+                compare,
+                client.transport(),
+                token,
+                &peeled_obs,
+            )?;
             if added > 0 {
                 sourced = store.sourced_observation_ids();
                 n += added;
@@ -789,6 +927,16 @@ fn recover_outage_moves<T: Transport>(
         }
     }
     Ok(n)
+}
+
+fn prior_target_map(targets: &BTreeSet<String>) -> BTreeMap<String, String> {
+    let mut m = BTreeMap::new();
+    for entry in targets {
+        if let Some((name, sha)) = entry.split_once(':') {
+            m.insert(name.to_owned(), sha.to_owned());
+        }
+    }
+    m
 }
 
 fn diffs_from_compare(cache: &CompareCache) -> BTreeMap<(String, String), Diff> {
