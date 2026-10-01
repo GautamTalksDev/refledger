@@ -289,3 +289,4 @@
 {"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"0573d6ea4f73916dfcf0962abff1732fa76336c79576ffe6fcc52076ee5a7840\"","stored_at":"2026-10-01T11:18:01.337Z"}
 {"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"2f2c5b458932edf73e6bfb152b354dfe269665c891a6f560773ccae3c81670dd\"","stored_at":"2026-10-01T11:33:04.626Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"246169c61291b72928f17e9c657eda44dc70aa086b39bdbc6b9fd970eb2607a0\"","stored_at":"2026-10-01T11:33:04.626Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"4c7000e3fa032998f15cab49b9390f561f48fc25e033cea1cd6080c53b753457\"","stored_at":"2026-10-01T11:47:55.692Z"}
