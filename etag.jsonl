@@ -325,3 +325,4 @@
 {"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"e374131fc103d48b7a39f71a15bacb0815815ccb6bfddbd4bf7961e798faa877\"","stored_at":"2026-10-01T16:13:00.577Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"dc4fc91812e00922abc7ed5a4a9dc09a159b3d372d39ad0cf87f76641167d330\"","stored_at":"2026-10-01T16:18:08.404Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"b41e2012e3177d7402b38648eb9cd0703dde93f82974e7a56b7d99392e0be3c8\"","stored_at":"2026-10-01T16:18:08.404Z"}
+{"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"8c9abf1d2dbc53274ce0db95fd30e7b0a8607b5b97a7a6e30e55b16e5d23520e\"","stored_at":"2026-10-01T16:28:00.849Z"}
