@@ -307,3 +307,5 @@
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"18776be5287feafc6778fc56c86707bc96369e098f8ab911b4b1d72b42414fdd\"","stored_at":"2026-10-01T13:13:24.213Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"b4bc587ae0145923141a8c4d58869e3ec8b325ecb214bbe364f3518448d8494f\"","stored_at":"2026-10-01T13:18:01.275Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"ea5e79c3c16e6a2f24c8013cacadc60c74563d35d7791892b9568b5322e3805c\"","stored_at":"2026-10-01T13:33:18.629Z"}
+{"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"b7ac7a0807c8c2f13a6626d878b90938b064ee800574c846fd8780e82e5b13ed\"","stored_at":"2026-10-01T13:38:00.570Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"21b1a2c2f9ac57a6032dfee7d894be5eca195954f8f219e0ffc004a7a8b5d3e5\"","stored_at":"2026-10-01T13:38:00.570Z"}
