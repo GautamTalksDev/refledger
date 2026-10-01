@@ -189,3 +189,5 @@
 {"repo":"actions/github-script","archived":false}
 {"repo":"docker/login-action","archived":false}
 {"repo":"github/super-linter","archived":false}
+{"repo":"actions/labeler","archived":false}
+{"repo":"aws-actions/amazon-ecr-login","archived":false}
