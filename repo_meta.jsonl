@@ -234,3 +234,4 @@
 {"repo":"actions/checkout","archived":false}
 {"repo":"aquasecurity/trivy-action","archived":false}
 {"repo":"google-github-actions/setup-gcloud","archived":false}
+{"repo":"actions/setup-node","archived":false}

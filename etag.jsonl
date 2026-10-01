@@ -384,3 +384,4 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"2c370b829391923d94e1226dd8466d30e843523199c3670be0c99ba14186f907\"","stored_at":"2026-10-01T21:48:02.280Z"}
 {"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"8846bab2421c1243596afc5eb5968f4eb92c0407c20a2f9908f7d2067fdcb419\"","stored_at":"2026-10-01T22:18:07.608Z"}
 {"repo":"google-github-actions/setup-gcloud","template":"/repos/{owner}/{repo}","query":"","etag":"\"9abd6f3da1fede882a66fd6b70bed1d298c55facf2816511d3677d3fe1fad413\"","stored_at":"2026-10-01T22:18:07.608Z"}
+{"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"08607a1a56e9a1d7365fb4337c9067b29269798fa5e4e26ef35283f69dc0810c\"","stored_at":"2026-10-01T22:22:59.192Z"}
