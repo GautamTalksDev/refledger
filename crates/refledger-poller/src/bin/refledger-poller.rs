@@ -168,6 +168,15 @@ fn cmd_publish_pending(args: &[String]) -> ExitCode {
             return ExitCode::from(1);
         }
     }
+    // Push sealed log/heads even when there was no new seal this poll — a
+    // witness backfill (Rekor 409→lookup) must still reach main.
+    match store.republish_sealed_tip() {
+        Ok(ok) => eprintln!("publish-pending: tip_republished={ok}"),
+        Err(e) => {
+            eprintln!("republish_sealed_tip failed: {e}");
+            return ExitCode::from(1);
+        }
+    }
     ExitCode::SUCCESS
 }
 

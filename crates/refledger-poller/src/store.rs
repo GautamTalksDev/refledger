@@ -1475,6 +1475,31 @@ impl<V: Volume> Store<V> {
         Ok(appended)
     }
 
+    /// Fast-forward push the current sealed `log/` (including latest heads) to
+    /// main. Used by `publish-pending` so a witness backfill that did not
+    /// accompany a new seal still reaches the public branch.
+    pub fn republish_sealed_tip(&mut self) -> Result<bool, StoreError> {
+        let Some(entry) = self
+            .chain
+            .entries()
+            .iter()
+            .rev()
+            .find(|e| e.event == Event::ObservationDigest)
+        else {
+            return Ok(false);
+        };
+        let Some(digest) = &entry.observation_digest else {
+            return Ok(false);
+        };
+        let day = parse_day_label(&digest.date)?;
+        let seq = entry.seq;
+        let before = self.pending_publish_failures.len();
+        self.publish_sealed_log(day, seq)?;
+        let after = self.pending_publish_failures.len();
+        // True when we did not newly fail (pending count did not grow).
+        Ok(after <= before)
+    }
+
     pub fn chain_bytes(&self) -> Result<Vec<u8>, StoreError> {
         let mut out = Vec::new();
         for rel in self.day_logs()? {
