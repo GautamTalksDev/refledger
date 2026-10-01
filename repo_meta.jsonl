@@ -198,3 +198,4 @@
 {"repo":"aquasecurity/trivy-action","archived":false}
 {"repo":"docker/metadata-action","archived":false}
 {"repo":"actions/cache","archived":false}
+{"repo":"reviewdog/action-eslint","archived":false}
