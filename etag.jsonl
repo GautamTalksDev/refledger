@@ -311,3 +311,4 @@
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"21b1a2c2f9ac57a6032dfee7d894be5eca195954f8f219e0ffc004a7a8b5d3e5\"","stored_at":"2026-10-01T13:38:00.570Z"}
 {"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"454edd03766134806a44be9da5d0bf2b4c192a60018ece446d6744b495fed737\"","stored_at":"2026-10-01T13:42:57.780Z"}
 {"repo":"docker/metadata-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"be07c5d4e7b5f31cc313c70619bc2f10ed8b5fab5b6427732d687f776938079d\"","stored_at":"2026-10-01T13:42:57.780Z"}
+{"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"143c7338699af5d2ba8aaecf97087cd03c9a3fe9195349b3e18311cd400eeb44\"","stored_at":"2026-10-01T13:58:01.596Z"}
