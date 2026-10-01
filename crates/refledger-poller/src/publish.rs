@@ -326,6 +326,14 @@ pub struct PublishFailure {
     pub error: String,
 }
 
+/// Queued when seal runs with `REFLEDGER_DEFER_LEDGER_PUBLISH=1` so main is
+/// updated only after the data-branch commit succeeds.
+pub const DEFERRED_PUBLISH_MARKER: &str = "deferred: awaiting data branch commit";
+
+pub fn is_deferred_publish(failure: &PublishFailure) -> bool {
+    failure.error.starts_with("deferred:")
+}
+
 /// Successful retry of a previously failed publish, awaiting a digest note.
 #[derive(Debug, Clone)]
 pub struct PublishSuccess {

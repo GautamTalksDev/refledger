@@ -1795,3 +1795,174 @@ fn run_once_survives_compare_malformed_json() {
     // 200 with body missing required `status` field.
     enrich_fail_transport(200, Some(serde_json::json!({"files": []})), None);
 }
+
+/// Move observed while a prior day was unsealed must land on the chain after
+/// recovery seals that day — even if the in-memory buffer was lost (obs only).
+#[test]
+fn run_once_records_move_observed_during_outage_on_recovery() {
+    use refledger_log::entry::Event;
+    use serde_json::json;
+    use std::sync::atomic::{AtomicU32, Ordering as AtomicOrdering};
+
+    let dir = TempDir::new().unwrap();
+    const OLD: &str = "1111111111111111111111111111111111111111";
+    const TREE_OLD: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    const NEW: &str = "7272eeb121bd005fd0ec28b7b245c764b964cb44";
+    const TREE_NEW: &str = "f810ca43c48e2707b0de7a64737f294a71e64bda";
+
+    let t0 = odt(2026, Month::January, 1, 12, 0, 0, 0);
+    let t_move = odt(2026, Month::January, 2, 1, 7, 0, 0);
+    let t_recover = odt(2026, Month::January, 2, 2, 0, 0, 0);
+
+    {
+        let mut store = Store::open(dir.path(), opts(t0)).unwrap();
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("acme/canary")
+                    .unwrap()
+                    .observed_at(t0)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"old\"")),
+                        refs: vec![refledger_poller::observation::ObservedRef::new_lightweight(
+                            "refs/tags/v1.0.0",
+                            OLD,
+                            TREE_OLD,
+                        )
+                        .unwrap()],
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+        // Outage run wrote the peeled Ok tip but lost the buffered Move.
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("acme/canary")
+                    .unwrap()
+                    .observed_at(t_move)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"new\"")),
+                        refs: vec![refledger_poller::observation::ObservedRef::new_lightweight(
+                            "refs/tags/v1.0.0",
+                            NEW,
+                            TREE_NEW,
+                        )
+                        .unwrap()],
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+    }
+
+    #[derive(Clone, Default)]
+    struct RecoverTransport {
+        compares: Arc<AtomicU32>,
+    }
+    impl Transport for RecoverTransport {
+        fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
+            let t = &request.target;
+            if t.contains("/repos/acme/canary")
+                && !t.contains("/git/")
+                && !t.contains("/contents/")
+                && !t.contains("/compare/")
+            {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"new\"".into())]),
+                    body: Some(json!({"full_name": "acme/canary", "default_branch": "main"})),
+                });
+            }
+            if t.contains("/git/matching-refs/tags") {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"new\"".into())]),
+                    body: Some(json!([{
+                        "ref": "refs/tags/v1.0.0",
+                        "object": {"sha": NEW, "type": "commit"}
+                    }])),
+                });
+            }
+            if t.contains("/git/commits/") {
+                let sha = t.rsplit('/').next().unwrap_or("");
+                let tree = if sha == NEW { TREE_NEW } else { TREE_OLD };
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({
+                        "sha": sha,
+                        "tree": {"sha": tree},
+                        "parents": []
+                    })),
+                });
+            }
+            if t.contains("/compare/") {
+                self.compares.fetch_add(1, AtomicOrdering::Relaxed);
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({
+                        "status": "ahead",
+                        "ahead_by": 1,
+                        "behind_by": 0,
+                        "total_commits": 1,
+                        "files": [{"filename": "action.yml", "status": "modified"}]
+                    })),
+                });
+            }
+            if t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 404,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({"message": "Not Found"})),
+                });
+            }
+            Err(format!("unexpected {t}"))
+        }
+    }
+
+    let groups = vec![PollGroup {
+        repo: "acme/canary".into(),
+        paths: vec![None],
+    }];
+    let mut store = Store::open(dir.path(), opts(t_recover)).unwrap();
+    let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+    args.token = "ghp_test".into();
+    args.scheduled_at = t_recover;
+    args.actual_start = t_recover;
+    args.sleep = Box::new(|_| {});
+    args.confirm_delay = Duration::seconds(0);
+    args.max_requests = 150;
+    args.max_new_peels = 50;
+
+    let report = run_once_with(
+        &mut store,
+        CountingTransport::new(RecoverTransport::default(), 150),
+        &groups,
+        &args,
+    )
+    .expect("recovery once");
+    assert!(
+        !report.days_sealed.is_empty(),
+        "Jan 1 must seal on recovery: {report:?}"
+    );
+    let mv = store
+        .entries()
+        .iter()
+        .find(|e| e.event == Event::Move)
+        .expect("Move for outage tip must be on chain after recovery");
+    assert_eq!(mv.r#ref.as_deref(), Some("refs/tags/v1.0.0"));
+    assert_eq!(
+        mv.to.as_ref().map(|b| b.commit_sha.as_str()),
+        Some(NEW),
+        "canary tip must be recorded"
+    );
+}

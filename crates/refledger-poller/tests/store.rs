@@ -1400,6 +1400,72 @@ fn diffs_from_cache(
     m
 }
 
+#[test]
+fn entry_buffer_survives_store_reopen() {
+    let dir = TempDir::new().unwrap();
+    let jan1 = day(2026, Month::January, 1);
+    {
+        let mut store = Store::open(dir.path(), opts(static_rekor())).unwrap();
+        store
+            .append_observation(&obs_at(odt(2026, Month::January, 1, 12, 0, 0, 0)))
+            .unwrap();
+        store.stop_dispatch(jan1);
+        let detected = odt(2026, Month::January, 2, 0, 0, 2, 0);
+        let appended = store.append_entry(move_at(detected)).unwrap();
+        assert!(matches!(appended, Appended::Buffered));
+        assert_eq!(store.buffered_entry_count(), 1);
+        assert!(dir.path().join("state/entry_buffer.jsonl").exists());
+    }
+    let mut store = Store::open(dir.path(), opts(static_rekor())).unwrap();
+    assert_eq!(store.buffered_entry_count(), 1);
+    let digest = store.seal_day(jan1).unwrap();
+    assert_eq!(store.buffered_entry_count(), 0);
+    let mv = store.entries().last().unwrap();
+    assert_eq!(mv.event, Event::Move);
+    assert!(mv.seq > digest.seq);
+}
+
+struct ConflictLookupRekor {
+    acceptance: RekorAcceptance,
+}
+
+impl RekorClient for ConflictLookupRekor {
+    fn submit(&self, _proposed: &Value) -> Result<RekorAcceptance, String> {
+        Err("https://rekor.sigstore.dev/api/v1/log/entries: status code 409".into())
+    }
+
+    fn lookup_by_hash(&self, artifact_hash: &str) -> Result<Option<RekorAcceptance>, String> {
+        assert!(artifact_hash.starts_with("sha512:"));
+        Ok(Some(self.acceptance.clone()))
+    }
+}
+
+#[test]
+fn rekor_409_records_existing_log_index() {
+    let dir = TempDir::new().unwrap();
+    let mut store = Store::open(
+        dir.path(),
+        opts(Box::new(ConflictLookupRekor {
+            acceptance: RekorAcceptance {
+                log_index: 3027764712,
+                uuid: "deadbeef".into(),
+                log_id: Some("logid".into()),
+                integrated_time: Some(1790812975),
+            },
+        })),
+    )
+    .unwrap();
+    let jan1 = day(2026, Month::January, 1);
+    store.stop_dispatch(jan1);
+    store.seal_day(jan1).unwrap();
+    let heads = store.read_rel("log/heads.jsonl").unwrap().unwrap();
+    let first = heads.split(|b| *b == b'\n').next().unwrap();
+    let line: Value = serde_json::from_slice(first).unwrap();
+    assert_eq!(line["rekor"]["log_index"], 3027764712u64);
+    assert_eq!(line["rekor"]["uuid"], "deadbeef");
+    assert!(line["rekor"].get("error").is_none());
+}
+
 fn verify_bin() -> PathBuf {
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let target = std::env::var_os("CARGO_TARGET_DIR")

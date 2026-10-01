@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **2026-10-01 - outage Move lost; Rekor 409; publish-before-data.** Canary
+  `exact_content_change` (v1.0.0→7272eeb at 00:41Z) was observed and peeled at
+  01:07 but never a Move: derived entries buffered while Sep 30 was unsealed
+  lived only in memory and vanished on process exit. Entry buffer is now
+  durable (`state/entry_buffer.jsonl`); after seal, `once` also re-derives from
+  unsourced Ok tips after the chain tip. Rekor HTTP 409 ("already exists") is
+  treated as success via index lookup + `logIndex` record. Seal publish to
+  `main` is deferred until after the data-branch commit
+  (`REFLEDGER_DEFER_LEDGER_PUBLISH` + `publish-pending`). Digests note that
+  invent `commit_sha=000…001` / `tree_sha=000…002` are not git objects.
+
 - **2026-10-01 - enrich compare abort took down every poll.** Since ~00:02Z
   each `once` run failed on enrich (`compare status 404` or budget exhaustion)
   and committed nothing — no Sep 30 seal, no watching. Root causes: (1) one

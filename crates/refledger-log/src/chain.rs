@@ -7,6 +7,7 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 use time::OffsetDateTime;
@@ -65,31 +66,56 @@ impl ChainError {
 
 /// Entry content without chain linkage fields. [`Chain::append`] assigns
 /// `seq`, `prev_hash`, and `entry_hash`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// Serde is for the poller's durable entry buffer only — not the sealed log.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UnhashedEntry {
+    #[serde(with = "time::serde::rfc3339")]
     pub recorded_at: OffsetDateTime,
     pub event: Event,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub classification: Option<Classification>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<Severity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ref_form: Option<RefForm>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ancestry: Option<Ancestry>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub repo: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub r#ref: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ref_type_before: Option<RefType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ref_type_after: Option<RefType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub from: Option<Binding>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub to: Option<Binding>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub diff: Option<Diff>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gap_seconds: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source_observations: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub correlation: Option<Correlation>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub observation_digest: Option<ObservationDigest>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub population_change: Option<PopulationChange>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub http_status: Option<u16>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub redirect_location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub observation_window_seconds: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub detection_latency_note: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub corrects_seq: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
 }
 

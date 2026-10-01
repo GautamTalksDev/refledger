@@ -19,6 +19,7 @@ The freeze exists so the running poller, log format, and signatures stay the ins
 | 2026-09-30 | ce469fd | Queue signed digest note for `docs/tree-sha-affected-observations.txt` (same class as the false-422 note). Freeze start recorded in this commit. |
 | 2026-09-30 | 6ec4dde | Emergency before M1 window (starts 2026-10-01T00:00:00Z): changed/reappeared refs stored listing-only when the new tip was uncached, and classify skipped unpeeled refs — a tag moved to a brand-new malicious commit (tj-actions / Trivy shape) would produce no Move. Priority-peel those tips from the reserved budget before classify. Also: Correction for seq 40 Deletion `content_change`; canary-score retired-pattern + manual-intervention sections. |
 | 2026-10-01 | b5e1b05 | Emergency: every poll since 00:02Z aborted on enrich compare failure (`compare status 404` / budget exhaustion). One repo's optional compare must never abort the observatory; invented listing placeholders (`000…001`) made peels look like Moves. Isolation + skip invented SHAs. M1 window restarted (instrument changed mid-window). |
+| 2026-10-01 | (this) | Emergency: canary Move buffered during Sep 30 outage was lost on process exit (in-memory only); Rekor 409 treated as hard failure instead of lookup; seal could publish to main before data-branch commit. Durable entry buffer + outage re-derive; 409→lookup; publish after data commit. |
 
 ## Run window
 

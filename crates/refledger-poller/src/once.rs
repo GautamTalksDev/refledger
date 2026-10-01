@@ -323,6 +323,8 @@ pub fn run_once_with<T: Transport>(
     // Retry any pending ledger publish before the sweep so a failed seal
     // reaches main on the next poll, not 24 hours later.
     let _ = store.retry_pending_publishes()?;
+    // Rekor 409 / missed witness: look up existing entries and record logIndex.
+    let _ = store.retry_witnesses()?;
     let days_sealed = store.seal_missed_days_before(actual_start)?;
 
     let token = AuthToken::new(&args.token).map_err(|e| OnceError::Message(e.to_string()))?;
@@ -348,6 +350,18 @@ pub fn run_once_with<T: Transport>(
     // Repo states rebuilt lazily from the observation archive, then updated
     // as this run appends.
     let mut states: BTreeMap<String, RepoState> = BTreeMap::new();
+
+    // After sealing (or when already sealed), re-derive Moves from Ok tips
+    // observed while a prior day was unsealed — covers buffer loss across
+    // process exit and 304 sweeps that would otherwise never re-classify.
+    derived_events += recover_outage_moves(
+        store,
+        groups,
+        &mut states,
+        &mut compare,
+        client.transport(),
+        &args.token,
+    )?;
 
     // Phase 1: every poll group gets a conditional listing (and repo metadata)
     // before any peel or action.yml work consumes the shared budget.
@@ -739,6 +753,44 @@ fn process_observation<T: Transport>(
     }
 }
 
+/// Re-derive from Ok observations after the chain tip that are not yet cited
+/// as `source_observations`. Covers Moves detected during an outage whose
+/// in-memory buffer was lost before the prior-day seal.
+fn recover_outage_moves<T: Transport>(
+    store: &mut Store<OsVolume>,
+    groups: &[PollGroup],
+    states: &mut BTreeMap<String, RepoState>,
+    compare: &mut CompareCache,
+    transport: &T,
+    token: &str,
+) -> Result<usize, OnceError> {
+    let Some(tip_at) = store.tip_recorded_at() else {
+        return Ok(0);
+    };
+    let mut sourced = store.sourced_observation_ids();
+    let mut n = 0usize;
+    for g in groups {
+        let ok = store.ok_observations_chronological(&g.repo)?;
+        for obs in ok {
+            let id = obs.observation_id().to_string();
+            if sourced.contains(&id) {
+                continue;
+            }
+            if obs.observed_at().as_offset_datetime() <= tip_at {
+                continue;
+            }
+            // Force rebuild excluding this obs so tip comparison is honest.
+            states.remove(g.repo.as_str());
+            let added = process_observation(store, states, compare, transport, token, &obs)?;
+            if added > 0 {
+                sourced = store.sourced_observation_ids();
+                n += added;
+            }
+        }
+    }
+    Ok(n)
+}
+
 fn diffs_from_compare(cache: &CompareCache) -> BTreeMap<(String, String), Diff> {
     let mut m = BTreeMap::new();
     for ((old, new), c) in cache.iter() {
@@ -785,6 +837,7 @@ pub fn run_once(opts: StoreOptions, args: OnceArgs) -> Result<OnceReport, OnceEr
     store.ensure_false_422_digest_note()?;
     store.ensure_gap_no_derive_digest_note()?;
     store.ensure_tree_sha_digest_note()?;
+    store.ensure_invented_placeholder_digest_note()?;
     store.ensure_seq_40_deletion_classification_correction(args.actual_start)?;
     // First durable chain rows: Added for every watched key that already has
     // an observation but no PopulationChange yet (including the canary and

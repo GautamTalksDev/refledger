@@ -37,8 +37,9 @@ use crate::identity::{user_agent, DEFAULT_LOG_ID};
 use crate::observation::{Observation, ObservationError, Outcome, SkipReason, Timestamp};
 use crate::population::PollGroup;
 use crate::publish::{
-    format_publish_failure_note, format_publish_success_note, LedgerPublishPayload,
-    LedgerPublisher, NoopPublisher, PublishFailure, PublishSuccess,
+    format_publish_failure_note, format_publish_success_note, is_deferred_publish,
+    LedgerPublishPayload, LedgerPublisher, NoopPublisher, PublishFailure, PublishSuccess,
+    DEFERRED_PUBLISH_MARKER,
 };
 use crate::scheduler::skip_observation;
 
@@ -55,9 +56,19 @@ const IDENTITY_WARNINGS_PATH: &str = "state/identity_warnings.jsonl";
 const PUBLISH_FAILURES_PATH: &str = "state/publish_failures.jsonl";
 const PUBLISH_SUCCESSES_PATH: &str = "state/publish_successes.jsonl";
 const ARCHIVE_FAILURES_PATH: &str = "state/archive_upload_failures.jsonl";
+/// Derived events held until prior days seal. Survives process exit.
+const ENTRY_BUFFER_PATH: &str = "state/entry_buffer.jsonl";
 const LEGACY_IDENTITY_WARNINGS: &str = "log/identity_warnings.jsonl";
 const LEGACY_PUBLISH_FAILURES: &str = "log/publish_failures.jsonl";
 const LEGACY_ARCHIVE_FAILURES: &str = "log/archive_upload_failures.jsonl";
+
+/// True when the workflow asks `once` not to push `data/log` to main yet.
+pub fn ledger_publish_deferred() -> bool {
+    std::env::var("REFLEDGER_DEFER_LEDGER_PUBLISH")
+        .ok()
+        .as_deref()
+        == Some("1")
+}
 
 #[derive(Debug, Error)]
 pub enum StoreError {
@@ -150,6 +161,13 @@ pub struct RekorAcceptance {
 /// Witness client. A failure is recorded and retried; it is not fatal.
 pub trait RekorClient: Send + Sync {
     fn submit(&self, proposed: &Value) -> Result<RekorAcceptance, String>;
+
+    /// Look up an existing hashedrekord by artifact hash (`sha512:…`).
+    /// Used when submit returns 409 (already in the log).
+    fn lookup_by_hash(&self, artifact_hash: &str) -> Result<Option<RekorAcceptance>, String> {
+        let _ = artifact_hash;
+        Ok(None)
+    }
 }
 
 /// Production client for `hashedrekord` 0.0.1.
@@ -176,23 +194,14 @@ impl HttpRekor {
             base: base.into().trim_end_matches('/').to_owned(),
         }
     }
-}
 
-impl RekorClient for HttpRekor {
-    fn submit(&self, proposed: &Value) -> Result<RekorAcceptance, String> {
-        let url = format!("{}/api/v1/log/entries", self.base);
-        let bytes = serde_json::to_vec(proposed).map_err(|e| e.to_string())?;
-        let agent = ureq::AgentBuilder::new()
+    fn agent() -> ureq::Agent {
+        ureq::AgentBuilder::new()
             .timeout(std::time::Duration::from_secs(20))
-            .build();
-        let response = agent
-            .post(&url)
-            .set("Content-Type", "application/json")
-            .set("User-Agent", &user_agent())
-            .send_bytes(&bytes)
-            .map_err(|e| e.to_string())?;
-        let text = response.into_string().map_err(|e| e.to_string())?;
-        let value: Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+            .build()
+    }
+
+    fn parse_entry_map(value: Value) -> Result<RekorAcceptance, String> {
         let obj = value
             .as_object()
             .ok_or_else(|| "rekor response is not an object".to_owned())?;
@@ -213,6 +222,90 @@ impl RekorClient for HttpRekor {
                 .map(str::to_owned),
             integrated_time: entry.get("integratedTime").and_then(|v| v.as_u64()),
         })
+    }
+}
+
+impl RekorClient for HttpRekor {
+    fn submit(&self, proposed: &Value) -> Result<RekorAcceptance, String> {
+        let url = format!("{}/api/v1/log/entries", self.base);
+        let bytes = serde_json::to_vec(proposed).map_err(|e| e.to_string())?;
+        let agent = Self::agent();
+        match agent
+            .post(&url)
+            .set("Content-Type", "application/json")
+            .set("User-Agent", &user_agent())
+            .send_bytes(&bytes)
+        {
+            Ok(response) => {
+                let text = response.into_string().map_err(|e| e.to_string())?;
+                let value: Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+                Self::parse_entry_map(value)
+            }
+            Err(ureq::Error::Status(409, _response)) => {
+                let hex = proposed
+                    .pointer("/spec/data/hash/value")
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| "rekor 409 but proposed body has no hash".to_owned())?;
+                let artifact_hash = format!("sha512:{hex}");
+                match self.lookup_by_hash(&artifact_hash)? {
+                    Some(accepted) => Ok(accepted),
+                    None => Err(format!(
+                        "{url}: status code 409; lookup found no entry for {artifact_hash}"
+                    )),
+                }
+            }
+            Err(e) => Err(e.to_string()),
+        }
+    }
+
+    fn lookup_by_hash(&self, artifact_hash: &str) -> Result<Option<RekorAcceptance>, String> {
+        let index_url = format!("{}/api/v1/index/retrieve", self.base);
+        let body = serde_json::json!({ "hash": artifact_hash });
+        let bytes = serde_json::to_vec(&body).map_err(|e| e.to_string())?;
+        let agent = Self::agent();
+        let response = agent
+            .post(&index_url)
+            .set("Content-Type", "application/json")
+            .set("User-Agent", &user_agent())
+            .send_bytes(&bytes)
+            .map_err(|e| e.to_string())?;
+        let text = response.into_string().map_err(|e| e.to_string())?;
+        let uuids: Vec<String> = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+        let Some(uuid) = uuids.first() else {
+            return Ok(None);
+        };
+        let entry_url = format!("{}/api/v1/log/entries/{uuid}", self.base);
+        let entry_resp = agent
+            .get(&entry_url)
+            .set("User-Agent", &user_agent())
+            .call()
+            .map_err(|e| e.to_string())?;
+        let entry_text = entry_resp.into_string().map_err(|e| e.to_string())?;
+        let value: Value = serde_json::from_str(&entry_text).map_err(|e| e.to_string())?;
+        // Confirm the stored hashedrekord is for this artifact hash.
+        let entry = value
+            .as_object()
+            .and_then(|o| o.values().next())
+            .ok_or_else(|| "rekor lookup entry missing body".to_owned())?;
+        if let Some(b64) = entry.get("body").and_then(|v| v.as_str()) {
+            if let Ok(raw) = base64::engine::general_purpose::STANDARD.decode(b64) {
+                if let Ok(inner) = serde_json::from_slice::<Value>(&raw) {
+                    let stored = inner
+                        .pointer("/spec/data/hash/value")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let want = artifact_hash
+                        .strip_prefix("sha512:")
+                        .unwrap_or(artifact_hash);
+                    if stored != want {
+                        return Err(format!(
+                            "rekor lookup hash mismatch: stored={stored} want={want}"
+                        ));
+                    }
+                }
+            }
+        }
+        Ok(Some(Self::parse_entry_map(value)?))
     }
 }
 
@@ -586,6 +679,7 @@ impl<V: Volume> Store<V> {
         let pending_identity_warnings = load_identity_warnings(&mut vol)?;
         let pending_publish_failures = load_publish_failures(&mut vol)?;
         let pending_publish_successes = load_publish_successes(&mut vol)?;
+        let buffer = load_entry_buffer(&mut vol)?;
         Ok(Self {
             vol,
             log_id: opts.log_id,
@@ -601,7 +695,7 @@ impl<V: Volume> Store<V> {
             activity,
             sealed,
             dispatch_closed: BTreeSet::new(),
-            buffer: Vec::new(),
+            buffer,
             inflight: BTreeSet::new(),
             next_ticket: 1,
             observations_on_data_branch: opts.observations_on_data_branch,
@@ -880,6 +974,7 @@ impl<V: Volume> Store<V> {
             .any(|d| *d < day && !self.sealed.contains(d))
         {
             self.buffer.push(entry);
+            self.persist_entry_buffer()?;
             return Ok(Appended::Buffered);
         }
         self.commit(entry).map(|e| Appended::Written(Box::new(e)))
@@ -1047,6 +1142,17 @@ impl<V: Volume> Store<V> {
         self.ensure_digest_note_once(MARKER, NOTE)
     }
 
+    /// Same Sep 29 listing path also invented `commit_sha=000…001` /
+    /// `tree_sha=000…002` for unpeeled annotated tags. Those are not git
+    /// objects. Covered by docs/tree-sha-affected-observations.txt (placeholder
+    /// column); queued separately so the note names commit invent explicitly.
+    /// Idempotent.
+    pub fn ensure_invented_placeholder_digest_note(&mut self) -> Result<(), StoreError> {
+        const MARKER: &str = "invented-placeholder-shas";
+        const NOTE: &str = "invented-placeholder-shas: Sep 29 listing observations also carry invented commit_sha=000…001 and tree_sha=000…002 for unpeeled annotated tags (see docs/tree-sha-affected-observations.txt placeholder column); those values are not git objects and must not be relied on";
+        self.ensure_digest_note_once(MARKER, NOTE)
+    }
+
     fn ensure_digest_note_once(&mut self, marker: &str, note: &str) -> Result<(), StoreError> {
         if self
             .pending_identity_warnings
@@ -1156,6 +1262,10 @@ impl<V: Volume> Store<V> {
         if self.pending_publish_failures.is_empty() {
             return Ok(false);
         }
+        // During `once`, main publish is deferred until after the data commit.
+        if ledger_publish_deferred() {
+            return Ok(false);
+        }
         let first = self.pending_publish_failures[0].clone();
         let day = parse_day_label(&first.day)?;
         let seq = first
@@ -1166,7 +1276,17 @@ impl<V: Volume> Store<V> {
         let payload = LedgerPublishPayload { day, seq, files };
         match self.publisher.publish_seal(&payload) {
             Ok(()) => {
-                self.finish_publish_recovery()?;
+                if self
+                    .pending_publish_failures
+                    .iter()
+                    .all(is_deferred_publish)
+                {
+                    // Deferred queue clearing is silent — not a failure recovery.
+                    self.pending_publish_failures.clear();
+                    self.vol.write_exact(PUBLISH_FAILURES_PATH, b"")?;
+                } else {
+                    self.finish_publish_recovery()?;
+                }
                 Ok(true)
             }
             Err(err) => {
@@ -1184,6 +1304,21 @@ impl<V: Volume> Store<V> {
     }
 
     fn publish_sealed_log(&mut self, day: Date, seq: u64) -> Result<(), StoreError> {
+        if ledger_publish_deferred() {
+            let day_label = fmt_day(day);
+            if !self
+                .pending_publish_failures
+                .iter()
+                .any(|f| f.day == day_label)
+            {
+                self.record_publish_failure(&PublishFailure {
+                    day: day_label,
+                    seq: Some(seq),
+                    error: DEFERRED_PUBLISH_MARKER.to_owned(),
+                })?;
+            }
+            return Ok(());
+        }
         let had_pending = !self.pending_publish_failures.is_empty();
         let files = self.log_files_for_publish()?;
         let payload = LedgerPublishPayload { day, seq, files };
@@ -1326,7 +1461,7 @@ impl<V: Volume> Store<V> {
             )
             .map_err(|e| StoreError::Message(e.to_string()))?;
             let (body, artifact_hash) = hashedrekord_body(&canonical, &self.key)?;
-            let result = self.rekor.submit(&body);
+            let result = witness_submit(self.rekor.as_ref(), &body, &artifact_hash);
             let attempts = line
                 .get("rekor")
                 .and_then(|r| r.get("attempts"))
@@ -1372,10 +1507,51 @@ impl<V: Volume> Store<V> {
 
     fn flush_buffer(&mut self) -> Result<(), StoreError> {
         let pending = std::mem::take(&mut self.buffer);
+        // Clear durable copy first so a crash mid-flush does not double-apply
+        // after a successful commit of some entries (those are already chained).
+        self.vol.write_exact(ENTRY_BUFFER_PATH, b"")?;
         for entry in pending {
             let _ = self.append_entry(entry)?;
         }
+        self.persist_entry_buffer()?;
         Ok(())
+    }
+
+    fn persist_entry_buffer(&mut self) -> Result<(), StoreError> {
+        let mut out = Vec::new();
+        for entry in &self.buffer {
+            let line = serde_json::to_vec(entry).map_err(|e| StoreError::Message(e.to_string()))?;
+            out.extend_from_slice(&line);
+            out.push(b'\n');
+        }
+        self.vol.write_exact(ENTRY_BUFFER_PATH, &out)
+    }
+
+    /// Observation ids already cited by Move/Deletion/Recreation on the chain.
+    pub fn sourced_observation_ids(&self) -> BTreeSet<String> {
+        let mut out = BTreeSet::new();
+        for e in self.chain.entries() {
+            if !matches!(e.event, Event::Move | Event::Deletion | Event::Recreation) {
+                continue;
+            }
+            if let Some(ids) = &e.source_observations {
+                out.extend(ids.iter().cloned());
+            }
+        }
+        out
+    }
+
+    /// `recorded_at` of the chain tip, if any.
+    pub fn tip_recorded_at(&self) -> Option<OffsetDateTime> {
+        self.chain
+            .entries()
+            .last()
+            .map(|e| e.recorded_at.as_offset_datetime())
+    }
+
+    /// How many derived entries are waiting for a prior-day seal.
+    pub fn buffered_entry_count(&self) -> usize {
+        self.buffer.len()
     }
 
     fn commit(&mut self, unhashed: UnhashedEntry) -> Result<Entry, StoreError> {
@@ -1570,6 +1746,9 @@ impl<V: Volume> Store<V> {
             }
         }
         for failure in &self.pending_publish_failures {
+            if is_deferred_publish(failure) {
+                continue;
+            }
             let text = format_publish_failure_note(failure);
             if !mentioned.contains(&text) {
                 notes.push(text);
@@ -1657,7 +1836,7 @@ impl<V: Volume> Store<V> {
         )
         .map_err(|e| StoreError::Message(e.to_string()))?;
         let (body, artifact_hash) = hashedrekord_body(&canonical, &self.key)?;
-        let result = self.rekor.submit(&body);
+        let result = witness_submit(self.rekor.as_ref(), &body, &artifact_hash);
         let line = head_record(&signed, &self.key, &artifact_hash, &result, 1)?;
         self.vol.append_record("log/heads.jsonl", &line)?;
         Ok(())
@@ -1691,6 +1870,43 @@ impl Store<FaultVolume> {
     pub fn fault_mut(&mut self) -> &mut FaultVolume {
         &mut self.vol
     }
+}
+
+fn load_entry_buffer<V: Volume>(vol: &mut V) -> Result<Vec<UnhashedEntry>, StoreError> {
+    let Some(bytes) = vol.read(ENTRY_BUFFER_PATH)? else {
+        return Ok(Vec::new());
+    };
+    let mut out = Vec::new();
+    for (i, line) in bytes.split(|b| *b == b'\n').enumerate() {
+        if line.is_empty() {
+            continue;
+        }
+        let entry: UnhashedEntry = serde_json::from_slice(line)
+            .map_err(|e| StoreError::Corrupt(format!("entry_buffer.jsonl:{}: {e}", i + 1)))?;
+        out.push(entry);
+    }
+    Ok(out)
+}
+
+/// Submit to Rekor; on conflict (409 / already exists), look up the existing entry.
+fn witness_submit(
+    rekor: &dyn RekorClient,
+    body: &Value,
+    artifact_hash: &str,
+) -> Result<RekorAcceptance, String> {
+    match rekor.submit(body) {
+        Ok(accepted) => Ok(accepted),
+        Err(err) if is_rekor_already_exists(&err) => match rekor.lookup_by_hash(artifact_hash)? {
+            Some(accepted) => Ok(accepted),
+            None => Err(format!("{err}; lookup found no entry for {artifact_hash}")),
+        },
+        Err(err) => Err(err),
+    }
+}
+
+fn is_rekor_already_exists(err: &str) -> bool {
+    let lower = err.to_ascii_lowercase();
+    err.contains("409") || lower.contains("already exists") || lower.contains("entry already")
 }
 
 fn load_archive_failures<V: Volume>(vol: &mut V) -> Result<Vec<ArchiveFailure>, StoreError> {

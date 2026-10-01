@@ -9,7 +9,7 @@ use refledger_log::{
 };
 use refledger_poller::once::{run_once, scheduled_time_from_env, OnceArgs, ENABLED_VAR};
 use refledger_poller::publish::GitLedgerPublisher;
-use refledger_poller::store::StoreOptions;
+use refledger_poller::store::{Store, StoreOptions};
 use time::OffsetDateTime;
 
 fn main() -> ExitCode {
@@ -22,6 +22,10 @@ fn main() -> ExitCode {
         "once" => {
             args.remove(0);
             cmd_once(&args)
+        }
+        "publish-pending" => {
+            args.remove(0);
+            cmd_publish_pending(&args)
         }
         "keygen" => {
             args.remove(0);
@@ -41,7 +45,7 @@ fn main() -> ExitCode {
 
 fn usage() {
     eprintln!(
-        "usage:\n  refledger-poller once --data <dir> [--watched <path>]\n  refledger-poller keygen --out <path>"
+        "usage:\n  refledger-poller once --data <dir> [--watched <path>]\n  refledger-poller publish-pending --data <dir>\n  refledger-poller keygen --out <path>"
     );
 }
 
@@ -78,6 +82,93 @@ fn cmd_keygen(args: &[String]) -> ExitCode {
             ExitCode::from(1)
         }
     }
+}
+
+fn parse_data_dir(args: &[String]) -> Result<PathBuf, String> {
+    let mut data_dir: Option<PathBuf> = None;
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--data" => {
+                i += 1;
+                data_dir = args.get(i).map(PathBuf::from);
+            }
+            other => return Err(format!("unknown argument: {other}")),
+        }
+        i += 1;
+    }
+    data_dir.ok_or_else(|| "--data <dir> is required".to_owned())
+}
+
+fn store_options_from_env(actual_start: OffsetDateTime) -> Result<StoreOptions, String> {
+    let key_hex = match env::var("REFLEDGER_SIGNING_KEY") {
+        Ok(k) if !k.is_empty() => k,
+        _ => return Err("REFLEDGER_SIGNING_KEY is not set".into()),
+    };
+    let signing_key = load_signing_key(KeySource::HexSeed(key_hex)).map_err(|e| e.to_string())?;
+
+    let push_token = match env::var("GITHUB_TOKEN") {
+        Ok(t) if !t.is_empty() => t,
+        _ => String::new(),
+    };
+
+    let mut opts = StoreOptions::new(signing_key, actual_start);
+    opts.observations_on_data_branch = true;
+    if std::env::var("REFLEDGER_SKIP_STORE_LOCK").ok().as_deref() == Some("1") {
+        opts.skip_lock = true;
+    }
+    if let Ok(publisher) = GitLedgerPublisher::from_env() {
+        opts.publisher = Box::new(publisher);
+    } else if let Ok(clone) = env::var("REFLEDGER_PUBLISH_CLONE") {
+        let mut pub_ = GitLedgerPublisher::new(clone, None);
+        if !push_token.is_empty() {
+            pub_ = pub_.with_github_token(push_token);
+        }
+        opts.publisher = Box::new(pub_);
+    }
+    Ok(opts)
+}
+
+/// Push any deferred/failed seal publishes to main, and backfill Rekor indexes.
+/// Must run *after* the data-branch commit (no REFLEDGER_DEFER_LEDGER_PUBLISH).
+fn cmd_publish_pending(args: &[String]) -> ExitCode {
+    let data_dir = match parse_data_dir(args) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
+    let actual_start = normalize_to_utc_millis(OffsetDateTime::now_utc());
+    let opts = match store_options_from_env(actual_start) {
+        Ok(o) => o,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(1);
+        }
+    };
+    let mut store = match Store::open(&data_dir, opts) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("open store: {e}");
+            return ExitCode::from(1);
+        }
+    };
+    match store.retry_pending_publishes() {
+        Ok(published) => eprintln!("publish-pending: published={published}"),
+        Err(e) => {
+            eprintln!("publish-pending failed: {e}");
+            return ExitCode::from(1);
+        }
+    }
+    match store.retry_witnesses() {
+        Ok(n) => eprintln!("publish-pending: witnesses_retried={n}"),
+        Err(e) => {
+            eprintln!("retry_witnesses failed: {e}");
+            return ExitCode::from(1);
+        }
+    }
+    ExitCode::SUCCESS
 }
 
 fn cmd_once(args: &[String]) -> ExitCode {
@@ -120,18 +211,10 @@ fn cmd_once(args: &[String]) -> ExitCode {
     let actual_start = normalize_to_utc_millis(OffsetDateTime::now_utc());
     let scheduled_at = scheduled_time_from_env(actual_start);
 
-    let key_hex = match env::var("REFLEDGER_SIGNING_KEY") {
-        Ok(k) if !k.is_empty() => k,
-        _ => {
-            eprintln!("REFLEDGER_SIGNING_KEY is not set");
-            return ExitCode::from(1);
-        }
-    };
-    // Never echo the key.
-    let signing_key = match load_signing_key(KeySource::HexSeed(key_hex)) {
-        Ok(k) => k,
+    let mut opts = match store_options_from_env(actual_start) {
+        Ok(o) => o,
         Err(e) => {
-            eprintln!("signing key: {e}");
+            eprintln!("{e}");
             return ExitCode::from(1);
         }
     };
@@ -152,27 +235,9 @@ fn cmd_once(args: &[String]) -> ExitCode {
             }
         },
     };
-    // Push credential only — never used for API reads.
-    let push_token = match env::var("GITHUB_TOKEN") {
-        Ok(t) if !t.is_empty() => t,
-        _ => String::new(),
-    };
 
-    let mut opts = StoreOptions::new(signing_key, actual_start);
-    opts.observations_on_data_branch = true;
-    // Actions concurrency group is the writer lock; do not create .store.lock.
-    if std::env::var("REFLEDGER_SKIP_STORE_LOCK").ok().as_deref() == Some("1") {
-        opts.skip_lock = true;
-    }
-    if let Ok(publisher) = GitLedgerPublisher::from_env() {
-        opts.publisher = Box::new(publisher);
-    } else if let Ok(clone) = env::var("REFLEDGER_PUBLISH_CLONE") {
-        let mut pub_ = GitLedgerPublisher::new(clone, None);
-        if !push_token.is_empty() {
-            pub_ = pub_.with_github_token(push_token);
-        }
-        opts.publisher = Box::new(pub_);
-    }
+    // Ensure publisher is wired (store_options_from_env already did); keep opts.
+    let _ = &mut opts;
 
     let mut once = OnceArgs::production(data_dir, watched);
     once.token = read_token;
