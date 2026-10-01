@@ -235,3 +235,4 @@
 {"repo":"aquasecurity/trivy-action","archived":false}
 {"repo":"google-github-actions/setup-gcloud","archived":false}
 {"repo":"actions/setup-node","archived":false}
+{"repo":"actions/dependency-review-action","archived":false}
