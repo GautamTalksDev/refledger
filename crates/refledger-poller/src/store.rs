@@ -749,10 +749,15 @@ impl<V: Volume> Store<V> {
         now: OffsetDateTime,
     ) -> Result<Vec<Date>, StoreError> {
         let today = now.date();
-        let Some(latest) = self.latest_any_observed_at()? else {
+        // Walk every calendar day from the earliest activity day up to (but
+        // not including) today. Empty intermediate days still get a digest
+        // (LOG-FORMAT: quiet days are recorded, not omitted). Do not start
+        // from latest_any_observed_at(): record_schedule_gaps may already
+        // have written today's PollerDown rows, which would make
+        // `latest == today` and skip sealing yesterday.
+        let Some(mut day) = self.activity.iter().min().copied() else {
             return Ok(Vec::new());
         };
-        let mut day = latest.date();
         let mut sealed_now = Vec::new();
         while day < today {
             if !self.sealed.contains(&day) {

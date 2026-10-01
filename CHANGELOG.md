@@ -16,8 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Moves and produced compares against non-objects. Enrichment is optional
   (classification uses trees); compare failures omit `ancestry`/`diff` and
   note via `detection_latency_note`. Invented placeholders are not bindings.
-  Per-repo listing/peel/classify errors no longer abort the run. M1 window
-  restarted (instrument changed mid-window).
+  Per-repo listing/peel/classify errors no longer abort the run. Also:
+  `seal_missed_days_before` no longer starts from latest observation (gaps
+  written first would skip yesterday's seal). M1 window restarted.
 
 - **2026-09-30 - attack-shaped tag moves would go unrecorded.** After the
   tree-SHA listing fix, a ref whose target changed (or reappeared after a

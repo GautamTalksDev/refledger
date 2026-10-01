@@ -29,7 +29,7 @@ The freeze exists so the running poller, log format, and signatures stay the ins
 
 The seven-day M1 exit is measured on sealed days in this closed interval.
 
-**Restarted 2026-10-01:** the first M1 start (2026-10-01T00:00:00Z) was voided when an emergency enrich-isolation fix landed inside that window — seven days must be measured on one unchanged instrument.
+**Restarted 2026-10-01:** the first M1 start (2026-10-01T00:00:00Z) was voided when emergency enrich-isolation fix `b5e1b05` landed inside that window — seven days must be measured on one unchanged instrument.
 
-- **M1 start (UTC):** first UTC midnight after this enrich-isolation fix lands on `main` (recorded in the Exceptions table)
-- **M1 end (UTC):** seal at start+7 days (that day's ObservationDigest, stamped at the following midnight)
+- **M1 start (UTC):** 2026-10-02T00:00:00Z (first UTC midnight after `b5e1b05`)
+- **M1 end (UTC):** seal at 2026-10-09T00:00:00Z (day 2026-10-08's ObservationDigest, stamped at the start of 2026-10-09)
