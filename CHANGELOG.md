@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **2026-10-01 - freeze re-baselined to M1 window; cold recreation/backlog tests.**
+  Freeze now starts at `2026-10-02T00:00:00Z` with the M1 window (lifts after
+  the `2026-10-09T00:00:00Z` seal). Prior canary-driven commits move to a
+  pre-freeze hardening list. Rebuild peels listing-only archive stubs when a
+  later Ok deletes them, so recreate after a cold prior still forms a
+  tombstone. Cold-state `run_once` twins cover recreation-to-never-seen and
+  the 50-tag backlog.
+
 - **2026-10-01 - batch Move missed when prior tip was listing-only.** Live poll
   `2026-10-01T02:18:39Z` saw `v9.0.0/1/2` move `5f7797a7…`→`9501ea4a…`
   (`confirm=1`) but left all three listing-only: priority-peel only selected

@@ -409,7 +409,8 @@ pub fn run_once_with<T: Transport>(
                     store,
                     &mut states,
                     &mut compare,
-                    client.transport(),
+                    &client,
+                    &mut objects,
                     &args.token,
                     &obs,
                 )?;
@@ -440,7 +441,8 @@ pub fn run_once_with<T: Transport>(
                         store,
                         &mut states,
                         &mut compare,
-                        client.transport(),
+                        &client,
+                        &mut objects,
                         &args.token,
                         &early,
                     )?;
@@ -454,7 +456,8 @@ pub fn run_once_with<T: Transport>(
                     store,
                     &mut states,
                     &mut compare,
-                    client.transport(),
+                    &client,
+                    &mut objects,
                     &args.token,
                     &early,
                 )?;
@@ -471,7 +474,13 @@ pub fn run_once_with<T: Transport>(
     // observation was listing-only.
     let mut priority_tip_count = 0usize;
     for pending in &pending_ok {
-        let state = rebuild_repo_state(store, pending.warm.repo.as_str(), None)?;
+        let state = rebuild_repo_state(
+            store,
+            pending.warm.repo.as_str(),
+            None,
+            &mut objects,
+            &client,
+        )?;
         let prior = prior_target_map(&store.latest_ok_targets(pending.warm.repo.as_str())?);
         priority_tip_count += priority_peel_plan(&state, &pending.warm.refs, &prior).tip_count();
     }
@@ -508,7 +517,7 @@ pub fn run_once_with<T: Transport>(
     for pending in pending_after_warm {
         let repo_key = pending.warm.repo.as_str().to_owned();
         if !states.contains_key(&repo_key) {
-            match rebuild_repo_state(store, &repo_key, None) {
+            match rebuild_repo_state(store, &repo_key, None, &mut objects, &client) {
                 Ok(rebuilt) => {
                     states.insert(repo_key.clone(), rebuilt);
                 }
@@ -628,7 +637,8 @@ pub fn run_once_with<T: Transport>(
             store,
             &mut states,
             &mut compare,
-            client.transport(),
+            &client,
+            &mut objects,
             &args.token,
             &obs,
         )?;
@@ -663,7 +673,8 @@ pub fn run_once_with<T: Transport>(
                 store,
                 &mut states,
                 &mut compare,
-                client.transport(),
+                &client,
+                &mut objects,
                 &args.token,
                 &obs,
             )?;
@@ -760,13 +771,14 @@ fn process_observation<T: Transport>(
     store: &mut Store<OsVolume>,
     states: &mut BTreeMap<String, RepoState>,
     compare: &mut CompareCache,
-    transport: &T,
+    client: &Client<T>,
+    objects: &mut ObjectCache,
     token: &str,
     obs: &Observation,
 ) -> Result<usize, OnceError> {
     let repo = obs.repo().as_str().to_owned();
     if !states.contains_key(&repo) {
-        match rebuild_repo_state(store, &repo, Some(obs.observation_id())) {
+        match rebuild_repo_state(store, &repo, Some(obs.observation_id()), objects, client) {
             Ok(rebuilt) => {
                 states.insert(repo.clone(), rebuilt);
             }
@@ -777,7 +789,7 @@ fn process_observation<T: Transport>(
         }
     }
     let state = states.get_mut(&repo).expect("just inserted");
-    match classify_enrich_derive_append(store, state, compare, transport, token, obs) {
+    match classify_enrich_derive_append(store, state, compare, client.transport(), token, obs) {
         Ok(n) => Ok(n),
         Err(e) => {
             eprintln!(
@@ -853,7 +865,13 @@ fn recover_outage_moves<T: Transport>(
                 })
                 .collect();
             states.remove(g.repo.as_str());
-            let state = match rebuild_repo_state(store, &g.repo, Some(obs.observation_id())) {
+            let state = match rebuild_repo_state(
+                store,
+                &g.repo,
+                Some(obs.observation_id()),
+                objects,
+                client,
+            ) {
                 Ok(s) => s,
                 Err(e) => {
                     eprintln!("rebuild_repo_state failed repo={}: {e}", g.repo);
@@ -912,14 +930,8 @@ fn recover_outage_moves<T: Transport>(
                     continue;
                 }
             };
-            let added = process_observation(
-                store,
-                states,
-                compare,
-                client.transport(),
-                token,
-                &peeled_obs,
-            )?;
+            let added =
+                process_observation(store, states, compare, client, objects, token, &peeled_obs)?;
             if added > 0 {
                 sourced = store.sourced_observation_ids();
                 n += added;
@@ -958,17 +970,94 @@ fn diffs_from_compare(cache: &CompareCache) -> BTreeMap<(String, String), Diff> 
 }
 
 /// Replay Ok observations for `repo` to rebuild live classification state.
-fn rebuild_repo_state(
+///
+/// Listing-only archive tips are peeled into the object cache when possible so
+/// a delete/recreate across polls still forms tombstones (cold start: the
+/// pre-delete tip was never peeled when first stored).
+fn rebuild_repo_state<T: Transport>(
     store: &Store<OsVolume>,
     repo: &str,
     exclude: Option<ulid::Ulid>,
+    objects: &mut ObjectCache,
+    client: &Client<T>,
 ) -> Result<RepoState, OnceError> {
     let mut state = RepoState::default();
-    for obs in store.ok_observations_chronological(repo)? {
+    let ok = store.ok_observations_chronological(repo)?;
+    for (idx, obs) in ok.iter().enumerate() {
         if exclude.is_some_and(|id| obs.observation_id() == id) {
             continue;
         }
-        let (next, _) = classify(&state, &obs, &Enrichment::empty())
+        let Outcome::Ok { refs, .. } = obs.outcome() else {
+            continue;
+        };
+        let needs_peel = refs
+            .iter()
+            .any(|r| r.commit_sha().is_none() && r.tree_sha().is_none())
+            && ok[idx + 1..].iter().any(|later| {
+                let Outcome::Ok {
+                    refs: later_refs, ..
+                } = later.outcome()
+                else {
+                    return false;
+                };
+                // Tip disappears later (delete) or we need the binding for classify.
+                refs.iter()
+                    .any(|r| !later_refs.iter().any(|lr| lr.name() == r.name()))
+            });
+        let obs_for_classify = if needs_peel {
+            let slug = RepoSlug::parse(repo).map_err(|e| OnceError::Observation(e.to_string()))?;
+            let raws: Vec<_> = refs
+                .iter()
+                .map(|r| {
+                    let object_type = match r.ref_type() {
+                        crate::observation::RefType::Annotated => "tag",
+                        _ => "commit",
+                    };
+                    crate::github::rest::RawRef {
+                        name: r.name().to_owned(),
+                        object_type: object_type.into(),
+                        object_sha: r.target_sha().to_owned(),
+                    }
+                })
+                .collect();
+            let names: BTreeSet<_> = raws.iter().map(|r| r.name.clone()).collect();
+            let warm = WarmUpContext {
+                repo: slug,
+                path: obs.action_path().map(|s| s.to_owned()),
+                refs: raws,
+            };
+            match peel_priority_refs(&warm, &names, &BTreeSet::new(), objects, client) {
+                Ok(peeled) => {
+                    let at = obs.observed_at().as_offset_datetime();
+                    match Observation::builder()
+                        .repo(repo)
+                        .map_err(|e| OnceError::Observation(e.to_string()))?
+                        .observed_at(at)
+                        .map_err(|e| OnceError::Observation(e.to_string()))?
+                        .method(obs.method())
+                        .outcome(Outcome::Ok {
+                            http_status: match obs.outcome() {
+                                Outcome::Ok { http_status, .. } => *http_status,
+                                _ => 200,
+                            },
+                            etag: None,
+                            refs: peeled,
+                        })
+                        .build()
+                    {
+                        Ok(o) => o.with_observation_id(obs.observation_id()),
+                        Err(_) => obs.clone(),
+                    }
+                }
+                Err(e) => {
+                    eprintln!("rebuild peel failed repo={repo}: {e:?}");
+                    obs.clone()
+                }
+            }
+        } else {
+            obs.clone()
+        };
+        let (next, _) = classify(&state, &obs_for_classify, &Enrichment::empty())
             .map_err(|e| OnceError::Classify(e.to_string()))?;
         state = next;
     }

@@ -1901,6 +1901,151 @@ fn run_once_recreation_to_never_seen_commit_is_peeled() {
     );
 }
 
+/// Cold twin: pre-delete tip was listing-only (never peeled). Rebuild must peel
+/// that archive stub so delete forms a tombstone; recreate to a never-seen
+/// commit is then priority-peeled and recorded.
+#[test]
+fn run_once_recreation_cold_listing_only_prior_to_never_seen_commit() {
+    use refledger_log::entry::Event;
+    use refledger_poller::observation::{ObservedRef, RefType};
+
+    let dir = TempDir::new().unwrap();
+    let t0 = odt(2026, Month::January, 1, 12, 0, 0, 0);
+    let t1 = t0 + Duration::minutes(5);
+    let t2 = t1 + Duration::minutes(5);
+    const OLD: &str = "1111111111111111111111111111111111111111";
+    const TREE_OLD: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    const NEW: &str = "abababababababababababababababababababab";
+    const TREE_NEW: &str = "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd";
+
+    {
+        let mut store = Store::open(dir.path(), opts(t0)).unwrap();
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("acme/widgets")
+                    .unwrap()
+                    .observed_at(t0)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"old\"")),
+                        refs: vec![ObservedRef::new_unpeeled(
+                            "refs/tags/v3.0.0",
+                            RefType::Lightweight,
+                            OLD,
+                        )
+                        .unwrap()],
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("acme/widgets")
+                    .unwrap()
+                    .observed_at(t1)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"gone\"")),
+                        refs: vec![],
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+    }
+
+    #[derive(Clone, Default)]
+    struct ColdRecreateTransport;
+    impl Transport for ColdRecreateTransport {
+        fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
+            let t = &request.target;
+            if t.contains("/repos/acme/widgets")
+                && !t.contains("/git/")
+                && !t.contains("/contents/")
+                && !t.contains("/compare/")
+            {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"repo\"".into())]),
+                    body: Some(serde_json::json!({"archived": false})),
+                });
+            }
+            if t.contains("matching-refs/tags") {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"back\"".into())]),
+                    body: Some(serde_json::json!([{
+                        "ref": "refs/tags/v3.0.0",
+                        "object": {"type": "commit", "sha": NEW}
+                    }])),
+                });
+            }
+            if t.contains(&format!("/git/commits/{NEW}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"sha": NEW, "tree": {"sha": TREE_NEW}})),
+                });
+            }
+            if t.contains(&format!("/git/commits/{OLD}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"sha": OLD, "tree": {"sha": TREE_OLD}})),
+                });
+            }
+            if t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 404,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"message": "Not Found"})),
+                });
+            }
+            Err(format!("unexpected {t}"))
+        }
+    }
+
+    let groups = vec![PollGroup {
+        repo: "acme/widgets".into(),
+        paths: vec![None],
+    }];
+    let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+    args.token = "ghp_test".into();
+    args.scheduled_at = t2;
+    args.actual_start = t2;
+    args.sleep = Box::new(|_| {});
+    args.confirm_delay = Duration::seconds(0);
+    args.max_requests = 150;
+    args.max_new_peels = 0;
+
+    let mut store = Store::open(dir.path(), opts(t2)).unwrap();
+    run_once_with(
+        &mut store,
+        CountingTransport::new(ColdRecreateTransport, 150),
+        &groups,
+        &args,
+    )
+    .expect("once");
+    let rec = store
+        .entries()
+        .iter()
+        .find(|e| e.event == Event::Recreation)
+        .expect("Recreation on chain from listing-only prior");
+    assert_eq!(
+        rec.to.as_ref().map(|b| b.commit_sha.as_str()),
+        Some(NEW),
+        "recreate must be peeled to never-seen commit"
+    );
+    assert_eq!(rec.from.as_ref().map(|b| b.target_sha.as_str()), Some(OLD));
+}
+
 #[test]
 fn run_once_priority_peels_50_tag_batch_despite_full_backfill_backlog() {
     use refledger_log::entry::Event;
@@ -2066,6 +2211,179 @@ fn run_once_priority_peels_50_tag_batch_despite_full_backfill_backlog() {
     assert!(
         inner.peels.load(AtomicOrdering::Relaxed) >= BATCH as u32,
         "each moved tip must be peeled"
+    );
+}
+
+/// Cold twin of the 50-tag backlog: prior tips were listing-only (never peeled).
+#[test]
+fn run_once_priority_peels_50_tag_batch_cold_listing_only_prior() {
+    use refledger_log::entry::Event;
+    use refledger_poller::observation::{ObservedRef, RefType};
+    use serde_json::json;
+    use std::sync::atomic::{AtomicU32, Ordering as AtomicOrdering};
+
+    const N_BACKLOG: usize = 36;
+    const BATCH: usize = 50;
+
+    #[derive(Clone, Default)]
+    struct HugeBatchCold {
+        peels: Arc<AtomicU32>,
+    }
+    impl Transport for HugeBatchCold {
+        fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
+            let t = &request.target;
+            if t.contains("/compare/") {
+                return Ok(load_fixture("compare_ahead"));
+            }
+            if t.contains("/repos/") && !t.contains("/git/") && !t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"repo\"".into())]),
+                    body: Some(json!({"archived": false})),
+                });
+            }
+            if t.contains("matching-refs/tags") {
+                if t.contains("acme/batch") {
+                    let refs: Vec<_> = (0..BATCH)
+                        .map(|i| {
+                            json!({
+                                "ref": format!("refs/tags/v1.0.{i}"),
+                                "object": {
+                                    "type": "commit",
+                                    "sha": format!("b{:039x}", i + 1)
+                                }
+                            })
+                        })
+                        .collect();
+                    return Ok(RestResponse {
+                        status: 200,
+                        headers: BTreeMap::from([("etag".into(), "W/\"batch\"".into())]),
+                        body: Some(json!(refs)),
+                    });
+                }
+                let refs: Vec<_> = (0..80)
+                    .map(|i| {
+                        json!({
+                            "ref": format!("refs/tags/v{i}"),
+                            "object": {"type": "commit", "sha": format!("{:040x}", i + 100)}
+                        })
+                    })
+                    .collect();
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"tags\"".into())]),
+                    body: Some(json!(refs)),
+                });
+            }
+            if t.contains("/git/commits/") {
+                self.peels.fetch_add(1, AtomicOrdering::Relaxed);
+                let sha = t.rsplit('/').next().unwrap_or("").to_owned();
+                // Prior listing-only tips used a…; moved tips use b…
+                let tree = if sha.starts_with('a') {
+                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                } else {
+                    "cccccccccccccccccccccccccccccccccccccccc"
+                };
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({
+                        "sha": sha,
+                        "tree": {"sha": tree}
+                    })),
+                });
+            }
+            if t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 404,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({"message": "Not Found"})),
+                });
+            }
+            Err(format!("unexpected {t}"))
+        }
+    }
+
+    let dir = TempDir::new().unwrap();
+    let t0 = odt(2026, Month::January, 1, 12, 0, 0, 0);
+    let t1 = t0 + Duration::minutes(5);
+
+    let mut groups = vec![PollGroup {
+        repo: "acme/batch".into(),
+        paths: vec![None],
+    }];
+    for i in 0..N_BACKLOG {
+        groups.push(PollGroup {
+            repo: format!("org/backlog-{i}"),
+            paths: vec![None],
+        });
+    }
+
+    {
+        let mut store = Store::open(dir.path(), opts(t0)).unwrap();
+        let refs: Vec<_> = (0..BATCH)
+            .map(|i| {
+                ObservedRef::new_unpeeled(
+                    format!("refs/tags/v1.0.{i}"),
+                    RefType::Lightweight,
+                    format!("a{:039x}", i + 1),
+                )
+                .unwrap()
+            })
+            .collect();
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("acme/batch")
+                    .unwrap()
+                    .observed_at(t0)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"old\"")),
+                        refs,
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+        for g in &groups[1..] {
+            store.append_observation(&ok_obs(&g.repo, t0)).unwrap();
+        }
+    }
+
+    let inner = HugeBatchCold::default();
+    let mut store = Store::open(dir.path(), opts(t1)).unwrap();
+    let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+    args.token = "ghp_test".into();
+    args.scheduled_at = t1;
+    args.actual_start = t1;
+    args.sleep = Box::new(|_| {});
+    args.confirm_delay = Duration::seconds(0);
+    args.max_requests = 400;
+    args.max_new_peels = 5;
+
+    let report = run_once_with(
+        &mut store,
+        CountingTransport::new(inner.clone(), 400),
+        &groups,
+        &args,
+    )
+    .expect("once");
+
+    let moves = store
+        .entries()
+        .iter()
+        .filter(|e| e.event == Event::Move)
+        .count();
+    assert_eq!(
+        moves, BATCH,
+        "all {BATCH} moved tags must classify from listing-only prior; got {moves}; report={report:?}"
+    );
+    assert!(
+        inner.peels.load(AtomicOrdering::Relaxed) >= BATCH as u32,
+        "each moved tip (and priors) must be peeled"
     );
 }
 

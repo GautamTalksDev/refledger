@@ -1,38 +1,50 @@
 # Main branch freeze (seven-day run)
 
-**Code on `main` is frozen** from the first clean seal for **seven days**.
+**Code on `main` is frozen** from **2026-10-02T00:00:00Z** through the seal at **2026-10-09T00:00:00Z** — the same closed interval as the M1 measurement window.
 
 During the freeze:
 
 - **Docs only.** Markdown and comments that do not change build inputs, lockfiles, workflows, crates, or the clock Worker may land.
 - **No code.** No Rust, TypeScript, workflow, Dependabot, lockfile, or `clock/` changes on `main` unless this file records an emergency exception.
-- **Emergency fixes** require a dated entry below explaining why the instrument had to change mid-measurement.
+- **Emergency fixes** require a dated entry under [Exceptions](#exceptions) explaining why the instrument had to change mid-measurement.
 
-The freeze exists so the running poller, log format, and signatures stay the instrument they were when the run started. Dependency majors for the signing/hashing stack wait until after the run and are gated on both conformance suites.
+The freeze exists so the running poller, log format, and signatures stay the instrument they were when the measurement window started. Dependency majors for the signing/hashing stack wait until after the run and are gated on both conformance suites.
+
+Earlier canary-driven fixes (through 2026-10-01) are **pre-freeze hardening**, not freeze exceptions. Treating them as exceptions blurred what the freeze guarantees.
+
+## Pre-freeze hardening
+
+Fixes found by the canary and live polls before the M1 window. History only — they do not authorize mid-window changes.
+
+| Date (UTC) | Commit | What |
+| --- | --- | --- |
+| 2026-09-30 | 231b93e, 251fcdc, fe08b8f | First seal signed/witnessed on `data` but never reached `main` (`.gitignore` ignored `data/log/`; untracked parent `data/` refused; push auth double-credential). Pending publishes retry every poll. |
+| 2026-09-30 | 07c049c | `once` never ran classify→derive→append; listing invented `tree_sha`; confirm starved by backfill; canary patterns 3/4 invisible within one poll. |
+| 2026-09-30 | ce469fd | Queue signed digest note for `docs/tree-sha-affected-observations.txt`. |
+| 2026-09-30 | 6ec4dde | Changed/reappeared refs stored listing-only when the new tip was uncached; classify skipped unpeeled refs (tj-actions / Trivy shape would produce no Move). Priority-peel from reserve; seq 40 Deletion correction; canary-score retired-pattern + manual-intervention. |
+| 2026-10-01 | b5e1b05 | Polls aborted on enrich compare failure; invented listing placeholders looked like Moves. Enrich isolation + skip invented SHAs. (Voided the first attempted M1 start.) |
+| 2026-10-01 | ea8aefb | Canary Move buffered in memory and lost across process exit; Rekor 409 hard-failed; seal could publish to main before data commit. Durable buffer + re-derive; 409→lookup; publish after data. |
+| 2026-10-01 | fcaecb5 | Disclose `heads.jsonl` line rewrite on main; refuse non-prefix publish; `--strict` requires identical head+signature across witness lines for one seq. |
+| 2026-10-01 | e3f3a7d | Batch proof stayed listing-only when the prior tip was also listing-only; priority-peel any `target_sha` change (and never-peeled FROM); recovery re-derive; `SchedulerLag` as gap; canary bootstrap stops before pattern. |
 
 ## Exceptions
 
+*None yet. From 2026-10-02T00:00:00Z, a row here means a genuine mid-window emergency.*
+
 | Date (UTC) | Commit | Why |
 | --- | --- | --- |
-| 2026-09-30 | 231b93e, 251fcdc, fe08b8f | Pre-freeze: first seal was signed/witnessed on `data` but never reached `main`. Causes fixed in order: `.gitignore` ignored `data/log/`; untracked parent `data/` refused; push auth double-credential (`origin` token URL + Authorization header). Pending publishes retry every poll. Freeze had not started (starts at first clean seal on `main`). |
-| 2026-09-30 | 07c049c | Emergency: `once` never ran classify→derive→append (ledger could not record moves); listing invented `tree_sha`; confirm starved by backfill; canary patterns 3/4 invisible within one poll. Option A forward-only; sealed days untouched. |
-| 2026-09-30 | ce469fd | Queue signed digest note for `docs/tree-sha-affected-observations.txt` (same class as the false-422 note). Freeze start recorded in this commit. |
-| 2026-09-30 | 6ec4dde | Emergency before M1 window (starts 2026-10-01T00:00:00Z): changed/reappeared refs stored listing-only when the new tip was uncached, and classify skipped unpeeled refs — a tag moved to a brand-new malicious commit (tj-actions / Trivy shape) would produce no Move. Priority-peel those tips from the reserved budget before classify. Also: Correction for seq 40 Deletion `content_change`; canary-score retired-pattern + manual-intervention sections. |
-| 2026-10-01 | b5e1b05 | Emergency: every poll since 00:02Z aborted on enrich compare failure (`compare status 404` / budget exhaustion). One repo's optional compare must never abort the observatory; invented listing placeholders (`000…001`) made peels look like Moves. Isolation + skip invented SHAs. M1 window restarted (instrument changed mid-window). |
-| 2026-10-01 | ea8aefb | Emergency: canary Move buffered during Sep 30 outage was lost on process exit (in-memory only); Rekor 409 treated as hard failure instead of lookup; seal could publish to main before data-branch commit. Durable entry buffer + outage re-derive; 409→lookup; publish after data commit. |
-| 2026-10-01 | fcaecb5 | Emergency before M1 (starts 2026-10-02T00:00:00Z): disclose `heads.jsonl` line rewrite on main (`ff75e915` replaced seq 42 witnessed line from `0800c1f5`); refuse non-prefix publish; `--strict` requires identical head+signature across witness lines for one seq. No force-push. |
-| 2026-10-01 | e3f3a7d | Emergency: batch proof (`v9.0.0/1/2` 5f7797a7→9501ea4a at 02:18Z, confirm=1) stayed listing-only — priority-peel required a *peeled* prior binding, so never-peeled FROM sides were skipped. Any target_sha change is priority-peeled (and never-peeled FROM tips too); recovery re-derives; `canary-score` treats SchedulerLag as a gap; canary rotate stops after bootstrap. |
+| — | — | — |
 
 ## Run window
 
-- **Freeze start (UTC):** 2026-09-30T05:24:40Z
-- **Freeze lifts (UTC):** 2026-10-07T05:24:40Z (start + 7 days)
+- **Freeze start (UTC):** 2026-10-02T00:00:00Z
+- **Freeze lifts (UTC):** 2026-10-09T00:00:00Z (after the 2026-10-08 day seal)
 
 ## M1 measurement window
 
-The seven-day M1 exit is measured on sealed days in this closed interval.
+The seven-day M1 exit is measured on sealed days in this closed interval. Freeze and M1 start together so the instrument under measurement is the one that enters the window.
 
-**Restarted 2026-10-01:** the first M1 start (2026-10-01T00:00:00Z) was voided when emergency enrich-isolation fix `b5e1b05` landed inside that window — seven days must be measured on one unchanged instrument.
+**Prior attempt voided:** a 2026-10-01T00:00:00Z start was abandoned after `b5e1b05` changed the poller inside that day.
 
-- **M1 start (UTC):** 2026-10-02T00:00:00Z (first UTC midnight after `b5e1b05`)
+- **M1 start (UTC):** 2026-10-02T00:00:00Z
 - **M1 end (UTC):** seal at 2026-10-09T00:00:00Z (day 2026-10-08's ObservationDigest, stamped at the start of 2026-10-09)
