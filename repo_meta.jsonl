@@ -160,3 +160,4 @@
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"aquasecurity/trivy-action","archived":false}
 {"repo":"google-github-actions/setup-gcloud","archived":false}
+{"repo":"docker/build-push-action","archived":false}
