@@ -371,3 +371,5 @@
 {"repo":"tj-actions/glob","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"34c227e7bcd8019971111a0a82729b39ecc5b5ac6538a390f1afe93013efb0a5\"","stored_at":"2026-10-01T19:48:03.826Z"}
 {"repo":"tj-actions/json2file","template":"/repos/{owner}/{repo}","query":"","etag":"\"db65a3685c5b0ea2f39060eaa894a1712c98dcfd496abfe5908e114b698ce0a2\"","stored_at":"2026-10-01T19:48:03.826Z"}
 {"repo":"tj-actions/json2file","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"03918e01079bbd1b92008762b45b690be2073092678904d28b72e949038d548a\"","stored_at":"2026-10-01T19:48:03.826Z"}
+{"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"5ea23109e0f1592bb0b02b75013db08bb34ca581ee4196a86a174d94748e06aa\"","stored_at":"2026-10-01T19:53:07.174Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"e78a2871c566e32ac8659889eba60aac806e0ff1cff41ec64d4b96220f80060e\"","stored_at":"2026-10-01T19:53:07.174Z"}
