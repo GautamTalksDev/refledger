@@ -268,3 +268,4 @@
 {"repo":"actions/github-script","template":"/repos/{owner}/{repo}","query":"","etag":"\"86ab6dad0ceb935cf2dbe97c32dc748c8005188ca0edab806db1cc66ef2e7f4f\"","stored_at":"2026-10-01T03:57:52.498Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"1e379b42cba6eca2ac699269c7b9a607dc20030be0c3ba6aa8b84a7b92e9f4e8\"","stored_at":"2026-10-01T04:17:56.581Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"4a1a8efb3e36a8580d33cc3e7143a4e5081ffe6d0edb42538b81776364def370\"","stored_at":"2026-10-01T04:17:56.581Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"fcf896b3d3f71f722a34c7801a0563847428d156ae1495afdbf7836e4e6b08b0\"","stored_at":"2026-10-01T04:47:57.462Z"}
