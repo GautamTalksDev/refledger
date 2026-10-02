@@ -352,3 +352,5 @@
 {"repo":"github/super-linter","archived":false}
 {"repo":"google-github-actions/auth","archived":false}
 {"repo":"google-github-actions/setup-gcloud","archived":false}
+{"repo":"actions/attest-build-provenance","archived":false}
+{"repo":"github/codeql-action","archived":false}

@@ -508,3 +508,5 @@
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"dc5b6bc1f35228034954f152ae04b395e294230ca86337ad75c1a85f09a99edc\"","stored_at":"2026-10-02T15:27:58.893Z"}
 {"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"968f2385d3e815d0e83a9f10556ce439037a122e8ac5699a9d1060e14956fbf0\"","stored_at":"2026-10-02T15:27:58.893Z"}
 {"repo":"google-github-actions/setup-gcloud","template":"/repos/{owner}/{repo}","query":"","etag":"\"230d7d97f3882ebd965432c8a1445d16ae024b56f47f923437f769a005aef637\"","stored_at":"2026-10-02T15:27:58.893Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"e2dcbe6e4619493d8a200d50ab62de150d97264b0f3051311a50ffe02bc0b9ff\"","stored_at":"2026-10-02T15:33:04.086Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"30d28a3f026c2d63ed2e6e34b0c358c94d70a0c812e34755fe1a4f03d1e18f6b\"","stored_at":"2026-10-02T15:33:04.086Z"}
