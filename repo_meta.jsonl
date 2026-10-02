@@ -259,3 +259,4 @@
 {"repo":"aquasecurity/setup-trivy","archived":false}
 {"repo":"reviewdog/action-eslint","archived":false}
 {"repo":"actions/setup-python","archived":false}
+{"repo":"actions/setup-java","archived":false}
