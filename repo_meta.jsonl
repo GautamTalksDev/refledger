@@ -284,3 +284,4 @@
 {"repo":"docker/setup-buildx-action","archived":false}
 {"repo":"google-github-actions/auth","archived":false}
 {"repo":"reviewdog/action-actionlint","archived":false}
+{"repo":"actions/setup-dotnet","archived":false}
