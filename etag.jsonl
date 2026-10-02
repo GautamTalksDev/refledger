@@ -428,3 +428,4 @@
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"3d3a9c03f79622a9c161a2d1f9a2e6e211f146c0a5d9a2e1e876319cec41887f\"","stored_at":"2026-10-02T04:33:04.992Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"11a27f2ea2c5cbf13fb824535110c6838045d9bbbc72bbf2f40a61c51e640c92\"","stored_at":"2026-10-02T04:33:04.992Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"ebd73283e2ebd9109443ecd111eb31a826d4e40a6a90a056a0a805582575c20a\"","stored_at":"2026-10-02T04:38:04.587Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"70bce86bbcce81108389ceec7b7dc49afed4adb4145de352a269a1b35738e8e5\"","stored_at":"2026-10-02T04:43:04.791Z"}
