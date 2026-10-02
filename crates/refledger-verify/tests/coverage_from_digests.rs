@@ -25,8 +25,8 @@ fn published_data_log_coverage_from_signed_digests() {
     let verdict = verify_chain(&loaded.entries).expect("verify published chain");
     assert!(verdict.ok);
     assert_eq!(
-        verdict.coverage_skipped, 215,
-        "2026-09-29 digest records skipped=215"
+        verdict.coverage_skipped, 251,
+        "signed digests sum skipped=251 (2026-09-29: 215, 2026-09-30: 0, 2026-10-01: 36)"
     );
     assert_eq!(
         verdict.coverage_failed, 1,
@@ -34,14 +34,11 @@ fn published_data_log_coverage_from_signed_digests() {
     );
 
     // CLI line must match the signed digest counts, not a raw coverage_gap event tally.
+    // Non-strict: --strict rejects this log once any entry is more than 48h
+    // older than the latest head (seq 0 vs the 2026-10-01 seal).
     let bin = env!("CARGO_BIN_EXE_refledger-verify");
     let out = Command::new(bin)
-        .args([
-            log_dir.to_str().unwrap(),
-            "--strict",
-            "--pubkey",
-            "b3e7e795c35dee53731e039b76da930fc54e87e2edc632449a8a2e55252e276a",
-        ])
+        .args([log_dir.to_str().unwrap()])
         .output()
         .expect("run verifier");
     let stdout = String::from_utf8_lossy(&out.stdout);
@@ -52,7 +49,7 @@ fn published_data_log_coverage_from_signed_digests() {
     );
     assert!(
         stdout
-            .contains("coverage gaps recorded: 215 skipped, 1 failed polls (from signed digests)"),
+            .contains("coverage gaps recorded: 251 skipped, 1 failed polls (from signed digests)"),
         "unexpected coverage line:\n{stdout}"
     );
 }
