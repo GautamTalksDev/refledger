@@ -397,3 +397,5 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"77a3819f11bd2ab867a33e0c5e775c05d341cd545b6588433c2eea9b2b9c81f3\"","stored_at":"2026-10-02T01:18:02.376Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"14e3c19d22a8401898a73975473a7d4e5b43716d03b1f2e593581ef78475c9bc\"","stored_at":"2026-10-02T01:27:55.914Z"}
 {"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"826d44608d0925ed793fa2774bcc3590a4a90b54f282599c64cc3209658e79d2\"","stored_at":"2026-10-02T01:47:59.179Z"}
+{"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"0d134407e82308fc723f1da154c199029c35d20a3cc08e9da4f3f50b77c97254\"","stored_at":"2026-10-02T02:17:58.293Z"}
+{"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"d0a0bf9ef7be6208ef3c589b7f4d20cac76c5905ddee36d86215140abc7e0981\"","stored_at":"2026-10-02T02:17:58.293Z"}
