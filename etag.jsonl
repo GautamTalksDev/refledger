@@ -431,3 +431,6 @@
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"70bce86bbcce81108389ceec7b7dc49afed4adb4145de352a269a1b35738e8e5\"","stored_at":"2026-10-02T04:43:04.791Z"}
 {"repo":"docker/setup-buildx-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"6baaf048fc9d0ffd6650e9018906e93123eabbce64883bd0ded6fe1448a064c9\"","stored_at":"2026-10-02T04:48:01.971Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"159922dd46a6d0857b0f4670a3698685163a1f351718418ab469642bac20591c\"","stored_at":"2026-10-02T05:18:05.057Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"5cffddec6fda5ef5be8bc17e83a12d35e31c92f674386b0194489d7954acc9fd\"","stored_at":"2026-10-02T05:28:05.982Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"6432912e5bea8b3c213b2f56cc83262f935d4678047a2d533a1b8106bad6277f\"","stored_at":"2026-10-02T05:28:05.982Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"65ce05b8c17ed42fa8fec41bc4abe42eec85cfe6a6ee6e4ee8f5ca0d13bd4f2d\"","stored_at":"2026-10-02T05:28:05.982Z"}
