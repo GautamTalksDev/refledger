@@ -254,3 +254,7 @@
 {"repo":"actions/download-artifact","archived":false}
 {"repo":"actions/upload-artifact","archived":false}
 {"repo":"aquasecurity/trivy-action","archived":false}
+{"repo":"actions/cache","archived":false}
+{"repo":"actions/checkout","archived":false}
+{"repo":"aquasecurity/setup-trivy","archived":false}
+{"repo":"reviewdog/action-eslint","archived":false}
