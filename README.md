@@ -115,6 +115,21 @@ docs/                 everything you would want to read
 
 Live observations and the in-progress day log are on the **`data` branch** (directories `observations/` and `log/`). Canary (deliberate tag moves for detection measurement): [GautamTalksDev/canary](https://github.com/GautamTalksDev/canary).
 
+## Privacy
+
+The public site at `refledger.gautamkhosla.com` collects nothing from visitors.
+Checks run in the browser against GitHub's API. The append-only ledger stores
+public repository facts (tag names, commit hashes, times), not personal data
+from taggers or authors. Site policy: `/privacy` on the public site.
+
+## Security
+
+Report vulnerabilities in Refledger via
+[GitHub private vulnerability reporting](https://github.com/GautamTalksDev/refledger/security/advisories/new).
+Operator response policy for observed attacks is in [`SECURITY.md`](SECURITY.md).
+Public summary: `/security` on the site; machine-readable contact at
+`/.well-known/security.txt`.
+
 ## License
 
 Code is Apache 2.0. See [`LICENSE-APACHE`](LICENSE-APACHE).
