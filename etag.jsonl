@@ -549,3 +549,4 @@
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"e0212e37c4c959dac300cfc7bbeb13dd1ac0fe37588e238a14231b027bb0602f\"","stored_at":"2026-10-02T22:48:10.274Z"}
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"0d747eff2f369abb5c5fb1b285c43f1aafe29a9f4b8e75f3d30b61f7c1055c0e\"","stored_at":"2026-10-02T22:53:05.330Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"c33c5a9b9c951ff181802e7b07edffd0b43eaafe8e6dce141e631b2d7eb7c923\"","stored_at":"2026-10-02T22:53:05.330Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"d40d7a1c3cc00748500e463ca84d95280ccf1da73f732d29d81e3f4e4fb6228e\"","stored_at":"2026-10-02T23:08:14.270Z"}
