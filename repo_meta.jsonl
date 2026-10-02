@@ -250,3 +250,7 @@
 {"repo":"reviewdog/action-eslint","archived":false}
 {"repo":"reviewdog/action-eslint","archived":false}
 {"repo":"actions/checkout","archived":false}
+{"repo":"actions/checkout","archived":false}
+{"repo":"actions/download-artifact","archived":false}
+{"repo":"actions/upload-artifact","archived":false}
+{"repo":"aquasecurity/trivy-action","archived":false}
