@@ -20,10 +20,10 @@ use crate::derive::{derive, ChainTip};
 use crate::enrich::{enrich, CompareCache};
 use crate::github::etag::{AuthToken, ETagStore};
 use crate::github::rest::{
-    build_obs_for_once, cache_commit_tree, hydrate_prior_bindings, peel_priority_refs,
-    priority_peel_plan, resolve_repo, resolve_repo_listing, resolve_repo_warm_up, Client,
-    ObjectCache, PageBodyCache, RepoMetaCache, ResolveFail, RestRequest, RestResponse, Transport,
-    WarmUpContext,
+    build_obs_for_once, cache_commit_tree, hydrate_pending_from_bindings, hydrate_prior_bindings,
+    peel_priority_refs, priority_peel_plan, resolve_repo, resolve_repo_listing,
+    resolve_repo_warm_up, Client, ObjectCache, PageBodyCache, RepoMetaCache, ResolveFail,
+    RestRequest, RestResponse, Transport, WarmUpContext,
 };
 use crate::observation::{Observation, Outcome, RepoSlug, SkipReason, Timestamp};
 use crate::population::{load_watched, poll_groups, PollGroup};
@@ -397,6 +397,23 @@ pub fn run_once_with<T: Transport>(
         states.insert(g.repo.clone(), state);
     }
 
+    // Tip changes held across runs (peel 5xx / budget) — merge after rebuild so
+    // first_observed and from_last_observed survive process exit.
+    match store.load_pending_moves() {
+        Ok(pending) => {
+            for (repo, moves) in pending {
+                if let Some(st) = states.get_mut(&repo) {
+                    st.merge_pending_moves(moves);
+                } else {
+                    let mut st = RepoState::default();
+                    st.merge_pending_moves(moves);
+                    states.insert(repo, st);
+                }
+            }
+        }
+        Err(e) => eprintln!("load_pending_moves failed: {e}"),
+    }
+
     // Phase 1: every poll group gets a conditional listing (and repo metadata)
     // before any peel or action.yml work consumes the shared budget.
     for g in groups {
@@ -584,6 +601,8 @@ pub fn run_once_with<T: Transport>(
 
         let observed = if !plan.is_empty() {
             // Peel every changed tip (and never-peeled FROM tips) before classify.
+            // Soft-fails per tip so a 5xx/budget miss still peels priors and
+            // leaves the destination listing-only for deferral.
             client
                 .transport()
                 .set_max(peel_enrich_max.max(client.transport().requests()));
@@ -600,7 +619,7 @@ pub fn run_once_with<T: Transport>(
                     peel_priority_refs(
                         &pending.warm,
                         &BTreeSet::new(),
-                        &BTreeSet::new(),
+                        &plan.prior_shas,
                         &mut objects,
                         &client,
                     )
@@ -640,6 +659,9 @@ pub fn run_once_with<T: Transport>(
                     .unwrap_or_else(|| at - Duration::seconds(1));
                 hydrate_prior_bindings(st, &prior, &objects, prior_at);
             }
+        }
+        if let Some(st) = states.get_mut(&repo_key) {
+            hydrate_pending_from_bindings(st, &objects);
         }
 
         let etag = if observed
@@ -742,6 +764,10 @@ pub fn run_once_with<T: Transport>(
         "binding-tree-audit total unverified_before={tree_unverified_before} unverified_after={tree_unverified_after} newly_trusted={peeled}"
     );
 
+    if let Err(e) = store.save_pending_moves(&states) {
+        eprintln!("save_pending_moves failed: {e}");
+    }
+
     Ok(OnceReport {
         gaps: gaps.len(),
         days_sealed,
@@ -798,7 +824,47 @@ pub fn classify_enrich_derive_append<T: Transport>(
     let (next, events) =
         classify(state, obs, &enrichment).map_err(|e| OnceError::Classify(e.to_string()))?;
     *state = next;
-    if events.is_empty() {
+
+    let deferred: Vec<_> = events
+        .iter()
+        .filter_map(|e| match e {
+            crate::classify::ClassifiedEvent::PendingMoveDeferred {
+                ref_name, reason, ..
+            } => {
+                let why = match reason {
+                    crate::classify::PendingMoveReason::TreeUnknown => "tree_unknown",
+                };
+                Some(format!(
+                    "pending-move-deferred: {} {} ({why})",
+                    obs.repo().as_str(),
+                    ref_name,
+                ))
+            }
+            _ => None,
+        })
+        .collect();
+    for note in &deferred {
+        if let Err(e) = store.record_identity_warning(note) {
+            eprintln!("pending-move digest note failed: {e}");
+        }
+    }
+    if !deferred.is_empty() {
+        let count_note = format!("pending-moves-deferred-count: {}", deferred.len());
+        if let Err(e) = store.record_identity_warning(&count_note) {
+            eprintln!("pending-move count digest note failed: {e}");
+        }
+    }
+
+    let chain_events: Vec<_> = events
+        .into_iter()
+        .filter(|e| {
+            !matches!(
+                e,
+                crate::classify::ClassifiedEvent::PendingMoveDeferred { .. }
+            )
+        })
+        .collect();
+    if chain_events.is_empty() {
         return Ok(0);
     }
     let mut tip = ChainTip::from_entries(
@@ -808,7 +874,7 @@ pub fn classify_enrich_derive_append<T: Transport>(
         BTreeMap::new(),
     );
     tip.diffs = diffs_from_compare(compare);
-    let derived = derive(&tip, &events).map_err(|e| OnceError::Derive(e.to_string()))?;
+    let derived = derive(&tip, &chain_events).map_err(|e| OnceError::Derive(e.to_string()))?;
     let n = derived.len();
     for mut entry in derived {
         if let Some(ref note) = outcome.note {

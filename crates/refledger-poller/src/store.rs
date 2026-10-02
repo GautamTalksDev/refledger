@@ -32,6 +32,7 @@ use refledger_log::{
 use crate::archive::{
     format_archive_failure_note, ArchiveFailure, DayArchive, NoopArchive, ObservationArchive,
 };
+use crate::classify::{PendingMove, PendingMoveReason, RepoState};
 use crate::derive::{derive_observation_digest, ObservationDayStats};
 use crate::identity::{user_agent, DEFAULT_LOG_ID};
 use crate::observation::{Observation, ObservationError, Outcome, SkipReason, Timestamp};
@@ -53,6 +54,7 @@ pub const WITNESS_BACKLOG_HOURS: i64 = 48;
 /// Non-chain poller state lives under `state/`, never under `log/`.
 /// `log/` holds only day files (`YYYY/MM/DD.jsonl`) and `heads.jsonl`.
 const IDENTITY_WARNINGS_PATH: &str = "state/identity_warnings.jsonl";
+const PENDING_MOVES_PATH: &str = "state/pending_moves.jsonl";
 const PUBLISH_FAILURES_PATH: &str = "state/publish_failures.jsonl";
 const PUBLISH_SUCCESSES_PATH: &str = "state/publish_successes.jsonl";
 const ARCHIVE_FAILURES_PATH: &str = "state/archive_upload_failures.jsonl";
@@ -901,6 +903,121 @@ impl<V: Volume> Store<V> {
         self.vol.append_record(IDENTITY_WARNINGS_PATH, &bytes)?;
         self.pending_identity_warnings.push(warning.to_owned());
         Ok(())
+    }
+
+    /// Load persisted tip changes waiting for a trusted peel (`state/pending_moves.jsonl`).
+    pub fn load_pending_moves(
+        &self,
+    ) -> Result<BTreeMap<String, BTreeMap<String, PendingMove>>, StoreError> {
+        let Some(bytes) = self.vol.read(PENDING_MOVES_PATH)? else {
+            return Ok(BTreeMap::new());
+        };
+        let mut out: BTreeMap<String, BTreeMap<String, PendingMove>> = BTreeMap::new();
+        for (i, line) in bytes.split(|b| *b == b'\n').enumerate() {
+            if line.is_empty() {
+                continue;
+            }
+            let v: Value = serde_json::from_slice(line)
+                .map_err(|e| StoreError::Corrupt(format!("pending_moves.jsonl:{}: {e}", i + 1)))?;
+            let repo = v
+                .get("repo")
+                .and_then(|x| x.as_str())
+                .ok_or_else(|| {
+                    StoreError::Corrupt(format!("pending_moves.jsonl:{}: missing repo", i + 1))
+                })?
+                .to_owned();
+            let ref_name = v
+                .get("ref")
+                .and_then(|x| x.as_str())
+                .ok_or_else(|| {
+                    StoreError::Corrupt(format!("pending_moves.jsonl:{}: missing ref", i + 1))
+                })?
+                .to_owned();
+            let from_target = v
+                .get("from_target")
+                .and_then(|x| x.as_str())
+                .ok_or_else(|| {
+                    StoreError::Corrupt(format!(
+                        "pending_moves.jsonl:{}: missing from_target",
+                        i + 1
+                    ))
+                })?
+                .to_owned();
+            let to_target = v
+                .get("to_target")
+                .and_then(|x| x.as_str())
+                .ok_or_else(|| {
+                    StoreError::Corrupt(format!("pending_moves.jsonl:{}: missing to_target", i + 1))
+                })?
+                .to_owned();
+            let first_observed = parse_pending_time(&v, "first_observed", i + 1)?;
+            let from_last_observed = parse_pending_time(&v, "from_last_observed", i + 1)?;
+            let detecting_observation_id = v
+                .get("detecting_observation_id")
+                .and_then(|x| x.as_str())
+                .and_then(|s| s.parse().ok())
+                .ok_or_else(|| {
+                    StoreError::Corrupt(format!(
+                        "pending_moves.jsonl:{}: bad detecting_observation_id",
+                        i + 1
+                    ))
+                })?;
+            let reason = match v.get("reason").and_then(|x| x.as_str()).unwrap_or("") {
+                "tree_unknown" | "" => PendingMoveReason::TreeUnknown,
+                other => {
+                    return Err(StoreError::Corrupt(format!(
+                        "pending_moves.jsonl:{}: unknown reason {other}",
+                        i + 1
+                    )));
+                }
+            };
+            out.entry(repo).or_default().insert(
+                ref_name,
+                PendingMove {
+                    from_target,
+                    to_target,
+                    first_observed,
+                    from_last_observed,
+                    detecting_observation_id,
+                    reason,
+                },
+            );
+        }
+        Ok(out)
+    }
+
+    /// Replace `state/pending_moves.jsonl` with the current in-memory pending set.
+    pub fn save_pending_moves(
+        &mut self,
+        states: &BTreeMap<String, RepoState>,
+    ) -> Result<(), StoreError> {
+        let mut lines = Vec::new();
+        for (repo, state) in states {
+            for (ref_name, pending) in state.pending_moves() {
+                let reason = match pending.reason {
+                    PendingMoveReason::TreeUnknown => "tree_unknown",
+                };
+                let line = serde_json::json!({
+                    "repo": repo,
+                    "ref": ref_name,
+                    "from_target": pending.from_target,
+                    "to_target": pending.to_target,
+                    "first_observed": format_pending_time(pending.first_observed),
+                    "from_last_observed": format_pending_time(pending.from_last_observed),
+                    "detecting_observation_id": pending.detecting_observation_id.to_string(),
+                    "reason": reason,
+                });
+                lines.push(
+                    serde_json::to_vec(&line).map_err(|e| StoreError::Message(e.to_string()))?,
+                );
+            }
+        }
+        let mut body = Vec::new();
+        for line in &lines {
+            body.extend_from_slice(line);
+            body.push(b'\n');
+        }
+        self.vol.write_exact(PENDING_MOVES_PATH, &body)
     }
 
     /// Target bindings (`name:sha`) from the latest Ok observation for `repo`.
@@ -2063,6 +2180,33 @@ fn load_archive_failures<V: Volume>(vol: &mut V) -> Result<Vec<ArchiveFailure>, 
         out.push(ArchiveFailure { day, error });
     }
     Ok(out)
+}
+
+fn format_pending_time(t: OffsetDateTime) -> String {
+    let t = normalize_to_utc_millis(t);
+    format!(
+        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}.{:03}Z",
+        t.year(),
+        u8::from(t.month()),
+        t.day(),
+        t.hour(),
+        t.minute(),
+        t.second(),
+        t.nanosecond() / 1_000_000
+    )
+}
+
+fn parse_pending_time(v: &Value, field: &str, line: usize) -> Result<OffsetDateTime, StoreError> {
+    let s = v.get(field).and_then(|x| x.as_str()).ok_or_else(|| {
+        StoreError::Corrupt(format!("pending_moves.jsonl:{line}: missing {field}"))
+    })?;
+    Timestamp::from_external(
+        OffsetDateTime::parse(s, &time::format_description::well_known::Rfc3339).map_err(|e| {
+            StoreError::Corrupt(format!("pending_moves.jsonl:{line}: bad {field}: {e}"))
+        })?,
+    )
+    .map(|t| t.as_offset_datetime())
+    .map_err(|e| StoreError::Corrupt(format!("pending_moves.jsonl:{line}: bad {field}: {e}")))
 }
 
 fn load_identity_warnings<V: Volume>(vol: &mut V) -> Result<Vec<String>, StoreError> {

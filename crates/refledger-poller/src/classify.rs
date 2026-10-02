@@ -252,6 +252,37 @@ pub enum ClassifiedEvent {
         http_status: u16,
         location: String,
     },
+    /// Tip moved but a tree could not be trusted this sweep, so no Move was
+    /// signed. Held in [`RepoState::pending_moves`] until a later peel succeeds.
+    /// Not a chain event — [`crate::derive::derive`] drops it; digests count it.
+    PendingMoveDeferred {
+        ref_name: String,
+        from_target: String,
+        to_target: String,
+        first_observed: OffsetDateTime,
+        reason: PendingMoveReason,
+    },
+}
+
+/// Why a tip change was held instead of signed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PendingMoveReason {
+    /// New (or prior) commit has no trusted tree in the object cache this run.
+    TreeUnknown,
+}
+
+/// Tip change waiting for a trusted peel before a Move can be signed.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PendingMove {
+    pub from_target: String,
+    pub to_target: String,
+    /// Instant the tip change was first detected (preserved across peels).
+    pub first_observed: OffsetDateTime,
+    /// `last_observed` of the FROM binding at deferral — keeps the window.
+    pub from_last_observed: OffsetDateTime,
+    pub detecting_observation_id: Ulid,
+    pub reason: PendingMoveReason,
 }
 
 /// Precomputed per-move facts. Produced by [`crate::enrich`]; never fetched here.
@@ -348,6 +379,8 @@ pub struct RepoState {
     bindings: BTreeMap<String, LiveBinding>,
     tombstones: BTreeMap<String, Tombstone>,
     move_buffer: Vec<BufferedMove>,
+    /// Tip changes held until a trusted tree is available for both sides.
+    pending_moves: BTreeMap<String, PendingMove>,
     correlation_window: Duration,
     /// Most recent Ok observation id (for `source_observations`).
     last_ok_observation_id: Option<Ulid>,
@@ -360,6 +393,7 @@ impl Default for RepoState {
             bindings: BTreeMap::new(),
             tombstones: BTreeMap::new(),
             move_buffer: Vec::new(),
+            pending_moves: BTreeMap::new(),
             correlation_window: DEFAULT_CORRELATION_WINDOW,
             last_ok_observation_id: None,
         }
@@ -370,6 +404,27 @@ impl RepoState {
     pub fn with_correlation_window(mut self, window: Duration) -> Self {
         self.correlation_window = window;
         self
+    }
+
+    /// Tip changes held until both sides have a trusted tree.
+    pub fn pending_moves(&self) -> &BTreeMap<String, PendingMove> {
+        &self.pending_moves
+    }
+
+    /// Merge persisted pending tip changes after a rebuild (earliest wins).
+    pub fn merge_pending_moves(&mut self, pending: BTreeMap<String, PendingMove>) {
+        for (name, incoming) in pending {
+            match self.pending_moves.entry(name) {
+                std::collections::btree_map::Entry::Vacant(v) => {
+                    v.insert(incoming);
+                }
+                std::collections::btree_map::Entry::Occupied(mut o) => {
+                    if incoming.first_observed < o.get().first_observed {
+                        o.insert(incoming);
+                    }
+                }
+            }
+        }
     }
 
     /// Seed state from a successful observation (first poll of a repo).
@@ -497,7 +552,12 @@ pub fn classify(
             Ok(out)
         }
         Outcome::NotModified { .. } => {
-            for b in next.bindings.values_mut() {
+            for (name, b) in next.bindings.iter_mut() {
+                if next.pending_moves.contains_key(name) {
+                    // Old tip is frozen until the pending move signs; do not
+                    // advance last_observed or the observation window shrinks.
+                    continue;
+                }
                 b.snap.last_observed = at;
                 b.snap.observation_count = b.snap.observation_count.saturating_add(1);
             }
@@ -588,12 +648,49 @@ fn classify_ok(
     let mut sweep_moves: Vec<SweepMove> = Vec::new();
 
     for (name, r) in &seen {
+        let form = RefForm::parse(name);
         let Some(new_snap) =
             binding_from_ref(r, at, at, 1, trust_cache, enrichment.trusted_trees())?
         else {
+            // Tip may have moved even though we cannot bind yet (peel failed).
+            if let Some(live) = state.bindings.get(name.as_str()) {
+                if live.snap.target_sha != r.target_sha() {
+                    let from_target = live.snap.target_sha.clone();
+                    let from_last = live.snap.last_observed;
+                    let to_target = r.target_sha().to_owned();
+                    let ev = defer_pending_move(
+                        state,
+                        name,
+                        &from_target,
+                        &to_target,
+                        at,
+                        from_last,
+                        detecting_id,
+                        PendingMoveReason::TreeUnknown,
+                    );
+                    events.push(ev);
+                }
+            } else if let Some(pending) = state.pending_moves.get(name.as_str()) {
+                // Persisted deferral: tip still unpeeled; refresh visibility.
+                if pending.to_target == r.target_sha() {
+                    let from_target = pending.from_target.clone();
+                    let from_last = pending.from_last_observed;
+                    let to_target = pending.to_target.clone();
+                    let ev = defer_pending_move(
+                        state,
+                        name,
+                        &from_target,
+                        &to_target,
+                        at,
+                        from_last,
+                        detecting_id,
+                        PendingMoveReason::TreeUnknown,
+                    );
+                    events.push(ev);
+                }
+            }
             continue;
         };
-        let form = RefForm::parse(name);
 
         if let Some(tomb) = state.tombstones.remove(name) {
             let same_target = tomb.last.target_sha == new_snap.target_sha;
@@ -619,6 +716,7 @@ fn classify_ok(
                 observation_window_seconds: window,
                 source_observations: vec![tomb.prior_observation_id, detecting_id],
             });
+            state.pending_moves.remove(name);
             state
                 .bindings
                 .insert(name.clone(), LiveBinding { snap: restored });
@@ -627,6 +725,27 @@ fn classify_ok(
 
         match state.bindings.get(name) {
             None => {
+                if let Some(pending) = state.pending_moves.get(name.as_str()) {
+                    // Peeled destination but FROM binding missing — keep pending.
+                    if pending.to_target == new_snap.target_sha {
+                        let from_target = pending.from_target.clone();
+                        let from_last = pending.from_last_observed;
+                        let to_target = pending.to_target.clone();
+                        let ev = defer_pending_move(
+                            state,
+                            name,
+                            &from_target,
+                            &to_target,
+                            at,
+                            from_last,
+                            detecting_id,
+                            PendingMoveReason::TreeUnknown,
+                        );
+                        events.push(ev);
+                        continue;
+                    }
+                }
+                state.pending_moves.remove(name);
                 state
                     .bindings
                     .insert(name.clone(), LiveBinding { snap: new_snap });
@@ -645,6 +764,7 @@ fn classify_ok(
                 if trust_cache {
                     heal_tree(&mut updated, enrichment.trusted_trees());
                 }
+                state.pending_moves.remove(name);
                 state
                     .bindings
                     .insert(name.clone(), LiveBinding { snap: updated });
@@ -665,7 +785,26 @@ fn classify_ok(
                             "ref {name} tree unknown after object-cache lookup (commit {} -> {}); not signing a move",
                             from.commit_sha, to.commit_sha
                         );
+                        let from_last = from.last_observed;
+                        let ev = defer_pending_move(
+                            state,
+                            name,
+                            &from.target_sha,
+                            &to.target_sha,
+                            at,
+                            from_last,
+                            detecting_id,
+                            PendingMoveReason::TreeUnknown,
+                        );
+                        events.push(ev);
                         continue;
+                    }
+                }
+                if let Some(pending) = state.pending_moves.remove(name) {
+                    if pending.to_target == to.target_sha {
+                        to.first_observed = pending.first_observed;
+                        // FROM last_observed must stay the pre-move tip time.
+                        from.last_observed = pending.from_last_observed;
                     }
                 }
                 let kind = move_kind(&from, &to, trust_cache);
@@ -733,6 +872,50 @@ fn event_sort_key(e: &ClassifiedEvent) -> (u8, String) {
         ClassifiedEvent::Deletion { ref_name, .. } => (2, ref_name.clone()),
         ClassifiedEvent::Recreation { ref_name, .. } => (3, ref_name.clone()),
         ClassifiedEvent::Move { ref_name, .. } => (4, ref_name.clone()),
+        ClassifiedEvent::PendingMoveDeferred { ref_name, .. } => (5, ref_name.clone()),
+    }
+}
+
+/// Record or refresh a pending tip change. Preserves the earliest first_observed.
+#[allow(clippy::too_many_arguments)]
+fn defer_pending_move(
+    state: &mut RepoState,
+    name: &str,
+    from_target: &str,
+    to_target: &str,
+    at: OffsetDateTime,
+    from_last_observed: OffsetDateTime,
+    detecting_id: Ulid,
+    reason: PendingMoveReason,
+) -> ClassifiedEvent {
+    let entry = state
+        .pending_moves
+        .entry(name.to_owned())
+        .and_modify(|p| {
+            if p.to_target != to_target {
+                // Tip moved again while still pending — restart the clock.
+                p.from_target = from_target.to_owned();
+                p.to_target = to_target.to_owned();
+                p.first_observed = at;
+                p.from_last_observed = from_last_observed;
+                p.detecting_observation_id = detecting_id;
+                p.reason = reason;
+            }
+        })
+        .or_insert_with(|| PendingMove {
+            from_target: from_target.to_owned(),
+            to_target: to_target.to_owned(),
+            first_observed: at,
+            from_last_observed,
+            detecting_observation_id: detecting_id,
+            reason,
+        });
+    ClassifiedEvent::PendingMoveDeferred {
+        ref_name: name.to_owned(),
+        from_target: entry.from_target.clone(),
+        to_target: entry.to_target.clone(),
+        first_observed: entry.first_observed,
+        reason: entry.reason,
     }
 }
 

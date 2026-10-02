@@ -889,10 +889,29 @@ pub(crate) fn peel_priority_refs<T: Transport>(
         if !priority_names.contains(&raw.name) {
             continue;
         }
-        // Always peel priority tips — never leave an attack commit listing-only.
-        let peel = peel_ref(&owner, &name, raw, objects, client)?;
-        if let Peeled::Commit { commit_sha, .. } = &peel.peeled {
-            let _ = resolve_action_yml(&owner, &name, commit_sha, path, objects, client)?;
+        // Soft-fail per tip: a 5xx/budget miss must not abort prior-SHA peels
+        // or leave a whole batch unsigned-and-forgotten.
+        match peel_ref(&owner, &name, raw, objects, client) {
+            Ok(peel) => {
+                if let Peeled::Commit { commit_sha, .. } = &peel.peeled {
+                    let _ = resolve_action_yml(&owner, &name, commit_sha, path, objects, client);
+                }
+            }
+            Err(ResolveFail::BudgetExhausted) => {
+                eprintln!(
+                    "priority tip peel budget exhausted repo={} ref={}",
+                    ctx.repo.as_str(),
+                    raw.name
+                );
+                break;
+            }
+            Err(e) => {
+                eprintln!(
+                    "priority tip peel failed repo={} ref={}: {e:?}",
+                    ctx.repo.as_str(),
+                    raw.name
+                );
+            }
         }
     }
     for sha in also_peel_shas {
@@ -905,9 +924,25 @@ pub(crate) fn peel_priority_refs<T: Transport>(
             object_type: "commit".into(),
             object_sha: sha.clone(),
         };
-        let peel = peel_ref(&owner, &name, &raw, objects, client)?;
-        if let Peeled::Commit { commit_sha, .. } = &peel.peeled {
-            let _ = resolve_action_yml(&owner, &name, commit_sha, path, objects, client)?;
+        match peel_ref(&owner, &name, &raw, objects, client) {
+            Ok(peel) => {
+                if let Peeled::Commit { commit_sha, .. } = &peel.peeled {
+                    let _ = resolve_action_yml(&owner, &name, commit_sha, path, objects, client);
+                }
+            }
+            Err(ResolveFail::BudgetExhausted) => {
+                eprintln!(
+                    "prior-sha peel budget exhausted repo={} sha={sha}",
+                    ctx.repo.as_str()
+                );
+                break;
+            }
+            Err(e) => {
+                eprintln!(
+                    "prior-sha peel failed repo={} sha={sha}: {e:?}",
+                    ctx.repo.as_str()
+                );
+            }
         }
     }
     let mut observed = Vec::with_capacity(refs.len());
@@ -988,6 +1023,26 @@ pub(crate) fn priority_peel_plan(
             }
         }
     }
+    // Deferred tip changes must be re-peeled even when the listing already
+    // shows the destination (a prior incomplete peel stored the new tip).
+    for (name, pending) in state.pending_moves() {
+        let on_listing = refs
+            .iter()
+            .any(|r| r.name == *name && r.object_sha == pending.to_target);
+        if !on_listing {
+            continue;
+        }
+        plan.names.insert(name.clone());
+        if state.binding(name).is_none() {
+            plan.prior_shas.insert(pending.from_target.clone());
+        } else if let Some(prev) = state.binding(name) {
+            if prev.tree_sha() == prev.commit_sha()
+                && objects.tree_sha_for_commit(prev.commit_sha()).is_none()
+            {
+                plan.prior_shas.insert(prev.commit_sha().to_owned());
+            }
+        }
+    }
     plan
 }
 
@@ -1027,6 +1082,50 @@ pub(crate) fn hydrate_prior_bindings(
                 ref_type: crate::observation::RefType::Lightweight,
                 first_observed: prior_at,
                 last_observed: prior_at,
+                observation_count: 1,
+                action_yml_sha: None,
+            },
+        );
+    }
+}
+
+/// Hydrate FROM bindings for persisted [`PendingMove`] entries using each
+/// record's `from_last_observed` so observation windows stay correct.
+pub(crate) fn hydrate_pending_from_bindings(
+    state: &mut crate::classify::RepoState,
+    objects: &ObjectCache,
+) {
+    let pending: Vec<_> = state
+        .pending_moves()
+        .iter()
+        .map(|(n, p)| (n.clone(), p.clone()))
+        .collect();
+    for (name, pending) in pending {
+        if state.binding(&name).is_some() {
+            continue;
+        }
+        let Some(cached) = objects.get(&pending.from_target) else {
+            continue;
+        };
+        let CacheEntry::Commit { tree_sha, .. } = cached else {
+            continue;
+        };
+        if tree_sha == &pending.from_target {
+            eprintln!(
+                "tree_sha equals commit_sha {} while hydrating pending {name}; treating as unknown",
+                pending.from_target
+            );
+            continue;
+        }
+        state.insert_binding_if_absent(
+            name,
+            crate::classify::BindingSnapshot {
+                target_sha: pending.from_target.clone(),
+                commit_sha: pending.from_target.clone(),
+                tree_sha: tree_sha.clone(),
+                ref_type: crate::observation::RefType::Lightweight,
+                first_observed: pending.from_last_observed,
+                last_observed: pending.from_last_observed,
                 observation_count: 1,
                 action_yml_sha: None,
             },

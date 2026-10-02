@@ -2946,3 +2946,420 @@ fn run_once_canary_v2_lightweight_to_annotated_is_release_level_only() {
     assert_eq!(to.tree_sha.as_str(), TREE);
     assert_ne!(from.tree_sha.as_str(), from.commit_sha.as_str());
 }
+
+/// Peel 5xx on the new tip: no Move this run; pending-move recorded; next
+/// successful peel signs with the first-detection first_observed / window.
+#[test]
+fn run_once_defers_move_when_peel_5xx_then_signs_with_first_seen() {
+    use refledger_log::entry::{Classification, Event, Severity};
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    let dir = TempDir::new().unwrap();
+    let t0 = odt(2026, Month::January, 1, 12, 0, 0, 0);
+    let t1 = t0 + Duration::minutes(5);
+    let t2 = t1 + Duration::minutes(5);
+    const OLD: &str = "1111111111111111111111111111111111111111";
+    const NEW: &str = "cccccccccccccccccccccccccccccccccccccccc";
+    const TREE_OLD: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    const TREE_NEW: &str = "dddddddddddddddddddddddddddddddddddddddd";
+
+    {
+        let mut store = Store::open(dir.path(), opts(t0)).unwrap();
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("acme/widgets")
+                    .unwrap()
+                    .observed_at(t0)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"old\"")),
+                        refs: vec![refledger_poller::observation::ObservedRef::new_lightweight(
+                            "refs/tags/v1.2.3",
+                            OLD,
+                            TREE_OLD,
+                        )
+                        .unwrap()],
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+    }
+
+    #[derive(Clone)]
+    struct PeelFailThenOk {
+        allow_new: Arc<AtomicBool>,
+    }
+    impl Transport for PeelFailThenOk {
+        fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
+            let t = &request.target;
+            if t.contains("/repos/acme/widgets")
+                && !t.contains("/git/")
+                && !t.contains("/contents/")
+                && !t.contains("/compare/")
+            {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"repo\"".into())]),
+                    body: Some(serde_json::json!({"archived": false})),
+                });
+            }
+            if t.contains("matching-refs/tags") {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"moved\"".into())]),
+                    body: Some(serde_json::json!([{
+                        "ref": "refs/tags/v1.2.3",
+                        "object": {"type": "commit", "sha": NEW}
+                    }])),
+                });
+            }
+            if t.contains(&format!("/git/commits/{NEW}")) {
+                if !self.allow_new.load(Ordering::SeqCst) {
+                    return Ok(RestResponse {
+                        status: 500,
+                        headers: BTreeMap::new(),
+                        body: Some(serde_json::json!({"message": "Internal Server Error"})),
+                    });
+                }
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"sha": NEW, "tree": {"sha": TREE_NEW}})),
+                });
+            }
+            if t.contains(&format!("/git/commits/{OLD}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"sha": OLD, "tree": {"sha": TREE_OLD}})),
+                });
+            }
+            if t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 404,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"message": "Not Found"})),
+                });
+            }
+            if t.contains("/compare/") {
+                return Ok(load_fixture("compare_ahead"));
+            }
+            Err(format!("unexpected {t}"))
+        }
+    }
+
+    let allow_new = Arc::new(AtomicBool::new(false));
+    let groups = vec![PollGroup {
+        repo: "acme/widgets".into(),
+        paths: vec![None],
+    }];
+
+    {
+        let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+        args.token = "ghp_test".into();
+        args.scheduled_at = t1;
+        args.actual_start = t1;
+        args.sleep = Box::new(|_| {});
+        args.confirm_delay = Duration::seconds(0);
+        args.max_requests = 150;
+        args.max_new_peels = 20;
+        let mut store = Store::open(dir.path(), opts(t1)).unwrap();
+        let report = run_once_with(
+            &mut store,
+            CountingTransport::new(
+                PeelFailThenOk {
+                    allow_new: allow_new.clone(),
+                },
+                150,
+            ),
+            &groups,
+            &args,
+        )
+        .expect("once peel-fail");
+        assert_eq!(
+            store
+                .entries()
+                .iter()
+                .filter(|e| e.event == Event::Move)
+                .count(),
+            0,
+            "must not sign while peel fails: {report:?}"
+        );
+        let warn = std::fs::read_to_string(dir.path().join("state/identity_warnings.jsonl"))
+            .expect("pending-move must be visible in identity_warnings");
+        assert!(
+            warn.contains("pending-move-deferred:") && warn.contains("refs/tags/v1.2.3"),
+            "deferral note missing: {warn}"
+        );
+        assert!(
+            warn.contains("pending-moves-deferred-count:"),
+            "digest count missing: {warn}"
+        );
+        let pending = std::fs::read_to_string(dir.path().join("state/pending_moves.jsonl"))
+            .expect("pending-move record in state/");
+        assert!(
+            pending.contains("refs/tags/v1.2.3") && pending.contains(NEW),
+            "pending record missing tip: {pending}"
+        );
+    }
+
+    allow_new.store(true, Ordering::SeqCst);
+    {
+        let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+        args.token = "ghp_test".into();
+        args.scheduled_at = t2;
+        args.actual_start = t2;
+        args.sleep = Box::new(|_| {});
+        args.confirm_delay = Duration::seconds(0);
+        args.max_requests = 150;
+        args.max_new_peels = 20;
+        let mut store = Store::open(dir.path(), opts(t2)).unwrap();
+        run_once_with(
+            &mut store,
+            CountingTransport::new(
+                PeelFailThenOk {
+                    allow_new: allow_new.clone(),
+                },
+                150,
+            ),
+            &groups,
+            &args,
+        )
+        .expect("once peel-ok");
+        let mv = store
+            .entries()
+            .iter()
+            .find(|e| e.event == Event::Move)
+            .expect("Move after successful peel");
+        assert_eq!(mv.classification, Some(Classification::ContentChange));
+        assert_eq!(mv.severity, Some(Severity::High));
+        let to = mv.to.as_ref().unwrap();
+        assert_eq!(to.commit_sha.as_str(), NEW);
+        assert_eq!(
+            to.first_observed.as_offset_datetime(),
+            t1,
+            "first_observed must be the first detection, not the peel-success run"
+        );
+        let window = mv.observation_window_seconds.expect("window");
+        assert_eq!(
+            window, 300,
+            "window is first_seen - last old tip observation (5 min)"
+        );
+    }
+}
+
+/// Three exact tags move to one never-seen commit; peel fails the first run,
+/// then all three Moves plus a Correlation land on the following run.
+#[test]
+fn run_once_batch_peel_fail_then_three_moves_and_correlation() {
+    use refledger_log::entry::Event;
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    let dir = TempDir::new().unwrap();
+    let t0 = odt(2026, Month::January, 1, 12, 0, 0, 0);
+    let t1 = t0 + Duration::minutes(5);
+    let t2 = t1 + Duration::minutes(5);
+    const OLD: &str = "1111111111111111111111111111111111111111";
+    const NEW: &str = "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+    const TREE_OLD: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    const TREE_NEW: &str = "ffffffffffffffffffffffffffffffffffffffff";
+
+    {
+        let mut store = Store::open(dir.path(), opts(t0)).unwrap();
+        let refs: Vec<_> = ["v9.0.0", "v9.0.1", "v9.0.2"]
+            .iter()
+            .map(|t| {
+                refledger_poller::observation::ObservedRef::new_lightweight(
+                    format!("refs/tags/{t}"),
+                    OLD,
+                    TREE_OLD,
+                )
+                .unwrap()
+            })
+            .collect();
+        store
+            .append_observation(
+                &Observation::builder()
+                    .repo("acme/widgets")
+                    .unwrap()
+                    .observed_at(t0)
+                    .unwrap()
+                    .method(Method::Rest)
+                    .outcome(Outcome::Ok {
+                        http_status: 200,
+                        etag: Some(ETag::new("W/\"old\"")),
+                        refs,
+                    })
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+    }
+
+    #[derive(Clone)]
+    struct BatchPeelGate {
+        allow: Arc<AtomicBool>,
+    }
+    impl Transport for BatchPeelGate {
+        fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
+            let t = &request.target;
+            if t.contains("/repos/acme/widgets")
+                && !t.contains("/git/")
+                && !t.contains("/contents/")
+                && !t.contains("/compare/")
+            {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"repo\"".into())]),
+                    body: Some(serde_json::json!({"archived": false})),
+                });
+            }
+            if t.contains("matching-refs/tags") {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"moved\"".into())]),
+                    body: Some(serde_json::json!([
+                        {"ref": "refs/tags/v9.0.0", "object": {"type": "commit", "sha": NEW}},
+                        {"ref": "refs/tags/v9.0.1", "object": {"type": "commit", "sha": NEW}},
+                        {"ref": "refs/tags/v9.0.2", "object": {"type": "commit", "sha": NEW}}
+                    ])),
+                });
+            }
+            if t.contains(&format!("/git/commits/{NEW}")) {
+                if !self.allow.load(Ordering::SeqCst) {
+                    return Ok(RestResponse {
+                        status: 503,
+                        headers: BTreeMap::new(),
+                        body: Some(serde_json::json!({"message": "unavailable"})),
+                    });
+                }
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"sha": NEW, "tree": {"sha": TREE_NEW}})),
+                });
+            }
+            if t.contains(&format!("/git/commits/{OLD}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"sha": OLD, "tree": {"sha": TREE_OLD}})),
+                });
+            }
+            if t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 404,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({"message": "Not Found"})),
+                });
+            }
+            if t.contains("/compare/") {
+                return Ok(load_fixture("compare_ahead"));
+            }
+            Err(format!("unexpected {t}"))
+        }
+    }
+
+    let allow = Arc::new(AtomicBool::new(false));
+    let groups = vec![PollGroup {
+        repo: "acme/widgets".into(),
+        paths: vec![None],
+    }];
+
+    {
+        let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+        args.token = "ghp_test".into();
+        args.scheduled_at = t1;
+        args.actual_start = t1;
+        args.sleep = Box::new(|_| {});
+        args.confirm_delay = Duration::seconds(0);
+        args.max_requests = 150;
+        args.max_new_peels = 20;
+        let mut store = Store::open(dir.path(), opts(t1)).unwrap();
+        run_once_with(
+            &mut store,
+            CountingTransport::new(
+                BatchPeelGate {
+                    allow: allow.clone(),
+                },
+                150,
+            ),
+            &groups,
+            &args,
+        )
+        .expect("once defer");
+        assert_eq!(
+            store
+                .entries()
+                .iter()
+                .filter(|e| e.event == Event::Move || e.event == Event::Correlation)
+                .count(),
+            0
+        );
+        let warn = std::fs::read_to_string(dir.path().join("state/identity_warnings.jsonl"))
+            .expect("deferral notes");
+        let n = warn
+            .lines()
+            .filter(|l| l.contains("pending-move-deferred:"))
+            .count();
+        assert!(n >= 3, "expected ≥3 pending-move notes, got {n}: {warn}");
+        assert!(
+            warn.contains("pending-moves-deferred-count:"),
+            "digest count missing: {warn}"
+        );
+        let pending = std::fs::read_to_string(dir.path().join("state/pending_moves.jsonl"))
+            .expect("pending-move records");
+        assert!(
+            pending.contains("v9.0.0") && pending.contains("v9.0.1") && pending.contains("v9.0.2"),
+            "pending records missing: {pending}"
+        );
+    }
+
+    allow.store(true, Ordering::SeqCst);
+    {
+        let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+        args.token = "ghp_test".into();
+        args.scheduled_at = t2;
+        args.actual_start = t2;
+        args.sleep = Box::new(|_| {});
+        args.confirm_delay = Duration::seconds(0);
+        args.max_requests = 150;
+        args.max_new_peels = 20;
+        let mut store = Store::open(dir.path(), opts(t2)).unwrap();
+        run_once_with(
+            &mut store,
+            CountingTransport::new(
+                BatchPeelGate {
+                    allow: allow.clone(),
+                },
+                150,
+            ),
+            &groups,
+            &args,
+        )
+        .expect("once sign");
+        let moves: Vec<_> = store
+            .entries()
+            .iter()
+            .filter(|e| e.event == Event::Move)
+            .collect();
+        assert_eq!(moves.len(), 3, "three Moves: {moves:?}");
+        for mv in &moves {
+            assert_eq!(
+                mv.to.as_ref().unwrap().first_observed.as_offset_datetime(),
+                t1
+            );
+        }
+        assert!(
+            store
+                .entries()
+                .iter()
+                .any(|e| e.event == Event::Correlation),
+            "Correlation required"
+        );
+    }
+}

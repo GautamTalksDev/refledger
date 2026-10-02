@@ -234,6 +234,9 @@ pub fn derive(
                 next_seq += 1;
                 out.push(entry);
             }
+            ClassifiedEvent::PendingMoveDeferred { .. } => {
+                // Visibility is via RepoState + ObservationDigest note, not the chain.
+            }
         }
     }
 
