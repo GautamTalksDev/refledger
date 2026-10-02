@@ -413,3 +413,4 @@
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"0fa6e5d3b2f9a95a0a8b6ff5d196db0887fcb2672c7e5fb7baf83ce2fcd7dca2\"","stored_at":"2026-10-02T03:38:01.085Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"592b6e3d103e8dba48f02d4a1e71bacde576cfc7763f376999f2be78295d0f22\"","stored_at":"2026-10-02T03:42:58.291Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"d40795292a941693d3848310c75f884b875b73755cd0ece1b9ad8996335ed098\"","stored_at":"2026-10-02T03:48:01.733Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"782b7c6d09291e3e633efafb0534c07e135286c0c42120b9e7e7c24e9ebf503f\"","stored_at":"2026-10-02T03:53:01.920Z"}
