@@ -439,3 +439,4 @@
 {"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"aa37620ea96910e81a87a6cf53e4f5ec60556c092548d635bf6118b94ed5e370\"","stored_at":"2026-10-02T05:58:02.821Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"37c388b0c3407854e64727933c6015b1b3de7f2c5beba4eecb3d866d582c2e3f\"","stored_at":"2026-10-02T06:27:58.465Z"}
 {"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"d9e0033a0d93c075f0c6ee4dd6633c69a73422ece109510bb35514de8171be19\"","stored_at":"2026-10-02T06:43:00.901Z"}
+{"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"b9aeda79a59b009beb960ece348f666fdeff14cfab2210b981df6208712193fe\"","stored_at":"2026-10-02T06:48:04.243Z"}
