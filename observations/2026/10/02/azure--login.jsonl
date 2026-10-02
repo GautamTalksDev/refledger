@@ -1,0 +1,1 @@
+{"observation_id":"01M3WYR87FKR742D635JAJ8Q2C","repo":"azure/login","observed_at":"2026-10-02T00:02:57.467Z","poller_version":"0.1.0","method":"rest","outcome":{"type":"not_modified","http_status":304,"etag":"\"504fff1d18fdd6f18be2b969804dfe20c2c58be5ad3d74e9543344908a7a5e9c\""},"archived":false,"scheduled_at":"2026-10-02T00:02:57.000Z","actual_start":"2026-10-02T00:02:57.467Z"}
