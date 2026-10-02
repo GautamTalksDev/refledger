@@ -536,3 +536,6 @@
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"0cde979337ffecfb8225e833f37611592a9f9fb7702a9de0b943a02cceb57e5e\"","stored_at":"2026-10-02T19:55:35.716Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"389128e5ccd33b622148c6115dc9b0da7e69566231ffe766a671fa03c3d1b625\"","stored_at":"2026-10-02T20:18:44.221Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"1d3c8393f5d9badd9c082b1796f15ad330a031af1d272bbb5887e399f028544f\"","stored_at":"2026-10-02T20:18:44.221Z"}
+{"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"92ed9d4b87489f204139626ffffefbf9a0a4dfbb2fe1eee7f22aaf5b9a61a63e\"","stored_at":"2026-10-02T20:48:06.585Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"3a1b1c74d85c3aa61270551ff945ddb593506a6923f04db1de13fb0702f4d972\"","stored_at":"2026-10-02T20:48:06.585Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"d85b3ab13530f11b2f6a11ccf1cefa852ce8bdce92f897334c8ef00bd8ab7732\"","stored_at":"2026-10-02T20:48:06.585Z"}
