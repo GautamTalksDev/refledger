@@ -528,3 +528,5 @@
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"9db48e154b5814f88191d3a8a3866da09fe04331edbf21023032d48b03864954\"","stored_at":"2026-10-02T17:33:04.034Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"82e8288ee4e4e8f756ce479fb4f6a104ada0c16709dba7f21d3359b20ad7ee47\"","stored_at":"2026-10-02T17:38:07.946Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"b82ae4019da0257035e150f6273c9ee3dc783390f845792516cef0fa9af0b044\"","stored_at":"2026-10-02T17:53:14.292Z"}
+{"repo":"azure/webapps-deploy","template":"/repos/{owner}/{repo}","query":"","etag":"\"e8c6a980629cac508fd25a6801c2e5e12193a9f5441bf50ae8282b1265a2def8\"","stored_at":"2026-10-02T18:03:24.462Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"4f579d969fbdc562b8f395d651d8fe61b748e817308a0b5129f39cea93a2e77c\"","stored_at":"2026-10-02T18:03:24.462Z"}
