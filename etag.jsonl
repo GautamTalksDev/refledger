@@ -475,3 +475,4 @@
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"400d9f26483cca55796df07e7ebbf1ab537a312cbce8b8695157c802ebe954e8\"","stored_at":"2026-10-02T13:33:06.496Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"b3756e71b3bad1e8277069e7f03a246067ae3c1de6130e15113db6167b8df0f3\"","stored_at":"2026-10-02T13:38:08.220Z"}
 {"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"cc91f6ff7dc7c3c64eadbd1af372cc12ab5153a011dbbe5768b98bdbdc8e0e55\"","stored_at":"2026-10-02T13:48:03.877Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"fe1d96049bca9ded990c50a84d8f02ebc6a1c3a369fb59e40b192a37d32b953c\"","stored_at":"2026-10-02T13:53:06.963Z"}
