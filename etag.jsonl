@@ -412,3 +412,4 @@
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"4a9a466a947cd0610b7bfc1bccdef6da712e083df0056c4caa30f1719b02249f\"","stored_at":"2026-10-02T03:18:01.643Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"0fa6e5d3b2f9a95a0a8b6ff5d196db0887fcb2672c7e5fb7baf83ce2fcd7dca2\"","stored_at":"2026-10-02T03:38:01.085Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"592b6e3d103e8dba48f02d4a1e71bacde576cfc7763f376999f2be78295d0f22\"","stored_at":"2026-10-02T03:42:58.291Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"d40795292a941693d3848310c75f884b875b73755cd0ece1b9ad8996335ed098\"","stored_at":"2026-10-02T03:48:01.733Z"}
