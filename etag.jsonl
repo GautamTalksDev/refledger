@@ -441,3 +441,5 @@
 {"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"d9e0033a0d93c075f0c6ee4dd6633c69a73422ece109510bb35514de8171be19\"","stored_at":"2026-10-02T06:43:00.901Z"}
 {"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"b9aeda79a59b009beb960ece348f666fdeff14cfab2210b981df6208712193fe\"","stored_at":"2026-10-02T06:48:04.243Z"}
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"b392209bc523e8f2f8c647c56e0ff1d3d1a58e1a452c94dae9e7619f163c1641\"","stored_at":"2026-10-02T07:18:37.419Z"}
+{"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"10805e8a8cc86b0a66c3dc89477c70acc09392684414f02e0515aba14c1f7aa5\"","stored_at":"2026-10-02T07:32:57.918Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"a6a9557d6d33dc469049e13cfdac0f6b4d4ba83d77cb8d7c1f1b29a1f3adffa9\"","stored_at":"2026-10-02T07:32:57.918Z"}
