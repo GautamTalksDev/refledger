@@ -425,3 +425,5 @@
 {"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"97ea1a965ecb720ed96668b5e6e54c279284f1520bd6683c72cadbe5df2c090c\"","stored_at":"2026-10-02T04:28:01.894Z"}
 {"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"601275d3cb55ba15c0b5e9841d73365a9fef1c448eebf021402ccc2f3ff4fba7\"","stored_at":"2026-10-02T04:28:01.894Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"e057e291182b3673c4a580a3df0d670c8494671a752fdc171b2726fb019c27b3\"","stored_at":"2026-10-02T04:28:01.894Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"3d3a9c03f79622a9c161a2d1f9a2e6e211f146c0a5d9a2e1e876319cec41887f\"","stored_at":"2026-10-02T04:33:04.992Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"11a27f2ea2c5cbf13fb824535110c6838045d9bbbc72bbf2f40a61c51e640c92\"","stored_at":"2026-10-02T04:33:04.992Z"}

@@ -272,3 +272,5 @@
 {"repo":"actions/cache","archived":false}
 {"repo":"actions/upload-artifact","archived":false}
 {"repo":"reviewdog/action-actionlint","archived":false}
+{"repo":"actions/attest-build-provenance","archived":false}
+{"repo":"actions/setup-java","archived":false}
