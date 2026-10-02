@@ -455,3 +455,4 @@
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"11e0e6dc138ca018b23e1934ebc744d0069e2c2ac75905e58921feee94e0ee5c\"","stored_at":"2026-10-02T09:08:02.530Z"}
 {"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"0b27b67e80afeba6b90703452e9f31d63dd5c7be2a4bfec91a0b4f2f07f56f5e\"","stored_at":"2026-10-02T09:13:01.944Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"c97aab91e612ac07c8c29443f79bee7aa86f80242c3bca9dbe4fd7372648a3c3\"","stored_at":"2026-10-02T09:18:04.456Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"908c06bb9b5dc7691383d096948b48e778037009aaa07c05e82781460bec8203\"","stored_at":"2026-10-02T09:43:03.895Z"}
