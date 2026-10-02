@@ -414,3 +414,4 @@
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"592b6e3d103e8dba48f02d4a1e71bacde576cfc7763f376999f2be78295d0f22\"","stored_at":"2026-10-02T03:42:58.291Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"d40795292a941693d3848310c75f884b875b73755cd0ece1b9ad8996335ed098\"","stored_at":"2026-10-02T03:48:01.733Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"782b7c6d09291e3e633efafb0534c07e135286c0c42120b9e7e7c24e9ebf503f\"","stored_at":"2026-10-02T03:53:01.920Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"7e4b3daaaaa888ba6f31685b594b7146a8bfbd0acb6bd3b576292d94d8def9d2\"","stored_at":"2026-10-02T04:03:00.545Z"}
