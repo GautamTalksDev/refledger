@@ -460,3 +460,5 @@
 {"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"fa0cc3724d2b30b1cc58b53458f13abe7799c90051628909fca1935ae2334cf6\"","stored_at":"2026-10-02T10:33:00.175Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"6a023c40eea819f7030c3e2f3cde6b7ec2a3e2aba29d045b261d9612a305fc2f\"","stored_at":"2026-10-02T10:43:03.524Z"}
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"e804337f7f2bcf6b110643e7111afbf06696fa0d0672b43c7d2e2b99b885c51c\"","stored_at":"2026-10-02T11:38:00.762Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"e76521f6acc970a39a819628ec4b8fcb15b343e64ecf4157af8543aaeba1c93b\"","stored_at":"2026-10-02T11:53:06.698Z"}
+{"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"140db504357bd6b867a0654d309f583dfb8278dee209db60399e09e6310f8ce6\"","stored_at":"2026-10-02T11:53:06.698Z"}
