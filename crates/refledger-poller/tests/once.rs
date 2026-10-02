@@ -771,6 +771,10 @@ fn run_once_records_move_deletion_and_recreation_on_chain() {
         mock.route("/repos/acme/widgets", "repo_ok")
             .route("/repos/acme/widgets/git/matching-refs/tags", "tags_moved")
             .route(
+                "/repos/acme/widgets/git/commits/1111111111111111111111111111111111111111",
+                "git_commit_1",
+            )
+            .route(
                 "/repos/acme/widgets/git/commits/2222222222222222222222222222222222222222",
                 "git_commit_2",
             )
@@ -1115,6 +1119,16 @@ fn run_once_peels_never_seen_commit_before_classify_exact_move() {
                     body: Some(serde_json::json!({"sha": NEW, "tree": {"sha": TREE_NEW}})),
                 });
             }
+            if t.contains(&format!("/git/commits/{OLD}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({
+                        "sha": OLD,
+                        "tree": {"sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+                    })),
+                });
+            }
             if t.contains("/contents/") {
                 return Ok(RestResponse {
                     status: 404,
@@ -1243,6 +1257,16 @@ fn run_once_batch_of_three_exact_to_never_seen_commit_emits_correlation() {
                     status: 200,
                     headers: BTreeMap::new(),
                     body: Some(serde_json::json!({"sha": NEW, "tree": {"sha": TREE_NEW}})),
+                });
+            }
+            if t.contains(&format!("/git/commits/{OLD}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({
+                        "sha": OLD,
+                        "tree": {"sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+                    })),
                 });
             }
             if t.contains("/contents/") {
@@ -1850,6 +1874,16 @@ fn run_once_recreation_to_never_seen_commit_is_peeled() {
                     status: 200,
                     headers: BTreeMap::new(),
                     body: Some(serde_json::json!({"sha": NEW, "tree": {"sha": TREE_NEW}})),
+                });
+            }
+            if t.contains(&format!("/git/commits/{OLD}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(serde_json::json!({
+                        "sha": OLD,
+                        "tree": {"sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+                    })),
                 });
             }
             if t.contains("/contents/") {
@@ -2749,4 +2783,166 @@ fn run_once_records_move_observed_during_outage_on_recovery() {
         Some(NEW),
         "canary tip must be recorded"
     );
+}
+
+/// Seq 52 shape, from the archived canary v2 rows: the pre-fix binding stored
+/// tree == commit f77ccac, then the tag moved lightweight → annotated on that
+/// same commit. A post-fix poll must sign release_level_only / info.
+#[test]
+fn run_once_canary_v2_lightweight_to_annotated_is_release_level_only() {
+    use refledger_log::entry::{Classification, Event, Severity};
+    use serde_json::json;
+
+    const COMMIT: &str = "f77ccacd8e1ae035fba46dd24456469832ea7c36";
+    const TREE: &str = "2a568525155695c904bafd7cd982565935ca97f9";
+    const TAG: &str = "549990ab396ef38a4feaba990473c3d66fb26be7";
+
+    let dir = TempDir::new().unwrap();
+    let raw = std::fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/canary_v2/pre_fix_lightweight.jsonl"),
+    )
+    .unwrap();
+    let switch = std::fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/canary_v2/lightweight_to_annotated.jsonl"),
+    )
+    .unwrap();
+    let archived: serde_json::Value = serde_json::from_str(raw.trim()).unwrap();
+    let switch_v: serde_json::Value = serde_json::from_str(switch.trim()).unwrap();
+    let v2 = archived["outcome"]["refs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["name"] == "refs/tags/v2")
+        .unwrap();
+    assert_eq!(v2["tree_sha"], v2["commit_sha"]);
+    assert_eq!(v2["commit_sha"], COMMIT);
+    assert_eq!(archived["poller_version"], "0.1.0");
+    let switch_v2 = switch_v["outcome"]["refs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["name"] == "refs/tags/v2")
+        .unwrap();
+    assert_eq!(switch_v2["ref_type"], "annotated");
+    assert_eq!(switch_v2["commit_sha"], COMMIT);
+    assert_eq!(switch_v2["tree_sha"], TREE);
+    assert_eq!(switch_v2["target_sha"], TAG);
+
+    let mut seeded = archived;
+    let only_v2 = seeded["outcome"]["refs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| r["name"] == "refs/tags/v2")
+        .cloned()
+        .collect();
+    seeded["outcome"]["refs"] = serde_json::Value::Array(only_v2);
+    let prior: Observation = serde_json::from_value(seeded).unwrap();
+    assert_eq!(prior.poller_version().as_str(), "0.1.0");
+
+    let t_run = odt(2026, Month::September, 30, 5, 0, 0, 0);
+    {
+        let mut store = Store::open(dir.path(), opts(t_run)).unwrap();
+        store.append_observation(&prior).unwrap();
+    }
+
+    #[derive(Clone, Default)]
+    struct CanaryV2Transport;
+    impl Transport for CanaryV2Transport {
+        fn send(&self, request: &RestRequest) -> Result<RestResponse, String> {
+            let t = &request.target;
+            if t.contains("/repos/GautamTalksDev/canary")
+                && !t.contains("/git/")
+                && !t.contains("/contents/")
+                && !t.contains("/compare/")
+            {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"repo\"".into())]),
+                    body: Some(json!({"archived": false})),
+                });
+            }
+            if t.contains("matching-refs/tags") {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::from([("etag".into(), "W/\"v2\"".into())]),
+                    body: Some(json!([{
+                        "ref": "refs/tags/v2",
+                        "object": {"type": "tag", "sha": TAG}
+                    }])),
+                });
+            }
+            if t.contains(&format!("/git/tags/{TAG}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({"object": {"type": "commit", "sha": COMMIT}})),
+                });
+            }
+            if t.contains(&format!("/git/commits/{COMMIT}")) {
+                return Ok(RestResponse {
+                    status: 200,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({"sha": COMMIT, "tree": {"sha": TREE}})),
+                });
+            }
+            if t.contains("/contents/") {
+                return Ok(RestResponse {
+                    status: 404,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({"message": "Not Found"})),
+                });
+            }
+            if t.contains("/compare/") {
+                return Ok(RestResponse {
+                    status: 404,
+                    headers: BTreeMap::new(),
+                    body: Some(json!({"message": "Not Found"})),
+                });
+            }
+            Err(format!("unexpected {t}"))
+        }
+    }
+
+    let groups = vec![PollGroup {
+        repo: "GautamTalksDev/canary".into(),
+        paths: vec![None],
+    }];
+    let mut store = Store::open(dir.path(), opts(t_run)).unwrap();
+    let mut args = OnceArgs::production(dir.path(), dir.path().join("watched.jsonl"));
+    args.token = "ghp_test".into();
+    args.scheduled_at = t_run;
+    args.actual_start = t_run;
+    args.sleep = Box::new(|_| {});
+    args.confirm_delay = Duration::seconds(0);
+    args.max_requests = 40;
+    args.max_new_peels = 10;
+
+    run_once_with(
+        &mut store,
+        CountingTransport::new(CanaryV2Transport, 40),
+        &groups,
+        &args,
+    )
+    .expect("canary v2 once");
+
+    let moves: Vec<_> = store
+        .entries()
+        .iter()
+        .filter(|e| e.event == Event::Move)
+        .collect();
+    assert_eq!(moves.len(), 1, "one v2 move: {moves:?}");
+    let mv = moves[0];
+    assert_eq!(mv.classification, Some(Classification::ReleaseLevelOnly));
+    assert_eq!(mv.severity, Some(Severity::Info));
+    assert_eq!(mv.r#ref.as_deref(), Some("refs/tags/v2"));
+    let from = mv.from.as_ref().unwrap();
+    let to = mv.to.as_ref().unwrap();
+    assert_eq!(from.commit_sha.as_str(), COMMIT);
+    assert_eq!(to.commit_sha.as_str(), COMMIT);
+    assert_eq!(from.tree_sha.as_str(), TREE);
+    assert_eq!(to.tree_sha.as_str(), TREE);
+    assert_ne!(from.tree_sha.as_str(), from.commit_sha.as_str());
 }

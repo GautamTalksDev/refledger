@@ -464,11 +464,53 @@ impl ObjectCache {
     }
 
     /// Tree SHA previously recorded for `commit_sha`, if any.
+    ///
+    /// A cached tree equal to the commit is impossible and is treated as absent.
     pub fn tree_sha_for_commit(&self, commit_sha: &str) -> Option<&str> {
         match self.entries.get(commit_sha) {
-            Some(CacheEntry::Commit { tree_sha, .. }) => Some(tree_sha.as_str()),
+            Some(CacheEntry::Commit { tree_sha, .. }) if tree_sha != commit_sha => {
+                Some(tree_sha.as_str())
+            }
+            Some(CacheEntry::Commit { .. }) => {
+                eprintln!(
+                    "object cache tree_sha equals commit_sha {commit_sha}; treating as unknown"
+                );
+                None
+            }
             _ => None,
         }
+    }
+
+    /// Commit → tree index. Tag-object keys contribute their peeled commit.
+    /// Trees equal to the commit are omitted.
+    pub fn commit_tree_index(&self) -> BTreeMap<String, String> {
+        let mut out = BTreeMap::new();
+        for entry in self.entries.values() {
+            let CacheEntry::Commit {
+                commit_sha,
+                tree_sha,
+                ..
+            } = entry
+            else {
+                continue;
+            };
+            if tree_sha == commit_sha {
+                eprintln!(
+                    "object cache tree_sha equals commit_sha {commit_sha}; treating as unknown"
+                );
+                continue;
+            }
+            if let Some(prior) = out.get(commit_sha) {
+                if prior != tree_sha {
+                    eprintln!(
+                        "object cache commit {commit_sha} has conflicting trees {prior} and {tree_sha}; keeping {prior}"
+                    );
+                }
+                continue;
+            }
+            out.insert(commit_sha.clone(), tree_sha.clone());
+        }
+        out
     }
 
     /// Intentionally absent: content-addressed peels do not go stale.
@@ -904,6 +946,7 @@ pub(crate) fn priority_peel_plan(
     state: &crate::classify::RepoState,
     refs: &[RawRef],
     prior_targets: &BTreeMap<String, String>,
+    objects: &ObjectCache,
 ) -> PriorityPeelPlan {
     let mut plan = PriorityPeelPlan::default();
     for raw in refs {
@@ -920,12 +963,28 @@ pub(crate) fn priority_peel_plan(
                     plan.prior_shas.insert(prev_target.clone());
                 }
             }
+            // Invented tree (tree == commit) must be peeled before classify
+            // even when a binding exists. A merely uncached real tree is left
+            // for the post-sweep audit so a failed prior peel cannot drop the
+            // tip peel.
+            if let Some(prev) = state.binding(&raw.name) {
+                if prev.tree_sha() == prev.commit_sha()
+                    && objects.tree_sha_for_commit(prev.commit_sha()).is_none()
+                {
+                    plan.prior_shas.insert(prev.commit_sha().to_owned());
+                }
+            }
             continue;
         }
         // Fall back: peeled binding with a moved tip (warm test fixtures).
         if let Some(prev) = state.binding(&raw.name) {
             if prev.target_sha() != target {
                 plan.names.insert(raw.name.clone());
+                if prev.tree_sha() == prev.commit_sha()
+                    && objects.tree_sha_for_commit(prev.commit_sha()).is_none()
+                {
+                    plan.prior_shas.insert(prev.commit_sha().to_owned());
+                }
             }
         }
     }
@@ -953,6 +1012,12 @@ pub(crate) fn hydrate_prior_bindings(
         let CacheEntry::Commit { tree_sha, .. } = cached else {
             continue;
         };
+        if tree_sha == sha {
+            eprintln!(
+                "tree_sha equals commit_sha {sha} in object cache while hydrating {name}; treating as unknown"
+            );
+            continue;
+        }
         state.insert_binding_if_absent(
             name.clone(),
             crate::classify::BindingSnapshot {
@@ -1033,6 +1098,11 @@ fn observed_from_peel(
             commit_sha,
             tree_sha,
         } => {
+            if tree_sha == commit_sha {
+                eprintln!("tree_sha equals commit_sha {commit_sha} from peel; treating as unknown");
+                return ObservedRef::new_unpeeled(&raw.name, peel.ref_type, &peel.target_sha)
+                    .map_err(ResolveFail::obs);
+            }
             if let Some(cached_tree) = objects.tree_sha_for_commit(commit_sha) {
                 if cached_tree != tree_sha.as_str() {
                     return Err(ResolveFail::protocol(format!(
@@ -1643,6 +1713,12 @@ fn fetch_commit_tree<T: Transport>(
         .and_then(|s| s.as_str())
         .ok_or_else(|| ResolveFail::protocol("git/commits missing tree.sha"))?
         .to_owned();
+    if tree_sha == commit_sha {
+        eprintln!("tree_sha equals commit_sha {commit_sha} from git/commits; treating as unknown");
+        return Err(ResolveFail::protocol(format!(
+            "commit {commit_sha} tree_sha equals commit_sha"
+        )));
+    }
     objects
         .put(
             commit_sha,
@@ -1654,6 +1730,32 @@ fn fetch_commit_tree<T: Transport>(
         )
         .map_err(ResolveFail::from)?;
     Ok(tree_sha)
+}
+
+/// Peel one commit into the object cache, consuming the peel budget on a miss.
+///
+/// Returns whether the cache now holds a trusted tree. A budget miss or a
+/// transport error is logged and returns false; it does not abort the run.
+pub(crate) fn cache_commit_tree<T: Transport>(
+    owner: &str,
+    name: &str,
+    commit_sha: &str,
+    objects: &mut ObjectCache,
+    client: &Client<T>,
+) -> bool {
+    if objects
+        .tree_sha_for_commit(commit_sha)
+        .is_some_and(|tree| tree != commit_sha)
+    {
+        return true;
+    }
+    match fetch_commit_tree(owner, name, commit_sha, objects, client) {
+        Ok(_) => true,
+        Err(e) => {
+            eprintln!("peel commit {commit_sha} in {owner}/{name} failed: {e:?}");
+            false
+        }
+    }
 }
 
 fn resolve_action_yml<T: Transport>(

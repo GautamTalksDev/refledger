@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **2026-10-02 - invented tree signed as content change (seq 52).** Canary `v2`
+  lightweight→annotated on commit `f77ccac…` was signed `content_change` / low.
+  Rebuild folded pre-fix observation `01M3R8GXRYD65WM7MAW5NPZ1KR`, which stored
+  `tree_sha` equal to that commit, and the same-target arm never replaced it.
+  From poller 0.1.1 a tree is trusted only from the object cache; `tree == commit`
+  is unknown; same commit is only `release_level_only`. Older observations still
+  replay the historic chain. Corrections for seq 40, 43, and 52. M1 window
+  restarts at 2026-10-03T00:00:00Z (seal 2026-10-10T00:00:00Z).
+
 - **2026-10-01 - freeze re-baselined to M1 window; cold recreation/backlog tests.**
   Freeze now starts at `2026-10-02T00:00:00Z` with the M1 window (lifts after
   the `2026-10-09T00:00:00Z` seal). Prior canary-driven commits move to a

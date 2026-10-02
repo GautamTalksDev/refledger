@@ -75,7 +75,7 @@ Seven consecutive days on GitHub Actions (`docs/DEPLOYMENT.md`) at a **5 minute*
 - every canary action detected and correctly classified, p95 latency published in `docs/DETECTION.md`
 - every coverage gap present as an observation, none inferred
 
-**Window restart (2026-10-01):** the original M1 start at 2026-10-01T00:00:00Z was abandoned after an emergency poller fix (enrich isolation) changed the instrument inside the window; measurement restarts at the first UTC midnight after that fix lands — see `FREEZE.md`.
+**Window restart (2026-10-02):** the 2026-10-01 and 2026-10-02 M1 starts were abandoned after emergency poller fixes changed the instrument inside the window. Measurement restarts at the first UTC midnight after the latest exception — see `FREEZE.md`.
 
 Scheduled runs can be delayed or dropped under GitHub load. Every miss is recorded as a gap (`SchedulerLag` with scheduled vs actual start). A restart or missed cron does not reset the seven-day count if the chain and digests show no unrecorded gap. A day with an unrecorded gap does.
 

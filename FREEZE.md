@@ -1,6 +1,6 @@
 # Main branch freeze (seven-day run)
 
-**Code on `main` is frozen** from **2026-10-02T00:00:00Z** through the seal at **2026-10-09T00:00:00Z** — the same closed interval as the M1 measurement window.
+**Code on `main` is frozen** from **2026-10-03T00:00:00Z** through the seal at **2026-10-10T00:00:00Z** — the same closed interval as the M1 measurement window. The 2026-10-02 start was voided by the exception below.
 
 During the freeze:
 
@@ -29,22 +29,20 @@ Fixes found by the canary and live polls before the M1 window. History only — 
 
 ## Exceptions
 
-*None yet. From 2026-10-02T00:00:00Z, a row here means a genuine mid-window emergency.*
-
 | Date (UTC) | Commit | Why |
 | --- | --- | --- |
-| — | — | — |
+| 2026-10-02 | (this change) | A classifier bug can sign a false High "content change" about a real maintainer's tag. |
 
 ## Run window
 
-- **Freeze start (UTC):** 2026-10-02T00:00:00Z
-- **Freeze lifts (UTC):** 2026-10-09T00:00:00Z (after the 2026-10-08 day seal)
+- **Freeze start (UTC):** 2026-10-03T00:00:00Z
+- **Freeze lifts (UTC):** 2026-10-10T00:00:00Z (after the 2026-10-09 day seal)
 
 ## M1 measurement window
 
 The seven-day M1 exit is measured on sealed days in this closed interval. Freeze and M1 start together so the instrument under measurement is the one that enters the window.
 
-**Prior attempt voided:** a 2026-10-01T00:00:00Z start was abandoned after `b5e1b05` changed the poller inside that day.
+**Prior attempts voided:** a 2026-10-01T00:00:00Z start was abandoned after `b5e1b05` changed the poller inside that day. The 2026-10-02T00:00:00Z start was abandoned after the 2026-10-02 tree-invariant exception. Measurement restarts at the first UTC midnight after that exception lands.
 
-- **M1 start (UTC):** 2026-10-02T00:00:00Z
-- **M1 end (UTC):** seal at 2026-10-09T00:00:00Z (day 2026-10-08's ObservationDigest, stamped at the start of 2026-10-09)
+- **M1 start (UTC):** 2026-10-03T00:00:00Z
+- **M1 end (UTC):** seal at 2026-10-10T00:00:00Z (day 2026-10-09's ObservationDigest, stamped at the start of 2026-10-10)

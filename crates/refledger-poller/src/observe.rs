@@ -174,6 +174,13 @@ impl<'de> Deserialize<'de> for Timestamp {
 #[serde(transparent)]
 pub struct Version(String);
 
+/// First poller version whose observations trust commit trees only from the
+/// object cache and refuse a same-commit `content_change`.
+///
+/// Older observations keep the pre-fix classifier so a replay of the signed
+/// chain stays byte-for-byte identical.
+pub const TREE_TRUST_POLLER_VERSION: &str = "0.1.1";
+
 impl Version {
     pub fn crate_version() -> Self {
         Self(env!("CARGO_PKG_VERSION").to_owned())
@@ -182,6 +189,35 @@ impl Version {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+
+    /// Observations stamped at or after [`TREE_TRUST_POLLER_VERSION`].
+    pub fn trusts_cached_trees(&self) -> bool {
+        version_at_least(&self.0, TREE_TRUST_POLLER_VERSION)
+    }
+}
+
+/// Numeric dotted-version compare (`0.1.10` > `0.1.1`). Non-numeric suffixes
+/// are ignored so a dirty local version still orders by its numeric prefix.
+fn version_at_least(version: &str, minimum: &str) -> bool {
+    fn parts(s: &str) -> Vec<u64> {
+        s.split('.')
+            .map(|p| {
+                let digits: String = p.chars().take_while(|c| c.is_ascii_digit()).collect();
+                digits.parse().unwrap_or(0)
+            })
+            .collect()
+    }
+    let have = parts(version);
+    let need = parts(minimum);
+    let n = have.len().max(need.len());
+    for i in 0..n {
+        let a = have.get(i).copied().unwrap_or(0);
+        let b = need.get(i).copied().unwrap_or(0);
+        if a != b {
+            return a > b;
+        }
+    }
+    true
 }
 
 /// HTTP API family used for the poll.
@@ -583,6 +619,16 @@ impl Observation {
     /// Replace the auto-assigned id (recovery re-derive must cite the archive row).
     pub fn with_observation_id(mut self, id: Ulid) -> Self {
         self.observation_id = id;
+        self
+    }
+
+    /// Keep the archived `poller_version` when a row is rebuilt for replay.
+    ///
+    /// The builder always stamps [`Version::crate_version`]. Recovery must not
+    /// upgrade an old observation onto the tree-trust rules, or the historic
+    /// chain would not replay.
+    pub(crate) fn with_archived_poller_version(mut self, version: Version) -> Self {
+        self.poller_version = version;
         self
     }
 
@@ -1084,6 +1130,15 @@ pub fn reconstruct_bindings(
                     else {
                         continue;
                     };
+                    // tree == commit is not a git tree (pre-fix listing). Do not
+                    // carry it forward as a reconstructed binding tree.
+                    if tree_sha.as_str() == commit_sha.as_str() {
+                        eprintln!(
+                            "tree_sha equals commit_sha {} while reconstructing bindings; treating as unknown",
+                            commit_sha.as_str()
+                        );
+                        continue;
+                    }
                     if !seen.insert(r.name.clone()) {
                         continue;
                     }

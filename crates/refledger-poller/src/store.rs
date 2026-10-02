@@ -23,7 +23,7 @@ use time::{Date, Duration, OffsetDateTime, PrimitiveDateTime, Time};
 
 use refledger_log::canonical_json;
 use refledger_log::chain::{Chain, UnhashedEntry};
-use refledger_log::entry::{Entry, Event};
+use refledger_log::entry::{Classification, Entry, Event};
 use refledger_log::{
     key_id, normalize_to_utc_millis, public_key_pkix_pem, sign_ed25519ph, sign_head, Head,
     SigningKey,
@@ -1160,6 +1160,63 @@ impl<V: Volume> Store<V> {
         }
         self.append_entry(UnhashedEntry::correction(recorded_at, SEQ, REASON))?;
         Ok(())
+    }
+
+    /// Append a Correction for every signed entry that violates the tree
+    /// invariants. Idempotent per seq: a second Correction is not written when
+    /// one whose reason contains `tree-invariant` already corrects that seq.
+    ///
+    /// Deletions that carry `content_change` only because LOG-FORMAT v1 has no
+    /// deletion-specific classification are not violations by themselves
+    /// (seq 55). They are flagged when a tree equals its commit or disagrees
+    /// with the object cache (seq 40).
+    pub fn ensure_tree_invariant_corrections(
+        &mut self,
+        recorded_at: OffsetDateTime,
+        cache_trees: &BTreeMap<String, String>,
+    ) -> Result<Vec<u64>, StoreError> {
+        let planned: Vec<(u64, String)> = self
+            .chain
+            .entries()
+            .iter()
+            .filter_map(|entry| tree_invariant_reason(entry, cache_trees).map(|r| (entry.seq, r)))
+            .collect();
+        let mut seqs = Vec::with_capacity(planned.len());
+        for (seq, reason) in &planned {
+            seqs.push(*seq);
+            let already = self.chain.entries().iter().any(|entry| {
+                entry.event == Event::Correction
+                    && entry.corrects_seq == Some(*seq)
+                    && entry
+                        .reason
+                        .as_deref()
+                        .is_some_and(|r| r.contains("tree-invariant"))
+            });
+            if already {
+                continue;
+            }
+            self.append_entry(UnhashedEntry::correction(recorded_at, *seq, reason.clone()))?;
+        }
+        Ok(seqs)
+    }
+
+    /// Queue one digest note naming every seq from [`Self::ensure_tree_invariant_corrections`].
+    pub fn ensure_tree_invariant_digest_note(&mut self, seqs: &[u64]) -> Result<(), StoreError> {
+        if seqs.is_empty() {
+            return Ok(());
+        }
+        let mut seqs = seqs.to_vec();
+        seqs.sort_unstable();
+        seqs.dedup();
+        let list = seqs
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+        let note = format!(
+            "tree-invariant-2026-10-02: seq {list} violate tree invariants (a Move whose commits match was not release_level_only, a tree_sha equalled its commit_sha, or a tree_sha disagreed with the object cache); Corrections were appended; entries were not edited"
+        );
+        self.ensure_digest_note_once("tree-invariant-2026-10-02", &note)
     }
 
     /// 32 listing observations recorded incorrect tree_sha values (commit SHA
@@ -2436,4 +2493,58 @@ fn head_record_from_existing(
         "rekor": Value::Object(rekor),
     });
     canonical_json(&value).map_err(|e| StoreError::Message(e.to_string()))
+}
+
+fn tree_invariant_reason(entry: &Entry, cache_trees: &BTreeMap<String, String>) -> Option<String> {
+    let mut parts = Vec::new();
+    if entry.event == Event::Move {
+        if let (Some(from), Some(to)) = (&entry.from, &entry.to) {
+            if from.commit_sha.as_str() == to.commit_sha.as_str()
+                && entry.classification != Some(Classification::ReleaseLevelOnly)
+            {
+                let cls = match entry.classification {
+                    Some(Classification::ContentChange) => "content_change",
+                    Some(Classification::CommitMetadataOnly) => "commit_metadata_only",
+                    Some(Classification::ReleaseLevelOnly) => "release_level_only",
+                    None => "none",
+                };
+                parts.push(format!(
+                    "same commit {} classified {cls}; only release_level_only is possible",
+                    from.commit_sha.as_str()
+                ));
+            }
+        }
+    }
+    for (side, binding) in [("from", &entry.from), ("to", &entry.to)] {
+        let Some(binding) = binding else {
+            continue;
+        };
+        let commit = binding.commit_sha.as_str();
+        let tree = binding.tree_sha.as_str();
+        if tree == commit {
+            parts.push(format!("{side} tree_sha equals commit_sha {commit}"));
+        } else if let Some(cached) = cache_trees.get(commit) {
+            if cached != tree {
+                parts.push(format!(
+                    "{side} tree_sha {tree} disagrees with object cache {cached} for commit {commit}"
+                ));
+            }
+        }
+    }
+    if parts.is_empty() {
+        return None;
+    }
+    let repo = entry.repo.as_deref().unwrap_or("?");
+    let name = entry.r#ref.as_deref().unwrap_or("?");
+    let event = match entry.event {
+        Event::Move => "move",
+        Event::Deletion => "deletion",
+        Event::Recreation => "recreation",
+        _ => "entry",
+    };
+    Some(format!(
+        "tree-invariant: seq {} {event} {repo} {name}: {}",
+        entry.seq,
+        parts.join("; ")
+    ))
 }

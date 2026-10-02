@@ -1343,7 +1343,7 @@ fn lw(name: &str, commit: &str, tree: &str) -> ObservedRef {
 }
 
 fn ok_obs(at: OffsetDateTime, refs: Vec<ObservedRef>) -> Observation {
-    Observation::builder()
+    let obs = Observation::builder()
         .repo("acme/widgets")
         .unwrap()
         .observed_at(at)
@@ -1355,7 +1355,10 @@ fn ok_obs(at: OffsetDateTime, refs: Vec<ObservedRef>) -> Observation {
             refs,
         })
         .build()
-        .unwrap()
+        .unwrap();
+    let mut value = serde_json::to_value(&obs).unwrap();
+    value["poller_version"] = "0.1.0".into();
+    serde_json::from_value(value).unwrap()
 }
 
 fn enrichment_from_cache(state: &RepoState, obs: &Observation, cache: &CompareCache) -> Enrichment {
@@ -1543,6 +1546,74 @@ fn publish_refuses_when_main_heads_would_rewrite_a_line() {
     );
     // Main clone must still hold the original good bytes.
     assert_eq!(fs::read(&heads_path).unwrap(), good);
+}
+
+#[test]
+fn tree_invariant_correction_appended_once_and_noted() {
+    use std::collections::BTreeMap;
+
+    let dir = TempDir::new().unwrap();
+    let t0 = odt(2026, Month::October, 1, 12, 0, 0, 0);
+    let t1 = odt(2026, Month::October, 1, 16, 0, 0, 0);
+    let mut store = Store::open(dir.path(), opts(static_rekor())).unwrap();
+    let commit = "f77ccacd8e1ae035fba46dd24456469832ea7c36";
+    let real_tree = "2a568525155695c904bafd7cd982565935ca97f9";
+    let tag = "549990ab396ef38a4feaba990473c3d66fb26be7";
+    let prior = ok_obs(t0, vec![lw("refs/tags/v2", commit, commit)]);
+    let next = ok_obs(t1, vec![ann_ref("refs/tags/v2", tag, commit, real_tree)]);
+    let state = RepoState::from_ok_observation(&prior).unwrap();
+    let (state, events) = classify(&state, &next, &Enrichment::empty()).unwrap();
+    let _ = state;
+    assert!(
+        events.iter().any(|e| matches!(
+            e,
+            refledger_poller::classify::ClassifiedEvent::Move {
+                kind: refledger_poller::classify::MoveKind::ContentChange,
+                ..
+            }
+        )),
+        "0.1.0 replay of the invented tree is content_change"
+    );
+    let tip = ChainTip::from_entries(store.entries(), "acme/widgets", t1, BTreeMap::new());
+    for entry in derive(&tip, &events).unwrap() {
+        store.append_entry(entry).unwrap();
+    }
+    let mut cache = BTreeMap::new();
+    cache.insert(commit.to_owned(), real_tree.to_owned());
+    let seqs = store.ensure_tree_invariant_corrections(t1, &cache).unwrap();
+    assert_eq!(seqs, vec![0]);
+    store.ensure_tree_invariant_digest_note(&seqs).unwrap();
+    let corrections: Vec<_> = store
+        .entries()
+        .iter()
+        .filter(|e| e.event == Event::Correction)
+        .collect();
+    assert_eq!(corrections.len(), 1);
+    assert_eq!(corrections[0].corrects_seq, Some(0));
+    assert!(corrections[0]
+        .reason
+        .as_deref()
+        .unwrap()
+        .contains("tree-invariant"));
+    let again = store.ensure_tree_invariant_corrections(t1, &cache).unwrap();
+    assert_eq!(again, vec![0]);
+    assert_eq!(
+        store
+            .entries()
+            .iter()
+            .filter(|e| e.event == Event::Correction)
+            .count(),
+        1,
+        "correction is append-once"
+    );
+    store.ensure_tree_invariant_digest_note(&again).unwrap();
+    let notes = std::fs::read_to_string(dir.path().join("state/identity_warnings.jsonl")).unwrap();
+    assert!(notes.contains("tree-invariant-2026-10-02"));
+    assert!(notes.contains("seq 0"));
+}
+
+fn ann_ref(name: &str, tag: &str, commit: &str, tree: &str) -> ObservedRef {
+    ObservedRef::new_annotated(name, tag, commit, tree).unwrap()
 }
 
 fn verify_bin() -> PathBuf {

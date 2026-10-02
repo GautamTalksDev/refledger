@@ -60,7 +60,11 @@ fn assert_pure(
 }
 
 fn ok_obs(at: OffsetDateTime, refs: Vec<ObservedRef>) -> Observation {
-    Observation::builder()
+    obs_version(at, refs, "0.1.0")
+}
+
+fn obs_version(at: OffsetDateTime, refs: Vec<ObservedRef>, version: &str) -> Observation {
+    let obs = Observation::builder()
         .repo("acme/widgets")
         .unwrap()
         .observed_at(at)
@@ -72,7 +76,10 @@ fn ok_obs(at: OffsetDateTime, refs: Vec<ObservedRef>) -> Observation {
             refs,
         })
         .build()
-        .unwrap()
+        .unwrap();
+    let mut value = serde_json::to_value(&obs).unwrap();
+    value["poller_version"] = version.into();
+    serde_json::from_value(value).unwrap()
 }
 
 fn lw(name: &str, commit: &str, tree: &str) -> ObservedRef {
@@ -898,5 +905,164 @@ proptest! {
                 prop_assert_ne!(severity, Severity::High);
             }
         }
+    }
+}
+
+const COMMIT_F77: &str = "f77ccacd8e1ae035fba46dd24456469832ea7c36";
+const TREE_F77: &str = "2a568525155695c904bafd7cd982565935ca97f9";
+const TAG_F77: &str = "549990ab396ef38a4feaba990473c3d66fb26be7";
+
+fn trusted(pairs: &[(&str, &str)]) -> Enrichment {
+    let mut e = Enrichment::empty();
+    for (commit, tree) in pairs {
+        e = e.with_trusted_tree(commit, tree);
+    }
+    e
+}
+
+#[test]
+fn same_commit_with_invented_tree_is_release_level_only_on_new_poller() {
+    let t0 = odt(2026, Month::September, 30, 4, 17, 49, 805);
+    let t1 = odt(2026, Month::October, 1, 16, 18, 8, 404);
+    // Historic: observation tree == commit is trusted, so the trees differ.
+    let prior = obs_version(
+        t0,
+        vec![lw("refs/tags/v2", COMMIT_F77, COMMIT_F77)],
+        "0.1.0",
+    );
+    let state = RepoState::from_ok_observation(&prior).unwrap();
+    let next = obs_version(
+        t1,
+        vec![ann("refs/tags/v2", TAG_F77, COMMIT_F77, TREE_F77)],
+        "0.1.0",
+    );
+    let (_s, historic) = classify(&state, &next, &Enrichment::empty()).unwrap();
+    match &historic[0] {
+        ClassifiedEvent::Move {
+            kind: MoveKind::ContentChange,
+            severity: Severity::Low,
+            from,
+            ..
+        } => {
+            assert_eq!(from.tree_sha, COMMIT_F77);
+            assert_eq!(from.commit_sha, COMMIT_F77);
+        }
+        other => panic!("historic replay must keep content_change, got {other:?}"),
+    }
+    let again = classify(&state, &next, &Enrichment::empty()).unwrap().1;
+    assert_eq!(historic, again, "historic replay is deterministic");
+
+    // New poller: same payloads, tree only from the cache.
+    let prior = obs_version(
+        t0,
+        vec![lw("refs/tags/v2", COMMIT_F77, COMMIT_F77)],
+        "0.1.1",
+    );
+    let enrich = trusted(&[(COMMIT_F77, TREE_F77)]);
+    let state = {
+        let (s, events) = classify(&RepoState::default(), &prior, &enrich).unwrap();
+        assert!(events.is_empty(), "first sight is not a move");
+        assert_eq!(
+            s.binding("refs/tags/v2").unwrap().tree_sha(),
+            TREE_F77,
+            "invented observation tree must not become the binding"
+        );
+        s
+    };
+    let next = obs_version(
+        t1,
+        vec![ann("refs/tags/v2", TAG_F77, COMMIT_F77, COMMIT_F77)],
+        "0.1.1",
+    );
+    let (_s, events) = classify(&state, &next, &enrich).unwrap();
+    match &events[0] {
+        ClassifiedEvent::Move {
+            kind:
+                MoveKind::ReleaseLevelOnly {
+                    sub: ReleaseLevelSub::LightweightToAnnotated,
+                },
+            severity: Severity::Info,
+            from,
+            to,
+            ..
+        } => {
+            assert_eq!(from.commit_sha, to.commit_sha);
+            assert_eq!(from.tree_sha, TREE_F77);
+            assert_eq!(to.tree_sha, TREE_F77);
+            assert_ne!(from.tree_sha, from.commit_sha);
+        }
+        other => panic!("expected release_level_only/info, got {other:?}"),
+    }
+}
+
+#[test]
+fn tree_equal_to_commit_is_unknown_without_a_cache_entry() {
+    let t0 = odt(2026, Month::October, 1, 0, 0, 0, 0);
+    let obs = obs_version(
+        t0,
+        vec![lw("refs/tags/v2", COMMIT_F77, COMMIT_F77)],
+        "0.1.1",
+    );
+    let state = RepoState::from_ok_observation(&obs).unwrap();
+    assert!(state.binding("refs/tags/v2").is_none());
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(64))]
+
+    #[test]
+    fn prop_same_commit_is_only_release_level_only(
+        from_annotated in proptest::bool::ANY,
+        to_annotated in proptest::bool::ANY,
+    ) {
+        let t0 = odt(2026, Month::January, 1, 0, 0, 0, 0);
+        let t1 = odt(2026, Month::January, 2, 0, 0, 0, 0);
+        let commit = commit_a();
+        let tree = tree_a();
+        let tag_from = tag_obj();
+        let tag_to = sha('e');
+        let from_ref = if from_annotated {
+            ann("refs/tags/v2", &tag_from, &commit, &tree)
+        } else {
+            lw("refs/tags/v2", &commit, &commit)
+        };
+        let to_ref = if to_annotated {
+            ann("refs/tags/v2", &tag_to, &commit, &sha('9'))
+        } else {
+            lw("refs/tags/v2", &commit, &sha('9'))
+        };
+        // Different targets so a move is considered; observation trees are lies.
+        prop_assume!(from_ref.target_sha() != to_ref.target_sha());
+        let enrich = trusted(&[(&commit, &tree)]);
+        let prior = obs_version(t0, vec![from_ref], "0.1.1");
+        let (state, _) = classify(&RepoState::default(), &prior, &enrich).unwrap();
+        let obs = obs_version(t1, vec![to_ref], "0.1.1");
+        let (_s, events) = classify(&state, &obs, &enrich).unwrap();
+        for e in events {
+            if let ClassifiedEvent::Move { kind, from, to, .. } = e {
+                let release_level = matches!(kind, MoveKind::ReleaseLevelOnly { .. });
+                prop_assert!(release_level);
+                prop_assert_eq!(&from.commit_sha, &to.commit_sha);
+                prop_assert_eq!(&from.tree_sha, &tree);
+                prop_assert_eq!(&to.tree_sha, &tree);
+                prop_assert_ne!(&from.tree_sha, &from.commit_sha);
+            }
+        }
+    }
+
+    #[test]
+    fn prop_observation_tree_is_ignored(
+        digit in prop::sample::select(vec!['3', '4', '5', '6', '7', '8', '9']),
+    ) {
+        let t0 = odt(2026, Month::January, 1, 0, 0, 0, 0);
+        let commit = commit_a();
+        let real = tree_a();
+        let lied = sha(digit);
+        prop_assume!(lied != real && lied != commit);
+        let enrich = trusted(&[(&commit, &real)]);
+        let obs = obs_version(t0, vec![lw("refs/tags/v1", &commit, &lied)], "0.1.1");
+        let (state, events) = classify(&RepoState::default(), &obs, &enrich).unwrap();
+        prop_assert!(events.is_empty());
+        prop_assert_eq!(state.binding("refs/tags/v1").unwrap().tree_sha(), real.as_str());
     }
 }

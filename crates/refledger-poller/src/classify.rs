@@ -19,7 +19,7 @@
 //! It never touches the network, the clock, or a random source. Ancestry and
 //! diffs arrive precomputed in [`Enrichment`] (see [`crate::enrich`]).
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -255,9 +255,14 @@ pub enum ClassifiedEvent {
 }
 
 /// Precomputed per-move facts. Produced by [`crate::enrich`]; never fetched here.
+///
+/// `trusted_trees` is the object-cache index (commit → tree), immutable and
+/// keyed by commit. Classification at [`crate::observation::TREE_TRUST_POLLER_VERSION`]
+/// and later reads trees only from this map, never from an observation field.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Enrichment {
     ancestry: BTreeMap<(String, String), Ancestry>,
+    trusted_trees: BTreeMap<String, String>,
 }
 
 impl Enrichment {
@@ -271,11 +276,47 @@ impl Enrichment {
         self
     }
 
+    /// Record a tree the object cache already verified for `commit`.
+    ///
+    /// A tree equal to its commit is not a git object; it is refused.
+    pub fn with_trusted_tree(mut self, commit: &str, tree: &str) -> Self {
+        if trusted_tree_value(commit, tree) {
+            self.trusted_trees
+                .insert(commit.to_owned(), tree.to_owned());
+        }
+        self
+    }
+
+    /// Merge an object-cache index. Entries whose tree equals the commit are dropped.
+    pub fn with_cached_trees(mut self, trees: &BTreeMap<String, String>) -> Self {
+        for (commit, tree) in trees {
+            if trusted_tree_value(commit, tree) {
+                self.trusted_trees.insert(commit.clone(), tree.clone());
+            }
+        }
+        self
+    }
+
+    pub fn trusted_tree(&self, commit: &str) -> Option<&str> {
+        self.trusted_trees.get(commit).map(|s| s.as_str())
+    }
+
+    pub fn trusted_trees(&self) -> &BTreeMap<String, String> {
+        &self.trusted_trees
+    }
+
     pub fn ancestry(&self, old_commit: &str, new_commit: &str) -> Option<Ancestry> {
         self.ancestry
             .get(&(old_commit.to_owned(), new_commit.to_owned()))
             .copied()
     }
+}
+
+fn trusted_tree_value(commit: &str, tree: &str) -> bool {
+    !tree.is_empty()
+        && tree != commit
+        && !crate::enrich::is_invented_placeholder(tree)
+        && !crate::enrich::is_invented_placeholder(commit)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -340,8 +381,9 @@ impl RepoState {
         };
         let at = obs.observed_at().as_offset_datetime();
         if let Outcome::Ok { refs, .. } = obs.outcome() {
+            let trust = obs.poller_version().trusts_cached_trees();
             for r in refs {
-                if let Some(b) = binding_from_ref(r, at, at, 1)? {
+                if let Some(b) = binding_from_ref(r, at, at, 1, trust, &BTreeMap::new())? {
                     state
                         .bindings
                         .insert(r.name().to_owned(), LiveBinding { snap: b });
@@ -349,6 +391,54 @@ impl RepoState {
             }
         }
         Ok(state)
+    }
+
+    /// `(binding count, unverified count)` against an object-cache tree index.
+    ///
+    /// Unverified means the stored tree equals its commit, is an invented
+    /// placeholder, is missing from the cache, or disagrees with the cache.
+    pub fn unverified_tree_counts(&self, trees: &BTreeMap<String, String>) -> (u64, u64) {
+        let mut n = 0u64;
+        let mut bad = 0u64;
+        for live in self.bindings.values() {
+            n += 1;
+            if binding_tree_unverified(&live.snap, trees) {
+                bad += 1;
+            }
+        }
+        (n, bad)
+    }
+
+    /// Commits whose tree is not yet a trusted cache entry.
+    pub fn commits_missing_trusted_tree(
+        &self,
+        trees: &BTreeMap<String, String>,
+    ) -> BTreeSet<String> {
+        let mut out = BTreeSet::new();
+        for live in self.bindings.values() {
+            let commit = &live.snap.commit_sha;
+            match trees.get(commit) {
+                Some(tree) if trusted_tree_value(commit, tree) => {}
+                _ => {
+                    out.insert(commit.clone());
+                }
+            }
+        }
+        out
+    }
+
+    /// Replace binding trees with the object-cache value. Returns
+    /// `(unverified before, unverified after)`.
+    pub fn reverify_cached_trees(&mut self, trees: &BTreeMap<String, String>) -> (u64, u64) {
+        let (_, before) = self.unverified_tree_counts(trees);
+        for live in self.bindings.values_mut() {
+            heal_tree(&mut live.snap, trees);
+        }
+        for tomb in self.tombstones.values_mut() {
+            heal_tree(&mut tomb.last, trees);
+        }
+        let (_, after) = self.unverified_tree_counts(trees);
+        (before, after)
     }
 
     pub fn binding(&self, name: &str) -> Option<&BindingSnapshot> {
@@ -391,12 +481,18 @@ pub fn classify(
 
     match observation.outcome() {
         Outcome::Ok { refs, .. } => {
+            let trust = observation.poller_version().trusts_cached_trees();
+            if trust {
+                // Heal before deletions copy a snap into the signed entry.
+                next.reverify_cached_trees(enrichment.trusted_trees());
+            }
             let out = classify_ok(
                 &mut next,
                 refs,
                 at,
                 observation.observation_id(),
                 enrichment,
+                trust,
             )?;
             Ok(out)
         }
@@ -443,6 +539,7 @@ fn classify_ok(
     at: OffsetDateTime,
     detecting_id: Ulid,
     enrichment: &Enrichment,
+    trust_cache: bool,
 ) -> Result<(RepoState, Vec<ClassifiedEvent>), ClassifyError> {
     let prior_id = state.last_ok_observation_id.unwrap_or(detecting_id);
     let sources = vec![prior_id, detecting_id];
@@ -491,7 +588,9 @@ fn classify_ok(
     let mut sweep_moves: Vec<SweepMove> = Vec::new();
 
     for (name, r) in &seen {
-        let Some(new_snap) = binding_from_ref(r, at, at, 1)? else {
+        let Some(new_snap) =
+            binding_from_ref(r, at, at, 1, trust_cache, enrichment.trusted_trees())?
+        else {
             continue;
         };
         let form = RefForm::parse(name);
@@ -533,21 +632,43 @@ fn classify_ok(
                     .insert(name.clone(), LiveBinding { snap: new_snap });
             }
             Some(live) if live.snap.target_sha == new_snap.target_sha => {
+                // Same target: refresh observation counters. Under the historic
+                // classifier the tree stays sticky — that is how pre-fix
+                // observation 01M3R8GXRYD65WM7MAW5NPZ1KR (v2 tree == commit
+                // f77ccac…) survived the next Ok, which already had the real
+                // tree, and was later signed on seq 52. New poller versions
+                // replace the tree from the object cache.
                 let mut updated = live.snap.clone();
                 updated.last_observed = at;
                 updated.observation_count = updated.observation_count.saturating_add(1);
                 updated.action_yml_sha = new_snap.action_yml_sha.clone();
+                if trust_cache {
+                    heal_tree(&mut updated, enrichment.trusted_trees());
+                }
                 state
                     .bindings
                     .insert(name.clone(), LiveBinding { snap: updated });
             }
             Some(live) => {
-                let from = live.snap.clone();
+                let mut from = live.snap.clone();
                 let mut to = new_snap.clone();
                 to.first_observed = at;
                 to.last_observed = at;
                 to.observation_count = 1;
-                let kind = move_kind(&from, &to);
+                if trust_cache {
+                    heal_tree(&mut from, enrichment.trusted_trees());
+                    heal_tree(&mut to, enrichment.trusted_trees());
+                    if !tree_trusted(&from, enrichment.trusted_trees())
+                        || !tree_trusted(&to, enrichment.trusted_trees())
+                    {
+                        eprintln!(
+                            "ref {name} tree unknown after object-cache lookup (commit {} -> {}); not signing a move",
+                            from.commit_sha, to.commit_sha
+                        );
+                        continue;
+                    }
+                }
+                let kind = move_kind(&from, &to, trust_cache);
                 let ancestry = enrichment.ancestry(&from.commit_sha, &to.commit_sha);
                 sweep_moves.push((
                     name.clone(),
@@ -674,14 +795,14 @@ fn prune_move_buffer(state: &mut RepoState, at: OffsetDateTime) {
     state.move_buffer.retain(|m| m.at >= start);
 }
 
-fn move_kind(from: &BindingSnapshot, to: &BindingSnapshot) -> MoveKind {
+fn move_kind(from: &BindingSnapshot, to: &BindingSnapshot, trust_cache: bool) -> MoveKind {
+    // Same commit cannot change content or commit metadata. A differing tree
+    // on one side is an invented or stale binding (seq 52), not a content change.
+    if trust_cache && from.commit_sha == to.commit_sha {
+        return release_level(from, to);
+    }
     if from.commit_sha == to.commit_sha && from.tree_sha == to.tree_sha {
-        let sub = match (from.ref_type, to.ref_type) {
-            (RefType::Lightweight, RefType::Annotated) => ReleaseLevelSub::LightweightToAnnotated,
-            (RefType::Annotated, RefType::Lightweight) => ReleaseLevelSub::AnnotatedToLightweight,
-            _ => ReleaseLevelSub::UnchangedRefType,
-        };
-        MoveKind::ReleaseLevelOnly { sub }
+        release_level(from, to)
     } else if from.tree_sha == to.tree_sha {
         MoveKind::CommitMetadataOnly
     } else {
@@ -728,28 +849,97 @@ fn window_secs(from: OffsetDateTime, to: OffsetDateTime) -> Result<u64, Classify
     Ok(secs as u64)
 }
 
+fn release_level(from: &BindingSnapshot, to: &BindingSnapshot) -> MoveKind {
+    let sub = match (from.ref_type, to.ref_type) {
+        (RefType::Lightweight, RefType::Annotated) => ReleaseLevelSub::LightweightToAnnotated,
+        (RefType::Annotated, RefType::Lightweight) => ReleaseLevelSub::AnnotatedToLightweight,
+        _ => ReleaseLevelSub::UnchangedRefType,
+    };
+    MoveKind::ReleaseLevelOnly { sub }
+}
+
+fn heal_tree(snap: &mut BindingSnapshot, trees: &BTreeMap<String, String>) {
+    if let Some(tree) = trees.get(&snap.commit_sha) {
+        if trusted_tree_value(&snap.commit_sha, tree) {
+            snap.tree_sha = tree.clone();
+        }
+    }
+}
+
+fn tree_trusted(snap: &BindingSnapshot, trees: &BTreeMap<String, String>) -> bool {
+    matches!(trees.get(&snap.commit_sha), Some(tree) if tree == &snap.tree_sha && trusted_tree_value(&snap.commit_sha, tree))
+}
+
+fn binding_tree_unverified(snap: &BindingSnapshot, trees: &BTreeMap<String, String>) -> bool {
+    if snap.tree_sha == snap.commit_sha
+        || crate::enrich::is_invented_placeholder(&snap.tree_sha)
+        || crate::enrich::is_invented_placeholder(&snap.commit_sha)
+    {
+        return true;
+    }
+    !matches!(trees.get(&snap.commit_sha), Some(cached) if cached == &snap.tree_sha)
+}
+
+/// Build a binding.
+///
+/// # Where an invented tree can still enter
+///
+/// Poller versions before [`crate::observation::TREE_TRUST_POLLER_VERSION`]
+/// copy `tree_sha` off the observation. That is the replay path: seq 52's
+/// `from` binding was rebuilt from observation `01M3R8GXRYD65WM7MAW5NPZ1KR`,
+/// whose listing stored `tree_sha == commit_sha` (`f77ccac…`). The next Ok
+/// already had the real tree, but the same-target arm kept the first tree.
+/// `rebuild_repo_state` only peels rows that have neither commit nor tree, so
+/// a present invented tree was treated as already peeled.
+///
+/// At or after that version the tree comes only from `trees` (the object
+/// cache). `tree_sha == commit_sha` is logged and treated as unknown.
 fn binding_from_ref(
     r: &ObservedRef,
     first: OffsetDateTime,
     last: OffsetDateTime,
     count: u64,
+    trust_cache: bool,
+    trees: &BTreeMap<String, String>,
 ) -> Result<Option<BindingSnapshot>, ClassifyError> {
-    let (Some(commit), Some(tree)) = (r.commit_sha(), r.tree_sha()) else {
-        // Non-commit peels / listing-only stubs: classification skips them.
+    let Some(commit) = r.commit_sha() else {
         return Ok(None);
     };
-    // Pre-fix listing invented these SHAs for unpeeled annotated tags. They
-    // are not git objects; treating them as bindings produced mass false Moves
-    // and fatal compare 404s (2026-10-01 outage).
-    if crate::enrich::is_invented_placeholder(commit)
-        || crate::enrich::is_invented_placeholder(tree)
-    {
+    if crate::enrich::is_invented_placeholder(commit) {
         return Ok(None);
     }
+    let tree = if trust_cache {
+        if let Some(obs_tree) = r.tree_sha() {
+            if obs_tree == commit {
+                eprintln!(
+                    "tree_sha equals commit_sha {commit} on an observation field; treating as unknown"
+                );
+            }
+        }
+        match trees.get(commit) {
+            Some(tree) if trusted_tree_value(commit, tree) => tree.clone(),
+            Some(_) => {
+                eprintln!("object cache tree_sha equals commit_sha {commit}; treating as unknown");
+                return Ok(None);
+            }
+            None => {
+                eprintln!("commit {commit} tree unknown (not in object cache); skipping binding");
+                return Ok(None);
+            }
+        }
+    } else {
+        let Some(tree) = r.tree_sha() else {
+            return Ok(None);
+        };
+        if crate::enrich::is_invented_placeholder(tree) {
+            return Ok(None);
+        }
+        tree.to_owned()
+    };
     Ok(Some(BindingSnapshot {
         target_sha: r.target_sha().to_owned(),
         commit_sha: commit.to_owned(),
-        tree_sha: tree.to_owned(),
+        tree_sha: tree,
         ref_type: r.ref_type(),
         first_observed: first,
         last_observed: last,

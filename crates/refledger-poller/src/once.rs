@@ -20,9 +20,10 @@ use crate::derive::{derive, ChainTip};
 use crate::enrich::{enrich, CompareCache};
 use crate::github::etag::{AuthToken, ETagStore};
 use crate::github::rest::{
-    build_obs_for_once, hydrate_prior_bindings, peel_priority_refs, priority_peel_plan,
-    resolve_repo, resolve_repo_listing, resolve_repo_warm_up, Client, ObjectCache, PageBodyCache,
-    RepoMetaCache, ResolveFail, RestRequest, RestResponse, Transport, WarmUpContext,
+    build_obs_for_once, cache_commit_tree, hydrate_prior_bindings, peel_priority_refs,
+    priority_peel_plan, resolve_repo, resolve_repo_listing, resolve_repo_warm_up, Client,
+    ObjectCache, PageBodyCache, RepoMetaCache, ResolveFail, RestRequest, RestResponse, Transport,
+    WarmUpContext,
 };
 use crate::observation::{Observation, Outcome, RepoSlug, SkipReason, Timestamp};
 use crate::population::{load_watched, poll_groups, PollGroup};
@@ -108,6 +109,10 @@ pub struct OnceReport {
     pub conditional_requests: u32,
     pub tip_seq: u64,
     pub derived_events: usize,
+    /// Bindings whose reconstructed tree was unverified before cache substitution.
+    pub tree_unverified_before: u64,
+    /// Bindings still unverified after cache substitution and this run's peels.
+    pub tree_unverified_after: u64,
 }
 
 /// Counting transport wrapper: enforces the per-run request budget and tallies
@@ -364,6 +369,34 @@ pub fn run_once_with<T: Transport>(
         &args.token,
     )?;
 
+    // Reconstruct bindings from the archive (historic trees, including invented
+    // ones), count them, then substitute object-cache trees before classify.
+    // Commits still missing a cache tree are peeled after the sweep, from
+    // whatever request budget the sweep did not use.
+    let mut missing_trees: Vec<(String, String)> = Vec::new();
+    let mut tree_unverified_before = 0u64;
+    for g in groups {
+        let mut state = match rebuild_repo_state(store, &g.repo, None, &mut objects, &client) {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("binding-tree-audit rebuild failed repo={}: {e}", g.repo);
+                continue;
+            }
+        };
+        let index = objects.commit_tree_index();
+        let (n, unverified) = state.unverified_tree_counts(&index);
+        tree_unverified_before += unverified;
+        eprintln!(
+            "binding-tree-audit repo={} bindings={n} unverified_before={unverified}",
+            g.repo
+        );
+        for sha in state.commits_missing_trusted_tree(&index) {
+            missing_trees.push((g.repo.clone(), sha));
+        }
+        state.reverify_cached_trees(&index);
+        states.insert(g.repo.clone(), state);
+    }
+
     // Phase 1: every poll group gets a conditional listing (and repo metadata)
     // before any peel or action.yml work consumes the shared budget.
     for g in groups {
@@ -482,7 +515,8 @@ pub fn run_once_with<T: Transport>(
             &client,
         )?;
         let prior = prior_target_map(&store.latest_ok_targets(pending.warm.repo.as_str())?);
-        priority_tip_count += priority_peel_plan(&state, &pending.warm.refs, &prior).tip_count();
+        priority_tip_count +=
+            priority_peel_plan(&state, &pending.warm.refs, &prior, &objects).tip_count();
     }
     let reserve = reserved_budget(moved.len(), priority_tip_count);
     let hard_max = args.max_requests;
@@ -529,7 +563,7 @@ pub fn run_once_with<T: Transport>(
         }
         let state = states.get(&repo_key).expect("just inserted");
         let prior = prior_target_map(&store.latest_ok_targets(&repo_key)?);
-        let plan = priority_peel_plan(state, &pending.warm.refs, &prior);
+        let plan = priority_peel_plan(state, &pending.warm.refs, &prior, &objects);
 
         let (http_status, etag, archived, at) = match pending.early.outcome() {
             Outcome::Ok {
@@ -685,6 +719,29 @@ pub fn run_once_with<T: Transport>(
         0
     };
 
+    let mut peeled = 0u64;
+    for (repo, sha) in &missing_trees {
+        if client.transport().requests() >= args.max_requests {
+            break;
+        }
+        let Some((owner, name)) = repo.split_once('/') else {
+            continue;
+        };
+        if cache_commit_tree(owner, name, sha, &mut objects, &client) {
+            peeled += 1;
+        }
+    }
+    let index = objects.commit_tree_index();
+    let mut tree_unverified_after = 0u64;
+    for state in states.values_mut() {
+        state.reverify_cached_trees(&index);
+        let (_, unverified) = state.unverified_tree_counts(&index);
+        tree_unverified_after += unverified;
+    }
+    eprintln!(
+        "binding-tree-audit total unverified_before={tree_unverified_before} unverified_after={tree_unverified_after} newly_trusted={peeled}"
+    );
+
     Ok(OnceReport {
         gaps: gaps.len(),
         days_sealed,
@@ -696,6 +753,8 @@ pub fn run_once_with<T: Transport>(
         conditional_requests: client.transport().conditional_requests(),
         tip_seq: store.tip_seq(),
         derived_events,
+        tree_unverified_before,
+        tree_unverified_after,
     })
 }
 
@@ -724,12 +783,20 @@ pub fn classify_enrich_derive_append<T: Transport>(
     state: &mut RepoState,
     compare: &mut CompareCache,
     transport: &T,
+    objects: &ObjectCache,
     token: &str,
     obs: &Observation,
 ) -> Result<usize, OnceError> {
     let outcome = enrich(state, obs, compare, transport, token);
-    let (next, events) = classify(state, obs, &outcome.enrichment)
-        .map_err(|e| OnceError::Classify(e.to_string()))?;
+    let enrichment = if obs.poller_version().trusts_cached_trees() {
+        outcome
+            .enrichment
+            .with_cached_trees(&objects.commit_tree_index())
+    } else {
+        outcome.enrichment
+    };
+    let (next, events) =
+        classify(state, obs, &enrichment).map_err(|e| OnceError::Classify(e.to_string()))?;
     *state = next;
     if events.is_empty() {
         return Ok(0);
@@ -789,7 +856,15 @@ fn process_observation<T: Transport>(
         }
     }
     let state = states.get_mut(&repo).expect("just inserted");
-    match classify_enrich_derive_append(store, state, compare, client.transport(), token, obs) {
+    match classify_enrich_derive_append(
+        store,
+        state,
+        compare,
+        client.transport(),
+        objects,
+        token,
+        obs,
+    ) {
         Ok(n) => Ok(n),
         Err(e) => {
             eprintln!(
@@ -878,7 +953,7 @@ fn recover_outage_moves<T: Transport>(
                     RepoState::default()
                 }
             };
-            let plan = priority_peel_plan(&state, &raws, &prior);
+            let plan = priority_peel_plan(&state, &raws, &prior, objects);
             states.insert(g.repo.clone(), state);
             let at = obs.observed_at().as_offset_datetime();
             let peeled_refs = if !plan.is_empty() {
@@ -924,7 +999,9 @@ fn recover_outage_moves<T: Transport>(
                 })
                 .build()
             {
-                Ok(o) => o.with_observation_id(obs.observation_id()),
+                Ok(o) => o
+                    .with_observation_id(obs.observation_id())
+                    .with_archived_poller_version(obs.poller_version().clone()),
                 Err(e) => {
                     eprintln!("recovery obs rebuild failed: {e}");
                     continue;
@@ -990,20 +1067,30 @@ fn rebuild_repo_state<T: Transport>(
         let Outcome::Ok { refs, .. } = obs.outcome() else {
             continue;
         };
-        let needs_peel = refs
-            .iter()
-            .any(|r| r.commit_sha().is_none() && r.tree_sha().is_none())
-            && ok[idx + 1..].iter().any(|later| {
-                let Outcome::Ok {
-                    refs: later_refs, ..
-                } = later.outcome()
-                else {
-                    return false;
-                };
-                // Tip disappears later (delete) or we need the binding for classify.
-                refs.iter()
-                    .any(|r| !later_refs.iter().any(|lr| lr.name() == r.name()))
-            });
+        let trusts = obs.poller_version().trusts_cached_trees();
+        // Listing-only rows, and poller>=0.1.1 rows whose tree is not in the
+        // object cache, must be peeled before classify. The observation field
+        // is not a source of truth for those versions.
+        let needs_peel = refs.iter().any(|r| {
+            if r.commit_sha().is_none() && r.tree_sha().is_none() {
+                return true;
+            }
+            if !trusts {
+                return false;
+            }
+            r.commit_sha()
+                .is_some_and(|commit| objects.tree_sha_for_commit(commit).is_none())
+        }) && ok[idx + 1..].iter().any(|later| {
+            let Outcome::Ok {
+                refs: later_refs, ..
+            } = later.outcome()
+            else {
+                return false;
+            };
+            // Tip disappears later (delete) or we need the binding for classify.
+            refs.iter()
+                .any(|r| !later_refs.iter().any(|lr| lr.name() == r.name()))
+        });
         let obs_for_classify = if needs_peel {
             let slug = RepoSlug::parse(repo).map_err(|e| OnceError::Observation(e.to_string()))?;
             let raws: Vec<_> = refs
@@ -1045,7 +1132,9 @@ fn rebuild_repo_state<T: Transport>(
                         })
                         .build()
                     {
-                        Ok(o) => o.with_observation_id(obs.observation_id()),
+                        Ok(o) => o
+                            .with_observation_id(obs.observation_id())
+                            .with_archived_poller_version(obs.poller_version().clone()),
                         Err(_) => obs.clone(),
                     }
                 }
@@ -1057,7 +1146,11 @@ fn rebuild_repo_state<T: Transport>(
         } else {
             obs.clone()
         };
-        let (next, _) = classify(&state, &obs_for_classify, &Enrichment::empty())
+        let mut enrichment = Enrichment::empty();
+        if obs_for_classify.poller_version().trusts_cached_trees() {
+            enrichment = enrichment.with_cached_trees(&objects.commit_tree_index());
+        }
+        let (next, _) = classify(&state, &obs_for_classify, &enrichment)
             .map_err(|e| OnceError::Classify(e.to_string()))?;
         state = next;
     }
@@ -1077,6 +1170,11 @@ pub fn run_once(opts: StoreOptions, args: OnceArgs) -> Result<OnceReport, OnceEr
     store.ensure_invented_placeholder_digest_note()?;
     store.ensure_heads_line_rewrite_digest_note()?;
     store.ensure_seq_40_deletion_classification_correction(args.actual_start)?;
+    let cache_trees = crate::github::rest::ObjectCache::open(args.data_dir.join("objects.jsonl"))
+        .map(|cache| cache.commit_tree_index())
+        .unwrap_or_default();
+    let tree_seqs = store.ensure_tree_invariant_corrections(args.actual_start, &cache_trees)?;
+    store.ensure_tree_invariant_digest_note(&tree_seqs)?;
     // First durable chain rows: Added for every watched key that already has
     // an observation but no PopulationChange yet (including the canary and
     // subdirectory keys that share a poll group).

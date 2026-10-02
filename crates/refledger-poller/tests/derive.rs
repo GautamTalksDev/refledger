@@ -60,19 +60,29 @@ fn lw(name: &str, commit: &str, tree: &str) -> ObservedRef {
 }
 
 fn ok_obs(at: OffsetDateTime, refs: Vec<ObservedRef>) -> Observation {
-    Observation::builder()
-        .repo("acme/widgets")
-        .unwrap()
-        .observed_at(at)
-        .unwrap()
-        .method(Method::Rest)
-        .outcome(Outcome::Ok {
-            http_status: 200,
-            etag: Some(ETag::new("W/\"e\"")),
-            refs,
-        })
-        .build()
-        .unwrap()
+    historic_poller(
+        Observation::builder()
+            .repo("acme/widgets")
+            .unwrap()
+            .observed_at(at)
+            .unwrap()
+            .method(Method::Rest)
+            .outcome(Outcome::Ok {
+                http_status: 200,
+                etag: Some(ETag::new("W/\"e\"")),
+                refs,
+            })
+            .build()
+            .unwrap(),
+    )
+}
+
+/// Direct classify tests stay on the pre-fix poller version. New observations
+/// from the builder are 0.1.1 and refuse observation-field trees.
+fn historic_poller(obs: Observation) -> Observation {
+    let mut value = serde_json::to_value(&obs).unwrap();
+    value["poller_version"] = "0.1.0".into();
+    serde_json::from_value(value).unwrap()
 }
 
 fn tip_at(next_seq: u64, at: OffsetDateTime) -> ChainTip {
@@ -457,6 +467,9 @@ fn replay_observe_classify_derive_chain_is_byte_for_byte() {
 
         let mut state = RepoState::default();
         let transport = NoNetwork;
+        let objects =
+            refledger_poller::github::rest::ObjectCache::open(dir.path().join("objects.jsonl"))
+                .unwrap();
         for obs in load_obs_sorted(&obs_dir) {
             store.append_observation(&obs).unwrap();
             classify_enrich_derive_append(
@@ -464,6 +477,7 @@ fn replay_observe_classify_derive_chain_is_byte_for_byte() {
                 &mut state,
                 &mut compare,
                 &transport,
+                &objects,
                 "token",
                 &obs,
             )
