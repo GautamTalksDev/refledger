@@ -489,3 +489,5 @@
 {"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"f8feb8f1991c55507b9069fc8540f35f8a61e80718f071307f64ca729bd6c15e\"","stored_at":"2026-10-02T15:08:04.540Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"60c129bd33b1ba877da6f14cd80ff266b0cdc8e6e0095a7effd169c2c77260c3\"","stored_at":"2026-10-02T15:08:04.540Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"5db20e4c4547df87c1ce591821b7d4df5e1105e1d8c369ad5091b2641b3a5dd7\"","stored_at":"2026-10-02T15:13:05.468Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"dd7d401ecb2f81b636fdce9d0b08c6d0b5a472adc5739dad4cd44b996be6a803\"","stored_at":"2026-10-02T15:18:05.464Z"}
+{"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"ab2e96eb56e47f7a5b339bd42bbbc1e8358023763583cde3d316ef4a723941c3\"","stored_at":"2026-10-02T15:18:05.464Z"}
