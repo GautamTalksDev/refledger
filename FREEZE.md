@@ -31,7 +31,7 @@ Fixes found by the canary and live polls before the M1 window. History only — 
 
 | Date (UTC) | Commit | Why |
 | --- | --- | --- |
-| 2026-10-02 | fee9ffa | A classifier bug can sign a false High "content change" about a real maintainer's tag. |
+| 2026-10-02 | 2206c0b | A classifier bug can sign a false High "content change" about a real maintainer's tag. |
 
 ## Run window
 
