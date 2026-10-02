@@ -342,3 +342,13 @@
 {"repo":"actions/setup-java","archived":false}
 {"repo":"actions/setup-node","archived":false}
 {"repo":"actions/setup-python","archived":false}
+{"repo":"actions/github-script","archived":false}
+{"repo":"aws-actions/amazon-ecr-login","archived":false}
+{"repo":"aws-actions/configure-aws-credentials","archived":false}
+{"repo":"azure/login","archived":false}
+{"repo":"docker/build-push-action","archived":false}
+{"repo":"docker/metadata-action","archived":false}
+{"repo":"docker/setup-buildx-action","archived":false}
+{"repo":"github/super-linter","archived":false}
+{"repo":"google-github-actions/auth","archived":false}
+{"repo":"google-github-actions/setup-gcloud","archived":false}

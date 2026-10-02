@@ -498,3 +498,13 @@
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"04324c63f7c43a7a36e40669435a97d924cc54cfcd8b473fc352e0392c4e18f2\"","stored_at":"2026-10-02T15:23:04.574Z"}
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"7b74a2619775458fe53d04e69468c2f886dea307cbc25610ed49b88fcb965a29\"","stored_at":"2026-10-02T15:23:04.574Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"b6bc405e22444809e070783c99a1ff883a9bba6de89185f0ff657307c47c73cf\"","stored_at":"2026-10-02T15:23:04.574Z"}
+{"repo":"actions/github-script","template":"/repos/{owner}/{repo}","query":"","etag":"\"915fa62d722dbc3b67475387cea114bfb3d2d52090262a57b94d75263e18dc6e\"","stored_at":"2026-10-02T15:27:58.893Z"}
+{"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"338d29229554bd021645844bb4a3a894d2476a08d62e13e03d1a7e5d69290911\"","stored_at":"2026-10-02T15:27:58.893Z"}
+{"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"0ddacea1d8abd9515f80d3d46c62ac1a683389ca2d168a849d14e08d7e07f02d\"","stored_at":"2026-10-02T15:27:58.893Z"}
+{"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"79e023097b365b25474a9c6766b806ba7691fc82bf3f157d903e1a54c081e5c8\"","stored_at":"2026-10-02T15:27:58.893Z"}
+{"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"b5bd99cf2cda532303dd64edc45dcd46c0c93aa0fb9c4c9d3df5ee31624b27d4\"","stored_at":"2026-10-02T15:27:58.893Z"}
+{"repo":"docker/metadata-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"b4e2ddf57404ed83a9d2e81baebe88ff73bc0d6b02787891889d08a90ecce843\"","stored_at":"2026-10-02T15:27:58.893Z"}
+{"repo":"docker/setup-buildx-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"c4be55522293e62f5f9fb2816900d52b5c795978b5db3c35502da1301ed2d4de\"","stored_at":"2026-10-02T15:27:58.893Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"dc5b6bc1f35228034954f152ae04b395e294230ca86337ad75c1a85f09a99edc\"","stored_at":"2026-10-02T15:27:58.893Z"}
+{"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"968f2385d3e815d0e83a9f10556ce439037a122e8ac5699a9d1060e14956fbf0\"","stored_at":"2026-10-02T15:27:58.893Z"}
+{"repo":"google-github-actions/setup-gcloud","template":"/repos/{owner}/{repo}","query":"","etag":"\"230d7d97f3882ebd965432c8a1445d16ae024b56f47f923437f769a005aef637\"","stored_at":"2026-10-02T15:27:58.893Z"}
