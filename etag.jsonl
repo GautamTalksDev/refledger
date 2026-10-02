@@ -452,3 +452,4 @@
 {"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"3996845d677125df360ca2f45799c5cd03ae95462192b0944a3184313383269f\"","stored_at":"2026-10-02T08:33:03.705Z"}
 {"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"3c67793d2a80d25fab2ff528f4b841092ed8705bd5f034af018b7c7a5fda00d6\"","stored_at":"2026-10-02T08:43:04.096Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"abd13d558bff0e926bf5e12bdc7e76728d7cb00d37a534803038e8d0f105b7ea\"","stored_at":"2026-10-02T08:48:00.903Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"11e0e6dc138ca018b23e1934ebc744d0069e2c2ac75905e58921feee94e0ee5c\"","stored_at":"2026-10-02T09:08:02.530Z"}
