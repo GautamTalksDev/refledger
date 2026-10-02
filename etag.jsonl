@@ -399,3 +399,4 @@
 {"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"826d44608d0925ed793fa2774bcc3590a4a90b54f282599c64cc3209658e79d2\"","stored_at":"2026-10-02T01:47:59.179Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"0d134407e82308fc723f1da154c199029c35d20a3cc08e9da4f3f50b77c97254\"","stored_at":"2026-10-02T02:17:58.293Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"d0a0bf9ef7be6208ef3c589b7f4d20cac76c5905ddee36d86215140abc7e0981\"","stored_at":"2026-10-02T02:17:58.293Z"}
+{"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"fc8ae10e401efd913c3d55f8bc6b6121f83ca259934336dadd7d83f2e1a22e0a\"","stored_at":"2026-10-02T02:28:03.426Z"}
