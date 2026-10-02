@@ -282,3 +282,4 @@
 {"repo":"reviewdog/action-actionlint","archived":false}
 {"repo":"actions/setup-java","archived":false}
 {"repo":"docker/setup-buildx-action","archived":false}
+{"repo":"google-github-actions/auth","archived":false}
