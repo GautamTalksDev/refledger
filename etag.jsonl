@@ -435,3 +435,4 @@
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"6432912e5bea8b3c213b2f56cc83262f935d4678047a2d533a1b8106bad6277f\"","stored_at":"2026-10-02T05:28:05.982Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"65ce05b8c17ed42fa8fec41bc4abe42eec85cfe6a6ee6e4ee8f5ca0d13bd4f2d\"","stored_at":"2026-10-02T05:28:05.982Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"a56384600594db3136d475c7f6d3569432c096eefa839e72a795b2f87beb12bd\"","stored_at":"2026-10-02T05:43:06.199Z"}
+{"repo":"docker/setup-buildx-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"83e9a082bcc38696d64633de75a58bdbab2250ad39b77e1a0e07b0b8c0dcaeb5\"","stored_at":"2026-10-02T05:48:01.549Z"}
