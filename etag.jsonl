@@ -551,3 +551,7 @@
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"c33c5a9b9c951ff181802e7b07edffd0b43eaafe8e6dce141e631b2d7eb7c923\"","stored_at":"2026-10-02T22:53:05.330Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"d40d7a1c3cc00748500e463ca84d95280ccf1da73f732d29d81e3f4e4fb6228e\"","stored_at":"2026-10-02T23:08:14.270Z"}
 {"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"4fb19899149fc1bec551a753676c52777c5c80ab5785c7051b627e391e8f9d47\"","stored_at":"2026-10-02T23:38:04.489Z"}
+{"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"bc459dde18425419f6a18464968e400e1bf312a2fe92e167dcc63387fe50cfb4\"","stored_at":"2026-10-02T23:43:00.134Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"3b787afbd1fbc22ccd52432ab43b92f9db45fb59c7bff099dd808ae3aa7b70ff\"","stored_at":"2026-10-02T23:43:00.134Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"3cf64a9991e709802f85d9882f0727dc006a64c00b759a12585a95bb8ae1bd9a\"","stored_at":"2026-10-02T23:43:00.134Z"}
+{"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"deac1784eafa2774296ce8278d7a5bc679b700b57dab710149abb963f6e7d8dc\"","stored_at":"2026-10-02T23:43:00.134Z"}
