@@ -465,3 +465,5 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"da2744456320aaa2ae303d9bd8524c646c91de4c6aa703506a5441832b6a8450\"","stored_at":"2026-10-02T11:58:05.832Z"}
 {"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"168bd8464c7b4a7356e8e45cd8e69d06ec8805ee026457a8d04f260fbf7964fe\"","stored_at":"2026-10-02T11:58:05.832Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"fe1967d50f202e9c6bcdd58d207238e539edf7ea65a9336ab6d84ebb487ec076\"","stored_at":"2026-10-02T12:13:08.437Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"8b08fcd25a8c766ff87142acb28650221445affb786e87b06b4f6da963f847ca\"","stored_at":"2026-10-02T12:18:06.137Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"4928991c7d676001511a806c0535af551bb653183fb9320d16d38c5b84d3f95f\"","stored_at":"2026-10-02T12:18:06.137Z"}
