@@ -595,3 +595,5 @@
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"80a9c293ac11403f7e2e71b2a2d9ca443a9efac2aa5d6cc5f6f2ac60f4beee2f\"","stored_at":"2026-10-03T13:43:48.541Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"a91c9b2d1d55a25e7fa3def0dccaf0d6ff21d37c28903335f832a9db336e1b81\"","stored_at":"2026-10-03T13:58:14.543Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"0e462dbff095360bb08b5d5e168c8b6ed2c0df6d4d31876953038f4863882573\"","stored_at":"2026-10-03T14:58:14.245Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"011b5abdb0b6f3390b2cd1573c27a4601ced0c5f2ed7392c21fdaa95be885040\"","stored_at":"2026-10-03T15:18:15.337Z"}
+{"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"18dc24b853e333543a3f560457ba785a3b329e15b0ee981abe046657dd07b64b\"","stored_at":"2026-10-03T15:18:15.337Z"}
