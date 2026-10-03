@@ -443,3 +443,4 @@
 {"repo":"actions/upload-artifact","archived":false}
 {"repo":"docker/build-push-action","archived":false}
 {"repo":"docker/build-push-action","archived":false}
+{"repo":"docker/setup-buildx-action","archived":false}
