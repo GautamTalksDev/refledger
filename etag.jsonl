@@ -566,3 +566,6 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"497edda7656274469ae8f31b13296418d43c04c6d901dfb9371579799c362ecb\"","stored_at":"2026-10-03T03:33:11.676Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"cedbb86bb17fbcc00e1f932a149ee01ef4c4b3e2738c8da91c98d2fa9d93e9c4\"","stored_at":"2026-10-03T04:18:05.551Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"b70849571aa5bf755de6930a2ea8275e19aff64531ebe90046bc23ce04e2b949\"","stored_at":"2026-10-03T04:18:05.551Z"}
+{"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"ddef0f3ee47f5e83ee36d62bd21d5cdefedc2d1995632ea6fb2b1470703c9558\"","stored_at":"2026-10-03T04:23:09.393Z"}
+{"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"e0d622f93725fca0552bdfcb60bfea26eb530149ee2630a14dfa4fc9ba87f561\"","stored_at":"2026-10-03T04:23:09.393Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"09c3edb5794a858f24a3504072d379044bee25353365a6fd46249ae581644c5b\"","stored_at":"2026-10-03T04:23:09.393Z"}
