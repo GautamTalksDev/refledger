@@ -22,9 +22,9 @@ separately and never enter latency figures.
 | Performed during a recorded gap | 1 |
 | Detected | 1 |
 | Misclassified | 0 |
-| p50 latency | — |
-| p95 latency | — |
-| max latency | — |
+| p50 latency | , |
+| p95 latency | , |
+| max latency | , |
 
 This is the figure OPERATIONS.md §7 promises to publish.
 
@@ -32,13 +32,13 @@ This is the figure OPERATIONS.md §7 promises to publish.
 
 | pattern | tag | detected | classified | latency |
 |---------|-----|----------|------------|---------|
-| recreate | v3.0.0 | yes | — | recreate half |
-| batch_exact_to_one | v9.0.0 | no | no | — |
-| batch_exact_to_one | v9.0.1 | no | no | — |
-| batch_exact_to_one | v9.0.2 | no | no | — |
-| batch_exact_to_one | v9.0.0 | no | no | — |
-| batch_exact_to_one | v9.0.1 | no | no | — |
-| batch_exact_to_one | v9.0.2 | no | no | — |
+| recreate | v3.0.0 | yes | , | recreate half |
+| batch_exact_to_one | v9.0.0 | no | no | , |
+| batch_exact_to_one | v9.0.1 | no | no | , |
+| batch_exact_to_one | v9.0.2 | no | no | , |
+| batch_exact_to_one | v9.0.0 | no | no | , |
+| batch_exact_to_one | v9.0.1 | no | no | , |
+| batch_exact_to_one | v9.0.2 | no | no | , |
 
 ## Creation-only (not scored)
 

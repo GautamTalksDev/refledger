@@ -1,6 +1,6 @@
 # Main branch freeze (seven-day run)
 
-**Code on `main` is frozen** from **2026-10-03T00:00:00Z** through the seal at **2026-10-10T00:00:00Z** — the same closed interval as the M1 measurement window. The 2026-10-02 start was voided by the exception below.
+**Code on `main` is frozen** from **2026-10-03T00:00:00Z** through the seal at **2026-10-10T00:00:00Z** , the same closed interval as the M1 measurement window. The 2026-10-02 start was voided by the exception below.
 
 During the freeze:
 
@@ -14,7 +14,7 @@ Earlier canary-driven fixes (through 2026-10-01) are **pre-freeze hardening**, n
 
 ## Pre-freeze hardening
 
-Fixes found by the canary and live polls before the M1 window. History only — they do not authorize mid-window changes.
+Fixes found by the canary and live polls before the M1 window. History only , they do not authorize mid-window changes.
 
 | Date (UTC) | Commit | What |
 | --- | --- | --- |

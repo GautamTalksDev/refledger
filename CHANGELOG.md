@@ -9,141 +9,141 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 
 - **2026-10-02 - invented tree signed as content change (seq 52).** Canary `v2`
-  lightweight→annotated on commit `f77ccac…` was signed `content_change` / low.
-  Rebuild folded pre-fix observation `01M3R8GXRYD65WM7MAW5NPZ1KR`, which stored
-  `tree_sha` equal to that commit, and the same-target arm never replaced it.
-  From poller 0.1.1 a tree is trusted only from the object cache; `tree == commit`
-  is unknown; same commit is only `release_level_only`. Older observations still
-  replay the historic chain. Corrections for seq 40, 43, and 52. M1 window
-  restarts at 2026-10-03T00:00:00Z (seal 2026-10-10T00:00:00Z).
+ lightweight→annotated on commit `f77ccac…` was signed `content_change` / low.
+ Rebuild folded pre-fix observation `01M3R8GXRYD65WM7MAW5NPZ1KR`, which stored
+ `tree_sha` equal to that commit, and the same-target arm never replaced it.
+ From poller 0.1.1 a tree is trusted only from the object cache; `tree == commit`
+ is unknown; same commit is only `release_level_only`. Older observations still
+ replay the historic chain. Corrections for seq 40, 43, and 52. M1 window
+ restarts at 2026-10-03T00:00:00Z (seal 2026-10-10T00:00:00Z).
 
 - **2026-10-01 - freeze re-baselined to M1 window; cold recreation/backlog tests.**
-  Freeze now starts at `2026-10-02T00:00:00Z` with the M1 window (lifts after
-  the `2026-10-09T00:00:00Z` seal). Prior canary-driven commits move to a
-  pre-freeze hardening list. Rebuild peels listing-only archive stubs when a
-  later Ok deletes them, so recreate after a cold prior still forms a
-  tombstone. Cold-state `run_once` twins cover recreation-to-never-seen and
-  the 50-tag backlog.
+ Freeze now starts at `2026-10-02T00:00:00Z` with the M1 window (lifts after
+ the `2026-10-09T00:00:00Z` seal). Prior canary-driven commits move to a
+ pre-freeze hardening list. Rebuild peels listing-only archive stubs when a
+ later Ok deletes them, so recreate after a cold prior still forms a
+ tombstone. Cold-state `run_once` twins cover recreation-to-never-seen and
+ the 50-tag backlog.
 
 - **2026-10-01 - batch Move missed when prior tip was listing-only.** Live poll
-  `2026-10-01T02:18:39Z` saw `v9.0.0/1/2` move `5f7797a7…`→`9501ea4a…`
-  (`confirm=1`) but left all three listing-only: priority-peel only selected
-  refs that already had a *peeled* binding. Any tip whose `target_sha` differs
-  from the previous observation is now priority-peeled from the reserve, and
-  a never-peeled FROM commit is peeled too so classify has both trees.
-  Recovery re-derives the same shape from the archive. `canary-score` counts
-  `SchedulerLag` as a recorded gap (previous obs → skip). Canary rotate that
-  bootstraps tags stops before the pattern so bootstrap and move never share
-  one push.
+ `2026-10-01T02:18:39Z` saw `v9.0.0/1/2` move `5f7797a7…`→`9501ea4a…`
+ (`confirm=1`) but left all three listing-only: priority-peel only selected
+ refs that already had a *peeled* binding. Any tip whose `target_sha` differs
+ from the previous observation is now priority-peeled from the reserve, and
+ a never-peeled FROM commit is peeled too so classify has both trees.
+ Recovery re-derives the same shape from the archive. `canary-score` counts
+ `SchedulerLag` as a recorded gap (previous obs → skip). Canary rotate that
+ bootstraps tags stops before the pattern so bootstrap and move never share
+ one push.
 
 - **2026-10-01 - heads.jsonl line rewrite on main (disclosed, not erased).**
-  Commit `ff75e915` replaced the seq 42 heads line published in `0800c1f5`
-  (which had Rekor `log_index` 3027764712) with a 409 error line, because
-  seal publish copied `heads.jsonl` wholesale from a data tip that lacked
-  the witnessed line. Head and signature bytes were identical in both
-  versions; the Rekor entry was never lost; `93211084` re-appended the
-  index. Both versions remain in git history (no force-push). Publishing
-  now refuses any file that is not a byte-for-byte prefix of what is
-  already on `main`. Digest note `heads-line-rewrite-2026-10-01`; see
-  [`docs/INCIDENTS.md`](docs/INCIDENTS.md). `--strict` requires identical
-  `head`+`signature` across witness attempt lines for the same seq.
+ Commit `ff75e915` replaced the seq 42 heads line published in `0800c1f5`
+ (which had Rekor `log_index` 3027764712) with a 409 error line, because
+ seal publish copied `heads.jsonl` wholesale from a data tip that lacked
+ the witnessed line. Head and signature bytes were identical in both
+ versions; the Rekor entry was never lost; `93211084` re-appended the
+ index. Both versions remain in git history (no force-push). Publishing
+ now refuses any file that is not a byte-for-byte prefix of what is
+ already on `main`. Digest note `heads-line-rewrite-2026-10-01`; see
+ [`docs/INCIDENTS.md`](docs/INCIDENTS.md). `--strict` requires identical
+ `head`+`signature` across witness attempt lines for the same seq.
 
 - **2026-10-01 - outage Move lost; Rekor 409; publish-before-data.** Canary
-  `exact_content_change` (v1.0.0→7272eeb at 00:41Z) was observed and peeled at
-  01:07 but never a Move: derived entries buffered while Sep 30 was unsealed
-  lived only in memory and vanished on process exit. Entry buffer is now
-  durable (`state/entry_buffer.jsonl`); after seal, `once` also re-derives from
-  unsourced Ok tips after the chain tip. Rekor HTTP 409 ("already exists") is
-  treated as success via index lookup + `logIndex` record. Seal publish to
-  `main` is deferred until after the data-branch commit
-  (`REFLEDGER_DEFER_LEDGER_PUBLISH` + `publish-pending`). Digests note that
-  invent `commit_sha=000…001` / `tree_sha=000…002` are not git objects.
+ `exact_content_change` (v1.0.0→7272eeb at 00:41Z) was observed and peeled at
+ 01:07 but never a Move: derived entries buffered while Sep 30 was unsealed
+ lived only in memory and vanished on process exit. Entry buffer is now
+ durable (`state/entry_buffer.jsonl`); after seal, `once` also re-derives from
+ unsourced Ok tips after the chain tip. Rekor HTTP 409 ("already exists") is
+ treated as success via index lookup + `logIndex` record. Seal publish to
+ `main` is deferred until after the data-branch commit
+ (`REFLEDGER_DEFER_LEDGER_PUBLISH` + `publish-pending`). Digests note that
+ invent `commit_sha=000…001` / `tree_sha=000…002` are not git objects.
 
 - **2026-10-01 - enrich compare abort took down every poll.** Since ~00:02Z
-  each `once` run failed on enrich (`compare status 404` or budget exhaustion)
-  and committed nothing — no Sep 30 seal, no watching. Root causes: (1) one
-  failed compare aborted the whole run; (2) invented listing placeholders
-  `000…001`/`000…002` in archived Ok observations made real peels look like
-  Moves and produced compares against non-objects. Enrichment is optional
-  (classification uses trees); compare failures omit `ancestry`/`diff` and
-  note via `detection_latency_note`. Invented placeholders are not bindings.
-  Per-repo listing/peel/classify errors no longer abort the run. Also:
-  `seal_missed_days_before` no longer starts from latest observation (gaps
-  written first would skip yesterday's seal). M1 window restarted.
+ each `once` run failed on enrich (`compare status 404` or budget exhaustion)
+ and committed nothing , no Sep 30 seal, no watching. Root causes: (1) one
+ failed compare aborted the whole run; (2) invented listing placeholders
+ `000…001`/`000…002` in archived Ok observations made real peels look like
+ Moves and produced compares against non-objects. Enrichment is optional
+ (classification uses trees); compare failures omit `ancestry`/`diff` and
+ note via `detection_latency_note`. Invented placeholders are not bindings.
+ Per-repo listing/peel/classify errors no longer abort the run. Also:
+ `seal_missed_days_before` no longer starts from latest observation (gaps
+ written first would skip yesterday's seal). M1 window restarted.
 
 - **2026-09-30 - attack-shaped tag moves would go unrecorded.** After the
-  tree-SHA listing fix, a ref whose target changed (or reappeared after a
-  tombstone) to a never-seen commit was stored listing-only, and classify
-  skipped unpeeled refs. The tj-actions / Trivy attack shape — tags moved to
-  a brand-new malicious commit — would therefore emit no Move. Every
-  changed or reappeared tip is now peeled from the reserved budget before
-  classify in the same run; confirm slots stay held aside from optional
-  backfill. Correction entry for seq 40 (Deletion carried meaningless
-  `content_change`; LOG-FORMAT v1 requires the field). Canary-score: retired
-  patterns and manual-intervention corrections are listed separately and
-  excluded from latency.
+ tree-SHA listing fix, a ref whose target changed (or reappeared after a
+ tombstone) to a never-seen commit was stored listing-only, and classify
+ skipped unpeeled refs. The tj-actions / Trivy attack shape , tags moved to
+ a brand-new malicious commit , would therefore emit no Move. Every
+ changed or reappeared tip is now peeled from the reserved budget before
+ classify in the same run; confirm slots stay held aside from optional
+ backfill. Correction entry for seq 40 (Deletion carried meaningless
+ `content_change`; LOG-FORMAT v1 requires the field). Canary-score: retired
+ patterns and manual-intervention corrections are listed separately and
+ excluded from latency.
 
 - **2026-09-30 - once never derived moves (gap-no-derive-2026-09-29).** The
-  Actions `once` runner stored observations but never ran
-  classify → enrich → derive → append, so the chain recorded no
-  Move/Deletion/Recreation since genesis (tip stayed at population Adds).
-  Archive replay found **0** ecosystem tag moves in that window; canary
-  patterns 3 and 4 were not observationally recoverable. Forward-only fix:
-  wire the same helper the library path uses into `run_once`; reserve
-  confirm + enrich budget before phase-2 backfill; leave sealed days
-  untouched. The next ObservationDigest carries note
-  `gap-no-derive-2026-09-29`.
+ Actions `once` runner stored observations but never ran
+ classify → enrich → derive → append, so the chain recorded no
+ Move/Deletion/Recreation since genesis (tip stayed at population Adds).
+ Archive replay found **0** ecosystem tag moves in that window; canary
+ patterns 3 and 4 were not observationally recoverable. Forward-only fix:
+ wire the same helper the library path uses into `run_once`; reserve
+ confirm + enrich budget before phase-2 backfill; leave sealed days
+ untouched. The next ObservationDigest carries note
+ `gap-no-derive-2026-09-29`.
 
 - **2026-09-30 - listing invented tree_sha.** Phase-1 Ok observations used
-  the commit SHA as `tree_sha` (lightweight) or placeholder
-  `000…001`/`000…002` (annotated). A commit's tree is immutable; those
-  values were wrong. Listing now records cache trees only, otherwise
-  listing-only refs with no invented tree. Affected archive observation
-  ids are listed in `docs/tree-sha-affected-observations.txt` (not
-  rewritten). The next ObservationDigest also notes that those
-  `tree_sha` fields must not be relied on (same class as the false-422
-  note).
+ the commit SHA as `tree_sha` (lightweight) or placeholder
+ `000…001`/`000…002` (annotated). A commit's tree is immutable; those
+ values were wrong. Listing now records cache trees only, otherwise
+ listing-only refs with no invented tree. Affected archive observation
+ ids are listed in `docs/tree-sha-affected-observations.txt` (not
+ rewritten). The next ObservationDigest also notes that those
+ `tree_sha` fields must not be relied on (same class as the false-422
+ note).
 
 - **2026-09-30 - seal publish to main.** `.gitignore` no longer ignores
-  `data/log/` (it had blocked the first seal's `git add`). Pending publish
-  failures retry on every poll until fast-forward succeeds, then the next
-  ObservationDigest notes the recovery. CI guards `git check-ignore` for a
-  sample `data/log/` path. Untracked parent `data/` on a fresh `main` is
-  allowed during publish (git reports `?? data/` before `git add`). Publish
-  auth strips embedded credentials from `origin` and uses
-  `AUTHORIZATION: basic` (x-access-token) so the workflow's token URL and
-  the header do not fight.
+ `data/log/` (it had blocked the first seal's `git add`). Pending publish
+ failures retry on every poll until fast-forward succeeds, then the next
+ ObservationDigest notes the recovery. CI guards `git check-ignore` for a
+ sample `data/log/` path. Untracked parent `data/` on a fresh `main` is
+ allowed during publish (git reports `?? data/` before `git add`). Publish
+ auth strips embedded credentials from `origin` and uses
+ `AUTHORIZATION: basic` (x-access-token) so the workflow's token URL and
+ the header do not fight.
 
 - **2026-09-30 - canary clock and verifier coverage line.** `refledger-clock`
-  also dispatches the canary rotation (`17 */4 * * *`). Verifier coverage
-  line sums `skipped`/`failed` from signed ObservationDigests.
+ also dispatches the canary rotation (`17 */4 * * *`). Verifier coverage
+ line sums `skipped`/`failed` from signed ObservationDigests.
 
 ### Changed
 
 - **2026-09-30 - canary patterns 3 and 4 split across rotations.**
-  `lightweight_to_annotated` / `annotated_to_lightweight` and
-  `delete` / `recreate` each leave their intermediate state for at least
-  one poll. Patterns act only on pre-existing bootstrap tags.
-  `canary-score` scores only event-producing patterns and reports
-  creation-only rows separately.
+ `lightweight_to_annotated` / `annotated_to_lightweight` and
+ `delete` / `recreate` each leave their intermediate state for at least
+ one poll. Patterns act only on pre-existing bootstrap tags.
+ `canary-score` scores only event-producing patterns and reports
+ creation-only rows separately.
 
 - **2026-09-29 - genesis, clock, hardening, freeze.** First continuous M1 day:
-  genesis population entries and live polls on the `data` branch; Cloudflare
-  Worker `refledger-clock` as the primary 5-minute dispatcher (Actions
-  `schedule` as backup); read-only PAT for API reads and `GITHUB_TOKEN` for
-  pushes; signing key only in Environment `ledger`; two-phase poll budget
-  (detection before warm-up); zizmor-clean workflows and related security
-  review follow-ups; dead R2/hmac archive path removed; store flock unlock
-  made explicit for deterministic tests; Dependabot ignores for crypto and
-  TypeScript majors; **`FREEZE.md`**: code on `main` frozen for seven days
-  from the first clean seal (docs still allowed). Full verify of sealed
-  `data/log/` on `main` waits until tonight's first seal.
+ genesis population entries and live polls on the `data` branch; Cloudflare
+ Worker `refledger-clock` as the primary 5-minute dispatcher (Actions
+ `schedule` as backup); read-only PAT for API reads and `GITHUB_TOKEN` for
+ pushes; signing key only in Environment `ledger`; two-phase poll budget
+ (detection before warm-up); zizmor-clean workflows and related security
+ review follow-ups; dead R2/hmac archive path removed; store flock unlock
+ made explicit for deterministic tests; Dependabot ignores for crypto and
+ TypeScript majors; **`FREEZE.md`**: code on `main` frozen for seven days
+ from the first clean seal (docs still allowed). Full verify of sealed
+ `data/log/` on `main` waits until tonight's first seal.
 
 - **2026-09-28 - project rename.** The product is now **Refledger**
-  (`refledger-log`, `refledger-verify`, `refledger-poller`; default `log_id` =
-  `"refledger"`). The earlier working name Tagwatch collided with
-  [woefe/tagwatch](https://github.com/woefe/tagwatch) and was replaced before
-  genesis so the signed chain never embeds the colliding name. The normative
-  format specification remains `docs/LOG-FORMAT.md` (filename kept so existing
-  citations continue to resolve); rename history lives here, not in the format
-  doc.
+ (`refledger-log`, `refledger-verify`, `refledger-poller`; default `log_id` =
+ `"refledger"`). The earlier working name Tagwatch collided with
+ [woefe/tagwatch](https://github.com/woefe/tagwatch) and was replaced before
+ genesis so the signed chain never embeds the colliding name. The normative
+ format specification remains `docs/LOG-FORMAT.md` (filename kept so existing
+ citations continue to resolve); rename history lives here, not in the format
+ doc.

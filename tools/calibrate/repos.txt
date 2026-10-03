@@ -1,4 +1,4 @@
-# owner/repo — one per line. Used by Mode A (across N repos) and Mode B (first entry).
+# owner/repo , one per line. Used by Mode A (across N repos) and Mode B (first entry).
 # Prefer public repos you do not own, so calibration traffic is representative.
 # Replace this list before a live run; keep N large enough that Mode A is not
 # secretly Mode B (recommend ≥ 50 for a serious measurement).

@@ -58,12 +58,14 @@ It is not the only tag monitor out there, either. Commercial tools watch tags pr
 
 | | |
 |---|---|
-| **Stage** | M1: genesis landed; first continuous seven-day run; **code on `main` is frozen** (`FREEZE.md`) |
+| **Stage** | M1 in progress: seven-day measurement run; **code on `main` frozen 2026-10-03 through 2026-10-10** (seal at 2026-10-10T00:00:00Z after 2026-10-09 day) |
 | **Watching** | 38 action keys across 35 repositories, plus a canary we control (36 poll groups) |
 | **Poll rate** | every 5 minutes at `:02`, `:07`, … via Cloudflare Worker `refledger-clock` (Actions `schedule` as backup) |
-| **Public site** | coming at `refledger.gautamkhosla.com` |
+| **Public site** | Coming at [refledger.gautamkhosla.com](https://refledger.gautamkhosla.com) after 2026-10-10 seal verification |
 
 The population is deliberately small and honestly defined: a set of cited seed actions plus everything those actions pull in through their own `action.yml` files, at every tag. See [`population/METHOD.md`](population/METHOD.md).
+
+**Freeze note:** Code on `main` is frozen (per [`FREEZE.md`](FREEZE.md)) from 2026-10-03T00:00:00Z through the 2026-10-10 seal. Only markdown documentation may change during this window. The freeze ensures the poller, log format, and signatures remain the same instrument throughout the M1 measurement period (2026-10-03 through 2026-10-09).
 
 ---
 
@@ -117,18 +119,11 @@ Live observations and the in-progress day log are on the **`data` branch** (dire
 
 ## Privacy
 
-The public site at `refledger.gautamkhosla.com` collects nothing from visitors.
-Checks run in the browser against GitHub's API. The append-only ledger stores
-public repository facts (tag names, commit hashes, times), not personal data
-from taggers or authors. Site policy: `/privacy` on the public site.
+The public site at [refledger.gautamkhosla.com](https://refledger.gautamkhosla.com) (launching after 2026-10-10 seal) collects nothing from visitors. Checks run in the browser against GitHub's API. The append-only ledger stores public repository facts (tag names, commit hashes, times), not personal data from taggers or authors. Site policy: [/privacy](https://refledger.gautamkhosla.com/privacy) on the public site.
 
 ## Security
 
-Report vulnerabilities in Refledger via
-[GitHub private vulnerability reporting](https://github.com/GautamTalksDev/refledger/security/advisories/new).
-Operator response policy for observed attacks is in [`SECURITY.md`](SECURITY.md).
-Public summary: `/security` on the site; machine-readable contact at
-`/.well-known/security.txt`.
+Report vulnerabilities in Refledger via [GitHub private vulnerability reporting](https://github.com/GautamTalksDev/refledger/security/advisories/new). Operator response policy for observed attacks is in [`SECURITY.md`](SECURITY.md). Public summary: [/security](https://refledger.gautamkhosla.com/security) on the site (launching after 2026-10-10); machine-readable contact at [/.well-known/security.txt](https://refledger.gautamkhosla.com/.well-known/security.txt).
 
 ## License
 

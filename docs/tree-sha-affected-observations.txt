@@ -1,7 +1,7 @@
 # Observations in the archive with invented SHAs (listing placeholders).
 # Not edited. Cause: phase-1 listing used commit_sha as tree_sha (lightweight)
 # or invented commit_sha=000…001 / tree_sha=000…002 (annotated, unpeeled).
-# Those placeholder values are not git objects and must not be relied on —
+# Those placeholder values are not git objects and must not be relied on , 
 # neither as commit nor as tree (same class as the false-422 fabrication).
 # Fixed going forward in once/warm-up (listing-only refs; no invented trees).
 # id	repo	observed_at	fake_tree_eq_commit	placeholder	n_refs

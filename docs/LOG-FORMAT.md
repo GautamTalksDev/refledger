@@ -27,7 +27,7 @@ Between tokens there is nothing. After `{` or `[` there is immediately the next 
 Strings are escaped per RFC 8259, with these additional constraints that remove RFC 8259’s remaining discretion:
 
 - Use the shortest valid escape for each character that must be escaped.
-- When a `\uXXXX` escape is used, the four hex digits are lowercase (`a`–`f`, not `A`–`F`).
+- When a `\uXXXX` escape is used, the four hex digits are lowercase (`a`-`f`, not `A`-`F`).
 - Only the following are escaped: quotation mark (`"`), reverse solidus (`\`), and control characters below U+0020.
 - Control characters below U+0020 are escaped as `\u00XX` with lowercase hex, except where RFC 8259 defines a one-character escape that is shorter; then that shorter form is required: `\b`, `\f`, `\n`, `\r`, `\t`. (U+0008, U+000C, U+000A, U+000D, U+0009 respectively.)
 - Solidus (`/`, U+002F) is never escaped.
@@ -52,7 +52,7 @@ Required form: `YYYY-MM-DDTHH:MM:SS.sssZ`
 
 - Four-digit year, two-digit month, two-digit day.
 - Literal `T`.
-- Two-digit hour (00–23), two-digit minute, two-digit second.
+- Two-digit hour (00-23), two-digit minute, two-digit second.
 - Literal `.` followed by exactly three decimal digits for milliseconds.
 - Literal `Z`. No other offset is permitted. No `+00:00`. No omission of fractional seconds. No more or fewer than three fractional digits.
 
@@ -103,18 +103,18 @@ A verifier that sees a gap, a mismatched `prev_hash`, or a genesis `prev_hash` t
 
 A head object is exactly these four fields, no others:
 
-- `seq` — integer; the sequence number of the latest entry covered by this head
-- `entry_hash` — string; that entry’s `entry_hash`
-- `recorded_at` — timestamp string per Section 1.5
-- `log_id` — string; identifies the log instance
+- `seq` , integer; the sequence number of the latest entry covered by this head
+- `entry_hash` , string; that entry’s `entry_hash`
+- `recorded_at` , timestamp string per Section 1.5
+- `log_id` , string; identifies the log instance
 
 Serialise the head under Section 1. Sign those exact bytes with Ed25519. Encode the 64-byte signature as lowercase hexadecimal (128 hex characters, no `"sha256:"` prefix, no other framing).
 
 The signed head is published as an object with exactly three fields:
 
-- `head` — the head object above
-- `signature` — the hex-encoded Ed25519 signature
-- `public_key` — the corresponding Ed25519 public key, hex-encoded (32 bytes → 64 lowercase hex characters)
+- `head` , the head object above
+- `signature` , the hex-encoded Ed25519 signature
+- `public_key` , the corresponding Ed25519 public key, hex-encoded (32 bytes → 64 lowercase hex characters)
 
 Verification: recompute `canonical_json(head)`, verify the Ed25519 signature over those bytes with `public_key`, and check that `head.entry_hash` and `head.seq` match the addressed log entry.
 
@@ -122,7 +122,7 @@ Verification: recompute `canonical_json(head)`, verify the Ed25519 signature ove
 
 `key_id` is not a field of the signed head and is not covered by the signature in §4.
 
-It is SHA-256 over the raw 32-byte Ed25519 public key — the key bytes, not their hex encoding and not a PEM wrapping — written as `sha256:` followed by 64 lowercase hex characters.
+It is SHA-256 over the raw 32-byte Ed25519 public key , the key bytes, not their hex encoding and not a PEM wrapping , written as `sha256:` followed by 64 lowercase hex characters.
 
 ### 4.2 Key rotation
 
@@ -134,9 +134,9 @@ A verifier that sees a `key_id` it has no pre-published rule for must fail close
 
 `heads.jsonl` (path `data/log/heads.jsonl`, beside the day files) is append-only. One JSON object per line. Each line contains:
 
-- `head`, `signature`, `public_key` — the signed head from this section
-- `key_id` — §4.1, required
-- `rekor` — unsigned witness metadata. Not part of the signature. When a submission has been accepted, `log_index` is the integer index returned by the witness log. A line may instead carry `error` and omit `log_index`; that is a recorded failed attempt. Retries append a new line. They do not rewrite an earlier one, and a failed witness is not a reason to stop appending the chain.
+- `head`, `signature`, `public_key` , the signed head from this section
+- `key_id` , §4.1, required
+- `rekor` , unsigned witness metadata. Not part of the signature. When a submission has been accepted, `log_index` is the integer index returned by the witness log. A line may instead carry `error` and omit `log_index`; that is a recorded failed attempt. Retries append a new line. They do not rewrite an earlier one, and a failed witness is not a reason to stop appending the chain.
 
 Day D’s published head is the head over day D’s `observation_digest` entry (the first entry of day D+1’s log file). `head.entry_hash` equals that entry’s `entry_hash`. The head is not required to be the chain tip.
 
@@ -150,8 +150,8 @@ The witness submission itself is Sigstore Rekor `hashedrekord` `0.0.1`, `POST /a
 
 A correction is a new entry with `event` equal to `"correction"`. It carries at least:
 
-- `corrects_seq` — integer; the `seq` of the entry being corrected
-- `reason` — string; human-readable explanation
+- `corrects_seq` , integer; the `seq` of the entry being corrected
+- `reason` , string; human-readable explanation
 
 Entries are never edited in place. The original entry remains in the chain with its original `entry_hash` and its original linkage.
 
@@ -179,13 +179,13 @@ Every entry carries a required top-level integer field `format_version`.
 
 `event` is one of:
 
-- `move`, `deletion`, `recreation` — tag binding changes; require `from`, `to`, `classification`, `severity`, `observation_window_seconds` > 0, and `source_observations` (array of observation ids, length ≥ 2).
+- `move`, `deletion`, `recreation` , tag binding changes; require `from`, `to`, `classification`, `severity`, `observation_window_seconds` > 0, and `source_observations` (array of observation ids, length ≥ 2).
 - `recreation` additionally requires `gap_seconds`.
-- `repo_unavailable`, `repo_redirected` — repository identity events; require `http_status`. Redirected also requires `redirect_location`.
-- `correlation` — batch correlation as its **own** entry (never an edit of earlier Move entries). Requires a `correlation` object with `batch_id`, `member_seqs` (every element strictly less than this entry’s `seq`), `refs_moved_together`, `all_to_same_target`, and optional fixed-string `note`.
-- `observation_digest` — one per UTC day; commits to that day’s observation JSONL files under signature. Requires an `observation_digest` object with `date`, `repos_polled`, `ok`, `not_modified`, `failed`, `skipped`, and `files` (sorted by `path` ascending; each `{ path, sha256 }`). Optional `note` records a recovery annotation (a torn write preserved beside the log). Omitted when absent; never null. A day with no observations still has a digest — all counts zero and `files` empty. Absence of the digest is not how a quiet day is recorded.
-- `population_change` — watched-population membership change. Requires top-level `repo` and a `population_change` object with `change` (`added` | `removed`), `reason` (`seed` | `transitive` with `via` = `owner/repo[@path]@commit` | `manual` | `restored`), optional `path` (subdirectory action), and optional `note`. Removal never deletes history; it records that observation of this `(repo, path)` stops here.
-- `correction` — as in §5.
+- `repo_unavailable`, `repo_redirected` , repository identity events; require `http_status`. Redirected also requires `redirect_location`.
+- `correlation` , batch correlation as its **own** entry (never an edit of earlier Move entries). Requires a `correlation` object with `batch_id`, `member_seqs` (every element strictly less than this entry’s `seq`), `refs_moved_together`, `all_to_same_target`, and optional fixed-string `note`.
+- `observation_digest` , one per UTC day; commits to that day’s observation JSONL files under signature. Requires an `observation_digest` object with `date`, `repos_polled`, `ok`, `not_modified`, `failed`, `skipped`, and `files` (sorted by `path` ascending; each `{ path, sha256 }`). Optional `note` records a recovery annotation (a torn write preserved beside the log). Omitted when absent; never null. A day with no observations still has a digest , all counts zero and `files` empty. Absence of the digest is not how a quiet day is recorded.
+- `population_change` , watched-population membership change. Requires top-level `repo` and a `population_change` object with `change` (`added` | `removed`), `reason` (`seed` | `transitive` with `via` = `owner/repo[@path]@commit` | `manual` | `restored`), optional `path` (subdirectory action), and optional `note`. Removal never deletes history; it records that observation of this `(repo, path)` stops here.
+- `correction` , as in §5.
 
 ### 7.2 Severity and ref form (v1)
 
