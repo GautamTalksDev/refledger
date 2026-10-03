@@ -1,5 +1,7 @@
 # Refledger
 
+**Live site:** [refledger.gautamkhosla.com](https://refledger.gautamkhosla.com)
+
 **What did `v4` point at last Tuesday? Refledger remembers.**
 
 Your workflow says this:
@@ -28,9 +30,9 @@ Same label. Different code. No trace. Unless someone was watching.
 
 ## This has already happened. Twice, at scale.
 
-**March 2025, `tj-actions/changed-files`.** An attacker repointed 346 existing version tags at a single malicious commit. Every pipeline using any of them started printing its own secrets into build logs. Most of those tags had been stable for over 148 days. They looked about as trustworthy as a tag can look.
+**March 2025, `tj-actions/changed-files`.** An attacker moved nearly all of its version tags to a single malicious commit. Every pipeline using any of them started printing its own secrets into build logs. ([StepSecurity write-up](https://www.stepsecurity.io/blog/harden-runner-detection-tj-actions-changed-files-action-is-compromised); [CVE-2025-30066](https://github.com/advisories/GHSA-mrrh-fwg8-r2c3). Neither source states an exact tag count.)
 
-**March 2026, `aquasecurity/trivy-action`.** 76 of 77 version tags were force pushed to a credential stealer, alongside every tag of `setup-trivy`. One team was correctly SHA pinned to `trivy-action` and got hit anyway, because `trivy-action` itself referenced `setup-trivy` by tag. Pinning the top of the tree does not pin the rest of it.
+**March 2026, `aquasecurity/trivy-action`.** Per [GHSA-69fq-xp46-6x23](https://github.com/aquasecurity/trivy/security/advisories/GHSA-69fq-xp46-6x23), an attacker force-pushed 76 of 77 version tags to credential-stealing malware, and replaced all 7 tags of `aquasecurity/setup-trivy`. The same advisory notes that SHA-pinning `trivy-action` to a commit from before 2025-04-09 could still pull a malicious `setup-trivy` by tag. Pinning the top of the tree does not pin the rest of it.
 
 Both attacks share a shape: many old, stable, *exact* version tags moving together to one commit. Legitimate release engineering never does that. Refledger looks for exactly that shape.
 
@@ -44,7 +46,7 @@ Both attacks share a shape: many old, stable, *exact* version tags moving togeth
 
 **A witness.** Once a day the day's ObservationDigest is signed with Ed25519, appended to `heads.jsonl`, submitted to [Sigstore's Rekor](https://docs.sigstore.dev/logging/overview/), and fast-forward pushed to the public repository so `git clone` carries the ledger. We cannot rewrite yesterday even if we wanted to.
 
-**Reproducible.** Give anyone the raw observations from the `data` branch and they can regenerate the entire ledger byte for byte. You do not have to trust our log. You can rebuild it.
+**Reproducible.** From the same raw observations, two independent runs of classify → enrich → derive → append produce identical ledger bytes. That is what `replay_observe_classify_derive_chain_is_byte_for_byte` in `crates/refledger-poller/tests/derive.rs` proves. You do not have to trust our published log; you can rebuild from the observations on the `data` branch and compare.
 
 ## What Refledger is not
 
@@ -58,10 +60,10 @@ It is not the only tag monitor out there, either. Commercial tools watch tags pr
 
 | | |
 |---|---|
-| **Stage** | M1 in progress: seven-day measurement run; **code on `main` frozen 2026-10-03 through 2026-10-10** (seal at 2026-10-10T00:00:00Z after 2026-10-09 day) |
+| **Stage** | Watching started **29 September 2026**. The seven-day M1 measurement window seals at **10 October 2026** (`2026-10-10T00:00:00Z`). Code on `main` is frozen for that window ([`FREEZE.md`](FREEZE.md)). |
 | **Watching** | 38 action keys across 35 repositories, plus a canary we control (36 poll groups) |
-| **Poll rate** | every 5 minutes at `:02`, `:07`, … via Cloudflare Worker `refledger-clock` (Actions `schedule` as backup) |
-| **Public site** | Coming at [refledger.gautamkhosla.com](https://refledger.gautamkhosla.com) after 2026-10-10 seal verification |
+| **Poll rate** | every 5 minutes at `:02`, `:07`, … via Cloudflare Worker `refledger-clock` (Actions `schedule` as backup). Same cadence in [`OPERATIONS.md`](OPERATIONS.md). |
+| **Public site** | [refledger.gautamkhosla.com](https://refledger.gautamkhosla.com) |
 
 The population is deliberately small and honestly defined: a set of cited seed actions plus everything those actions pull in through their own `action.yml` files, at every tag. See [`population/METHOD.md`](population/METHOD.md).
 
@@ -80,7 +82,7 @@ cargo run --locked --release -p refledger-verify -- data/log --strict \
   --pubkey b3e7e795c35dee53731e039b76da930fc54e87e2edc632449a8a2e55252e276a
 ```
 
-After the first daily seal (00:00 UTC), a fresh clone of `main` has `data/log/` with day files and `heads.jsonl`. Until then that path is absent; see [`docs/VERIFY.md`](docs/VERIFY.md) for verifying the in-progress chain on the `data` branch (no `--strict` until heads exist).
+That is the same command shown on the site's [Verify](https://refledger.gautamkhosla.com/verify) page. A fresh clone of `main` has `data/log/` with day files and `heads.jsonl`. See [`docs/VERIFY.md`](docs/VERIFY.md) for verifying the in-progress chain on the `data` branch (no `--strict` until heads exist).
 
 The verifier shares no code with the signer, on purpose.
 
@@ -96,6 +98,7 @@ The verifier shares no code with the signer, on purpose.
 | [Rekor witnessing](docs/REKOR.md) | How daily heads are submitted to Sigstore's public log |
 | [Crawler policy](OPERATIONS.md) | What we request from GitHub, how often, and how we back off |
 | [Security](SECURITY.md) | How to report a bug, and what we do when we spot something live |
+| [Incidents](https://refledger.gautamkhosla.com/incidents) | Public summaries of every disclosed mistake (source: [`docs/incident-summaries.md`](docs/incident-summaries.md)) |
 | [Kill test](KILL-TEST.md) | The public, pre registered condition under which this project shuts down |
 | [Freeze](FREEZE.md) | Code freeze on `main` for the seven-day run |
 
@@ -119,14 +122,14 @@ Live observations and the in-progress day log are on the **`data` branch** (dire
 
 ## Privacy
 
-The public site at [refledger.gautamkhosla.com](https://refledger.gautamkhosla.com) (launching after 2026-10-10 seal) collects nothing from visitors. Checks run in the browser against GitHub's API. The append-only ledger stores public repository facts (tag names, commit hashes, times), not personal data from taggers or authors. Site policy: [/privacy](https://refledger.gautamkhosla.com/privacy) on the public site.
+The public site at [refledger.gautamkhosla.com](https://refledger.gautamkhosla.com) collects nothing from visitors. Checks run in the browser against GitHub's API. The append-only ledger stores public repository facts (tag names, commit hashes, times), not personal data from taggers or authors. Site policy: [/privacy](https://refledger.gautamkhosla.com/privacy).
 
 ## Security
 
-Report vulnerabilities in Refledger via [GitHub private vulnerability reporting](https://github.com/GautamTalksDev/refledger/security/advisories/new). Operator response policy for observed attacks is in [`SECURITY.md`](SECURITY.md). Public summary: [/security](https://refledger.gautamkhosla.com/security) on the site (launching after 2026-10-10); machine-readable contact at [/.well-known/security.txt](https://refledger.gautamkhosla.com/.well-known/security.txt).
+Report vulnerabilities in Refledger via [GitHub private vulnerability reporting](https://github.com/GautamTalksDev/refledger/security/advisories/new). Operator response policy for observed attacks is in [`SECURITY.md`](SECURITY.md). Public summary: [/security](https://refledger.gautamkhosla.com/security); machine-readable contact at [/.well-known/security.txt](https://refledger.gautamkhosla.com/.well-known/security.txt).
 
 ## License
 
 Code is Apache 2.0. See [`LICENSE`](LICENSE). The same text is also in [`LICENSE-APACHE`](LICENSE-APACHE).
 
-Ledger data is dedicated to the public domain. The ledger, observations, and published data are under [`DATA-LICENSE`](DATA-LICENSE) (CC0 1.0). Ledger data: CC0, public domain.
+Ledger data is dedicated to the public domain under [`DATA-LICENSE`](DATA-LICENSE) (CC0 1.0). Ledger data: CC0, public domain.
