@@ -574,3 +574,5 @@
 {"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"755ae3b632c72dd8ea997edf80a6a5cdd863318fd7f9b64bb1bbf493321fe54b\"","stored_at":"2026-10-03T05:18:12.354Z"}
 {"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"5a96ac8316348d64ed186b82ae7caf7199495d560c9f68a17b4b5f09ef2d295f\"","stored_at":"2026-10-03T06:12:58.656Z"}
 {"repo":"actions/github-script","template":"/repos/{owner}/{repo}","query":"","etag":"\"fe42261933481d9045eae744da1c894e1bfaeed59e74aa812225660862df248f\"","stored_at":"2026-10-03T06:43:10.832Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"bf0fc900dbb3755eeab66a20db185c95366585f2a0dde67fd27b73a43630b7ef\"","stored_at":"2026-10-03T07:18:03.460Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"9abc5839fa52f15c4e6564e3628ba80b614b23e8a37710ee9351ed21b2251d6a\"","stored_at":"2026-10-03T07:18:03.460Z"}
