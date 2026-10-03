@@ -447,3 +447,4 @@
 {"repo":"docker/build-push-action","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"actions/cache","archived":false}
