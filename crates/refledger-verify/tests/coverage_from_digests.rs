@@ -13,6 +13,57 @@ fn repo_data_log() -> Option<PathBuf> {
     None
 }
 
+struct DigestCoverage {
+    seq: u64,
+    date: String,
+    skipped: u64,
+    failed: u64,
+}
+
+struct CoverageSums {
+    skipped: u64,
+    failed: u64,
+    rows: Vec<DigestCoverage>,
+}
+
+/// Sum `skipped` / `failed` from every `observation_digest` entry in the
+/// published chain. The test asserts the verifier reports those sums, not a
+/// hardcoded snapshot that goes stale when the next day seals.
+fn coverage_from_signed_digests(entries: &[serde_json::Value]) -> CoverageSums {
+    let mut skipped = 0u64;
+    let mut failed = 0u64;
+    let mut rows = Vec::new();
+    for entry in entries {
+        if entry.get("event").and_then(|v| v.as_str()) != Some("observation_digest") {
+            continue;
+        }
+        let digest = entry
+            .get("observation_digest")
+            .expect("observation_digest body");
+        let s = digest.get("skipped").and_then(|v| v.as_u64()).unwrap_or(0);
+        let f = digest.get("failed").and_then(|v| v.as_u64()).unwrap_or(0);
+        let seq = entry.get("seq").and_then(|v| v.as_u64()).expect("seq");
+        let date = digest
+            .get("date")
+            .and_then(|v| v.as_str())
+            .unwrap_or("?")
+            .to_string();
+        skipped += s;
+        failed += f;
+        rows.push(DigestCoverage {
+            seq,
+            date,
+            skipped: s,
+            failed: f,
+        });
+    }
+    CoverageSums {
+        skipped,
+        failed,
+        rows,
+    }
+}
+
 #[test]
 fn published_data_log_coverage_from_signed_digests() {
     let Some(log_dir) = repo_data_log() else {
@@ -24,18 +75,40 @@ fn published_data_log_coverage_from_signed_digests() {
     let loaded = load_jsonl_dir(&log_dir).expect("load published data/log");
     let verdict = verify_chain(&loaded.entries).expect("verify published chain");
     assert!(verdict.ok);
+
+    let sums = coverage_from_signed_digests(&loaded.entries);
+    assert!(
+        !sums.rows.is_empty(),
+        "published data/log must contain at least one observation_digest"
+    );
+    // One digest per sealed calendar day. A second digest for the same date
+    // would mean a double seal; fail loudly instead of summing quietly.
+    let mut seen_dates = std::collections::BTreeSet::new();
+    for row in &sums.rows {
+        assert!(
+            seen_dates.insert(row.date.clone()),
+            "date {} has more than one observation_digest (seq {}); refuse to treat that as a simple sum",
+            row.date,
+            row.seq
+        );
+        eprintln!(
+            "digest seq={} date={} skipped={} failed={}",
+            row.seq, row.date, row.skipped, row.failed
+        );
+    }
+
     assert_eq!(
-        verdict.coverage_skipped, 251,
-        "signed digests sum skipped=251 (2026-09-29: 215, 2026-09-30: 0, 2026-10-01: 36)"
+        verdict.coverage_skipped, sums.skipped,
+        "verifier skipped sum must match signed digests"
     );
     assert_eq!(
-        verdict.coverage_failed, 1,
-        "2026-09-29 digest records failed=1"
+        verdict.coverage_failed, sums.failed,
+        "verifier failed sum must match signed digests"
     );
 
     // CLI line must match the signed digest counts, not a raw coverage_gap event tally.
     // Non-strict: --strict rejects this log once any entry is more than 48h
-    // older than the latest head (seq 0 vs the 2026-10-01 seal).
+    // older than the latest head.
     let bin = env!("CARGO_BIN_EXE_refledger-verify");
     let out = Command::new(bin)
         .args([log_dir.to_str().unwrap()])
@@ -47,10 +120,13 @@ fn published_data_log_coverage_from_signed_digests() {
         out.status.success(),
         "verifier must pass on published data/log\nstdout:\n{stdout}\nstderr:\n{stderr}"
     );
+    let expect_line = format!(
+        "coverage gaps recorded: {} skipped, {} failed polls (from signed digests)",
+        sums.skipped, sums.failed
+    );
     assert!(
-        stdout
-            .contains("coverage gaps recorded: 251 skipped, 1 failed polls (from signed digests)"),
-        "unexpected coverage line:\n{stdout}"
+        stdout.contains(&expect_line),
+        "unexpected coverage line (wanted {expect_line:?}):\n{stdout}"
     );
 }
 
