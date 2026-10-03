@@ -576,3 +576,4 @@
 {"repo":"actions/github-script","template":"/repos/{owner}/{repo}","query":"","etag":"\"fe42261933481d9045eae744da1c894e1bfaeed59e74aa812225660862df248f\"","stored_at":"2026-10-03T06:43:10.832Z"}
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"bf0fc900dbb3755eeab66a20db185c95366585f2a0dde67fd27b73a43630b7ef\"","stored_at":"2026-10-03T07:18:03.460Z"}
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"9abc5839fa52f15c4e6564e3628ba80b614b23e8a37710ee9351ed21b2251d6a\"","stored_at":"2026-10-03T07:18:03.460Z"}
+{"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"8df201eee0d317c1799b2049501f15f42f2aef0f6a5ea81d5b3c9b1c2420216e\"","stored_at":"2026-10-03T07:23:13.247Z"}
