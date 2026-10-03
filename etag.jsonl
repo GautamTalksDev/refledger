@@ -570,3 +570,4 @@
 {"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"e0d622f93725fca0552bdfcb60bfea26eb530149ee2630a14dfa4fc9ba87f561\"","stored_at":"2026-10-03T04:23:09.393Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"09c3edb5794a858f24a3504072d379044bee25353365a6fd46249ae581644c5b\"","stored_at":"2026-10-03T04:23:09.393Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"6dd7ac655856e90c30f5807b459e1245fc42f8edbd76579dedc83dabc67501c1\"","stored_at":"2026-10-03T04:33:06.991Z"}
+{"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"09a74c63d80899a0973d70dba673f56cf0a0cc3cecbd16e7d79bcfd051da67f2\"","stored_at":"2026-10-03T05:13:11.069Z"}
