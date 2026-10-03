@@ -605,3 +605,4 @@
 {"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"9bdd9a3a7fc6d0b149af6ee3385eb3cb07002e6c7d71f31cc893523505b63cc5\"","stored_at":"2026-10-03T17:13:10.935Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"b2360ac831459fc6bab726ced631ebf960e9bd46b3ac9bccc306e227fd1cc948\"","stored_at":"2026-10-03T17:18:07.278Z"}
 {"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"153ad91d0df24da40d133b1f445d54da3e6789c9d0f2fc9731d4efce36247704\"","stored_at":"2026-10-03T17:33:05.124Z"}
+{"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"296e5ced905801284016872026fc8ecf862abc375d69060d5ac1988cb653943a\"","stored_at":"2026-10-03T17:53:12.630Z"}
