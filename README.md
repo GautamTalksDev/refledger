@@ -127,4 +127,6 @@ Report vulnerabilities in Refledger via [GitHub private vulnerability reporting]
 
 ## License
 
-Code is Apache 2.0. See [`LICENSE-APACHE`](LICENSE-APACHE).
+Code is Apache 2.0. See [`LICENSE`](LICENSE). The same text is also in [`LICENSE-APACHE`](LICENSE-APACHE).
+
+Ledger data is dedicated to the public domain. The ledger, observations, and published data are under [`DATA-LICENSE`](DATA-LICENSE) (CC0 1.0). Ledger data: CC0, public domain.
