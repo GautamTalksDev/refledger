@@ -592,3 +592,4 @@
 {"repo":"docker/login-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"2663bff807bf332150d807e056d0653c6792c43c1cb7f5e1ff5b76e8dd4e0f1a\"","stored_at":"2026-10-03T13:08:08.078Z"}
 {"repo":"actions/labeler","template":"/repos/{owner}/{repo}","query":"","etag":"\"4fdb6a8d3018b4c21a1150c9b82f3b208492880e4ec3dc3fd17610745c116b93\"","stored_at":"2026-10-03T13:13:47.070Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"cee1254352238d604cf4098f9b8738ec99770215b80108e6ec07a9659b6c9205\"","stored_at":"2026-10-03T13:23:19.494Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"80a9c293ac11403f7e2e71b2a2d9ca443a9efac2aa5d6cc5f6f2ac60f4beee2f\"","stored_at":"2026-10-03T13:43:48.541Z"}
