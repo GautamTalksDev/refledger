@@ -13,10 +13,23 @@ fn repo_data_log() -> Option<PathBuf> {
     None
 }
 
+struct DigestCoverage {
+    seq: u64,
+    date: String,
+    skipped: u64,
+    failed: u64,
+}
+
+struct CoverageSums {
+    skipped: u64,
+    failed: u64,
+    rows: Vec<DigestCoverage>,
+}
+
 /// Sum `skipped` / `failed` from every `observation_digest` entry in the
 /// published chain. The test asserts the verifier reports those sums, not a
 /// hardcoded snapshot that goes stale when the next day seals.
-fn coverage_from_signed_digests(entries: &[serde_json::Value]) -> (u64, u64, Vec<(u64, String, u64, u64)>) {
+fn coverage_from_signed_digests(entries: &[serde_json::Value]) -> CoverageSums {
     let mut skipped = 0u64;
     let mut failed = 0u64;
     let mut rows = Vec::new();
@@ -37,9 +50,18 @@ fn coverage_from_signed_digests(entries: &[serde_json::Value]) -> (u64, u64, Vec
             .to_string();
         skipped += s;
         failed += f;
-        rows.push((seq, date, s, f));
+        rows.push(DigestCoverage {
+            seq,
+            date,
+            skipped: s,
+            failed: f,
+        });
     }
-    (skipped, failed, rows)
+    CoverageSums {
+        skipped,
+        failed,
+        rows,
+    }
 }
 
 #[test]
@@ -54,29 +76,34 @@ fn published_data_log_coverage_from_signed_digests() {
     let verdict = verify_chain(&loaded.entries).expect("verify published chain");
     assert!(verdict.ok);
 
-    let (expect_skipped, expect_failed, rows) = coverage_from_signed_digests(&loaded.entries);
+    let sums = coverage_from_signed_digests(&loaded.entries);
     assert!(
-        !rows.is_empty(),
+        !sums.rows.is_empty(),
         "published data/log must contain at least one observation_digest"
     );
     // One digest per sealed calendar day. A second digest for the same date
     // would mean a double seal; fail loudly instead of summing quietly.
     let mut seen_dates = std::collections::BTreeSet::new();
-    for (seq, date, skipped, failed) in &rows {
+    for row in &sums.rows {
         assert!(
-            seen_dates.insert(date.clone()),
-            "date {date} has more than one observation_digest (seq {seq}); refuse to treat that as a simple sum"
+            seen_dates.insert(row.date.clone()),
+            "date {} has more than one observation_digest (seq {}); refuse to treat that as a simple sum",
+            row.date,
+            row.seq
         );
-        eprintln!("digest seq={seq} date={date} skipped={skipped} failed={failed}");
+        eprintln!(
+            "digest seq={} date={} skipped={} failed={}",
+            row.seq, row.date, row.skipped, row.failed
+        );
     }
 
     assert_eq!(
-        verdict.coverage_skipped, expect_skipped,
-        "verifier skipped sum must match signed digests {rows:?}"
+        verdict.coverage_skipped, sums.skipped,
+        "verifier skipped sum must match signed digests"
     );
     assert_eq!(
-        verdict.coverage_failed, expect_failed,
-        "verifier failed sum must match signed digests {rows:?}"
+        verdict.coverage_failed, sums.failed,
+        "verifier failed sum must match signed digests"
     );
 
     // CLI line must match the signed digest counts, not a raw coverage_gap event tally.
@@ -94,7 +121,8 @@ fn published_data_log_coverage_from_signed_digests() {
         "verifier must pass on published data/log\nstdout:\n{stdout}\nstderr:\n{stderr}"
     );
     let expect_line = format!(
-        "coverage gaps recorded: {expect_skipped} skipped, {expect_failed} failed polls (from signed digests)"
+        "coverage gaps recorded: {} skipped, {} failed polls (from signed digests)",
+        sums.skipped, sums.failed
     );
     assert!(
         stdout.contains(&expect_line),
