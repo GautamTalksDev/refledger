@@ -440,3 +440,4 @@
 {"repo":"docker/setup-buildx-action","archived":false}
 {"repo":"google-github-actions/auth","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"actions/upload-artifact","archived":false}
