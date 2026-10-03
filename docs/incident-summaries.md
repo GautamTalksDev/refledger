@@ -224,16 +224,16 @@ Moves that could not be looked up in time were dropped
 
 ### What happened
 
-If the poller saw a tag move but could not finish looking it up in the same run, the move was not signed that run, and nothing recorded that the delay happened. The tip in memory was left alone so a later run could see the change again, but the first-seen time could be wrong when it finally signed.
+If the poller saw a tag move but could not finish looking it up in the same run, the move was not signed, and nothing recorded that it happened. The new tip was archived without a full lookup. After the process exited, the next run rebuilt from that archive and no longer saw a tip change, so the move was never signed.
 
 ### Effect on watched actions
 
-None. Replaying the observation archive found no tip change of a watched action, and no tip change of the canary, that was lost because a lookup could not finish in the same run. The canary batch missed at 02:18 UTC on 1 October is a different defect, listed above.
+None in the production archive. Every tip change in the saved checks was compared with the signed chain, including changes that only appear when two runs are read in order. No watched action and no canary tag had a tip change of this shape that lacked a matching signed entry. The canary batch missed at 02:18 UTC on 1 October is a different defect, listed above. A test on the code from just before the fix shows the loss: run 1 fails the lookup, run 2 has budget, and run 2 still signs nothing.
 
 ### What changed
 
-Such moves are now saved, retried, and signed with their original time, and each delay is noted in the digest (`bc6af090`).
+Such moves are now saved across runs, retried, and signed with their original time, and each delay is noted in the digest (`bc6af090`).
 
 ### Technical details
 
-Before `bc6af090`, a tip change whose tree could not be trusted in the same run was not signed (`continue` after "not signing a move"); bindings were not advanced, so a later peel could still form a Move, but deferral was only an `eprintln` (no pending record, no digest count), and `to.first_observed` used the later run's time. Commit `bc6af090` persists tip changes in `state/pending_moves.jsonl`, soft-fails peel per tip on 5xx or budget exhaustion, signs later with the original `first_observed` and observation window, and records `pending-move-deferred:` notes for the next ObservationDigest. Archive replay of Ok tip changes against the signed chain found no watched-action move and no canary move dropped by that failure class.
+Regression test on main: `run_once_defers_move_when_peel_5xx_then_signs_with_first_seen`. Proven on `bc6af090^` with a `run_once` probe: seed a peeled tip, run 1 sees the tip move and peel returns 500, run 1 archives a listing-only Ok for the new tip and signs no Move, `state/pending_moves.jsonl` does not exist, run 2 opens a fresh `Store` with peel succeeding and still signs no Move. The loss is across process exit: rebuild from the archive does not retain a pending tip change, so the next process no longer sees OLD→NEW. Commit `bc6af090` persists tip changes in `state/pending_moves.jsonl`, soft-fails peel per tip on 5xx or budget exhaustion, signs later with the original `first_observed` and observation window, and records `pending-move-deferred:` notes for the next ObservationDigest. Archive replay: every Ok tip change (chronological per repo across all observation files) compared to signed Move/Deletion/Recreation; zero listing-only new-tip changes lacked a covering chain event for watched actions or the canary.
