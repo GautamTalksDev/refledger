@@ -1,0 +1,31 @@
+# Ledger data license
+
+SPDX-License-Identifier: CC0-1.0
+
+Ledger data: CC0, public domain.
+
+To the extent possible under law, the maintainer of Refledger has waived
+all copyright and related or neighboring rights to the ledger, the
+observations, and the other published data in this repository. This work
+is published under the Creative Commons CC0 1.0 Universal Public Domain
+Dedication.
+
+https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+You can copy, modify, distribute, and use this data, including for
+commercial purposes, without asking permission.
+
+## What this covers
+
+- Sealed ledger files under `data/log/`
+- Observations and in-progress logs on the `data` branch
+- Published population facts that are data
+
+## What this does not cover
+
+Source code, documentation, and the poller are Apache-2.0. See `LICENSE`.
+
+Third-party repository contents that appear inside an observation stay
+under their own terms. This dedication covers our record of the public
+facts we observed: tag names, commit identifiers, timestamps, and our
+classification fields.
