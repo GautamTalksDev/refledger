@@ -733,3 +733,6 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"24807d1dcc7aaaad6697aaa4ba18560b0aab975fc49a6c7640d5e0b34f4a39a1\"","stored_at":"2026-10-04T21:18:28.856Z"}
 {"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"3d565d962f45954ffe0e203f6e68210f895f33385ffa786d143192aa8bb54d31\"","stored_at":"2026-10-04T21:38:12.837Z"}
 {"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"1c556c7c825ac37e62aa1eae101653e2b983ae76261a83de98626a1d90171ed8\"","stored_at":"2026-10-04T21:43:24.390Z"}
+{"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"1777abbae0220feb2cc41d828ca758d091492bc4b7d8b259c45bce6059e542dd\"","stored_at":"2026-10-04T21:58:16.699Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"dc22c7d9b350a6680b674f5f3c90085daca1c6a9dd6a5fe92f3dd75df1aa712b\"","stored_at":"2026-10-04T21:58:16.699Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"bace2a5f4ab6e72af34d26b413d494f840d9deb246f7ef939f7eaa791649a10b\"","stored_at":"2026-10-04T21:58:16.699Z"}

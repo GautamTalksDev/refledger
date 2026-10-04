@@ -526,3 +526,6 @@
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"aws-actions/configure-aws-credentials","archived":false}
 {"repo":"docker/build-push-action","archived":false}
+{"repo":"actions/ai-inference","archived":false}
+{"repo":"actions/attest","archived":false}
+{"repo":"actions/attest-build-provenance","archived":false}
