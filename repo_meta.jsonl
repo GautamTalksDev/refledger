@@ -496,3 +496,4 @@
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"docker/build-push-action","archived":false}
 {"repo":"actions/dependency-review-action","archived":false}
+{"repo":"actions/upload-artifact","archived":false}
