@@ -703,3 +703,5 @@
 {"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"4d61db181c3421d7342078b2d232826c49c0a7042f39e537d26fa7dca9eb708d\"","stored_at":"2026-10-04T14:18:16.514Z"}
 {"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"c67e3679cc7ad1e2c57d3cc32770991cb9487f3548d10ae22b13b7f38ddd4044\"","stored_at":"2026-10-04T14:38:18.257Z"}
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"eb02611d284dfbd62b27c0d2cb3480e8003f52c27fe49090314099dc1f6a625b\"","stored_at":"2026-10-04T14:43:20.531Z"}
+{"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"3578a9a68c616ccc1df86c0191c5f0766a3d077bff84b2c0b3f5c58b356d9022\"","stored_at":"2026-10-04T14:53:18.859Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"b519ec1c39a4bcc62422eed0c0d7670db515d70acc7c7d08ff31df555174871a\"","stored_at":"2026-10-04T14:53:18.859Z"}
