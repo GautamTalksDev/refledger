@@ -693,3 +693,4 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"54d88e63c25265301520b540b1c5ee464f9eb6266e40129eb74e8df81a57fcf9\"","stored_at":"2026-10-04T11:08:20.779Z"}
 {"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"786fea13b2be1fce1613f47b9c1925d42a7c1fb4537cdc41172b115f1f16d219\"","stored_at":"2026-10-04T11:38:14.395Z"}
 {"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"1d94e5a776f78d9f1271087beab226a8fca6495113150da86ff7b367e485f221\"","stored_at":"2026-10-04T11:53:15.296Z"}
+{"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"81740b0aa43ebd8f1abe03853ecff7267e970806ec33cc4ad9afdc51922b0e8d\"","stored_at":"2026-10-04T11:58:18.256Z"}

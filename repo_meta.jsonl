@@ -489,3 +489,4 @@
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/cache","archived":false}
 {"repo":"azure/login","archived":false}
+{"repo":"aws-actions/configure-aws-credentials","archived":false}
