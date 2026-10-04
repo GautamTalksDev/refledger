@@ -731,3 +731,4 @@
 {"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"045f940d1dfd1ae4f47cdf414cb244933f2848f3e06bd0b183cbb6ce9cb37490\"","stored_at":"2026-10-04T20:33:21.493Z"}
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"5a7ff21c4899d36a3a8bf45b5031ee4723761b914a32303be6243d9ce73a2ae4\"","stored_at":"2026-10-04T21:08:26.913Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"24807d1dcc7aaaad6697aaa4ba18560b0aab975fc49a6c7640d5e0b34f4a39a1\"","stored_at":"2026-10-04T21:18:28.856Z"}
+{"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"3d565d962f45954ffe0e203f6e68210f895f33385ffa786d143192aa8bb54d31\"","stored_at":"2026-10-04T21:38:12.837Z"}
