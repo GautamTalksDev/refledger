@@ -530,3 +530,4 @@
 {"repo":"actions/attest","archived":false}
 {"repo":"actions/attest-build-provenance","archived":false}
 {"repo":"actions/ai-inference","archived":false}
+{"repo":"actions/setup-node","archived":false}
