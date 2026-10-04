@@ -466,3 +466,4 @@
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/setup-java","archived":false}
 {"repo":"actions/checkout","archived":false}
+{"repo":"reviewdog/action-actionlint","archived":false}

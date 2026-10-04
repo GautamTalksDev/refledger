@@ -666,3 +666,5 @@
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"b5aa2a5c9e856fb83ef397366c4e3958ec17355a807e8378635b948f329c2687\"","stored_at":"2026-10-04T02:03:14.216Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"d0a0bf9ef7be6208ef3c589b7f4d20cac76c5905ddee36d86215140abc7e0981\"","stored_at":"2026-10-04T02:20:23.316Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"262e59f5cc80537b0a2b99db23afab871bf5135d9120b4eaa8344245f7c357b0\"","stored_at":"2026-10-04T02:48:16.508Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"5a81d120f609c707d8f5106a64e3500d9257347914082015c9a82df70c8c5549\"","stored_at":"2026-10-04T03:03:24.894Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"f4d2c24a8be2ffb89d6428f82359712cdb955c1a6f3f9867028b67256f14e7c3\"","stored_at":"2026-10-04T03:03:24.894Z"}
