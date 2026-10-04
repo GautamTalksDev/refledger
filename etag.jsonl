@@ -718,3 +718,4 @@
 {"repo":"docker/metadata-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"6a59b723c309eae41667310d165bb9c895e7d80accde02ed6d6857dd30aa4811\"","stored_at":"2026-10-04T17:13:26.180Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"4a1cb1c69817317fae5e3e08a3e38fa64700fb03239871107729e6dba2b130a4\"","stored_at":"2026-10-04T17:18:14.462Z"}
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"b17c4b754c00b4ad0a1bd203440bf6ca73457527a8bb69e7129801f4e89f4d5e\"","stored_at":"2026-10-04T17:38:23.282Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"69bb8cab4467b5d63a1522a5ba4dfa54885feaf42d94efa4f015611b62d2cee6\"","stored_at":"2026-10-04T17:53:20.537Z"}
