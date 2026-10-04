@@ -725,3 +725,4 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"e19a709872c7a639ef5a6e3d5f4a3ccdc9b6329f7f7179e64489bf75fe752778\"","stored_at":"2026-10-04T18:43:21.932Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"5f5d1f1580b0cf0a786247bc4b388b9d98d6b8149dd70fc0321addb48decd1c5\"","stored_at":"2026-10-04T18:48:25.298Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"016cf1f0bb703771014a54b1093767fa7da6ebe9b433337ee5a8b77e7fbb0be4\"","stored_at":"2026-10-04T18:48:25.298Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"79b699792df1b9c0cc03d0692098204d45a1ddec3b256a506959e93b9d44e2cb\"","stored_at":"2026-10-04T19:57:39.014Z"}
