@@ -514,3 +514,4 @@
 {"repo":"actions/attest-build-provenance","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"azure/webapps-deploy","archived":false}
+{"repo":"aws-actions/amazon-ecr-login","archived":false}
