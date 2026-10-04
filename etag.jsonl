@@ -708,3 +708,6 @@
 {"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"905e0e041363e929ab1b1454e6ea8f2b274d3c7ea8cc1bc3679dcdf91fa89e78\"","stored_at":"2026-10-04T15:13:22.867Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"036aa1984e1a4bb9f2e07545dac71e0c04a5854645bb61777b6bb4a3e20efddb\"","stored_at":"2026-10-04T15:23:22.902Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"b6bc405e22444809e070783c99a1ff883a9bba6de89185f0ff657307c47c73cf\"","stored_at":"2026-10-04T15:23:22.902Z"}
+{"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"338d29229554bd021645844bb4a3a894d2476a08d62e13e03d1a7e5d69290911\"","stored_at":"2026-10-04T15:28:16.826Z"}
+{"repo":"docker/metadata-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"b4e2ddf57404ed83a9d2e81baebe88ff73bc0d6b02787891889d08a90ecce843\"","stored_at":"2026-10-04T15:28:16.826Z"}
+{"repo":"google-github-actions/setup-gcloud","template":"/repos/{owner}/{repo}","query":"","etag":"\"230d7d97f3882ebd965432c8a1445d16ae024b56f47f923437f769a005aef637\"","stored_at":"2026-10-04T15:28:16.826Z"}
