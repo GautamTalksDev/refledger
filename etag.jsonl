@@ -705,3 +705,4 @@
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"eb02611d284dfbd62b27c0d2cb3480e8003f52c27fe49090314099dc1f6a625b\"","stored_at":"2026-10-04T14:43:20.531Z"}
 {"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"3578a9a68c616ccc1df86c0191c5f0766a3d077bff84b2c0b3f5c58b356d9022\"","stored_at":"2026-10-04T14:53:18.859Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"b519ec1c39a4bcc62422eed0c0d7670db515d70acc7c7d08ff31df555174871a\"","stored_at":"2026-10-04T14:53:18.859Z"}
+{"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"905e0e041363e929ab1b1454e6ea8f2b274d3c7ea8cc1bc3679dcdf91fa89e78\"","stored_at":"2026-10-04T15:13:22.867Z"}
