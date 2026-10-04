@@ -467,3 +467,5 @@
 {"repo":"actions/setup-java","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"reviewdog/action-actionlint","archived":false}
+{"repo":"aquasecurity/setup-trivy","archived":false}
+{"repo":"reviewdog/action-eslint","archived":false}
