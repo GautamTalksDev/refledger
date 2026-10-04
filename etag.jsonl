@@ -686,3 +686,5 @@
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"e9a1532e668a9d3a89378bea849bcf37656fa6925eea5d4566e0841703543a46\"","stored_at":"2026-10-04T08:28:17.393Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"4d2017cd507d928f6f4e0934ac4b3581435d2f786013abe5501263017910c68d\"","stored_at":"2026-10-04T08:28:17.393Z"}
 {"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"0b27b67e80afeba6b90703452e9f31d63dd5c7be2a4bfec91a0b4f2f07f56f5e\"","stored_at":"2026-10-04T09:13:15.136Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"c965294263ecca42feeb9dce8d506c39478ae3b8f9608cb6687e54cdb93a3ce4\"","stored_at":"2026-10-04T09:18:20.373Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"635110d4511146c36d563eacc66ba9e9e9476b0b283276854a48b842cad7bf37\"","stored_at":"2026-10-04T09:18:20.373Z"}
