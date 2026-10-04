@@ -682,3 +682,4 @@
 {"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"77f03896221b7023de8fc7c83830901bb77c9463e8e26935a49ef10e383fa3dd\"","stored_at":"2026-10-04T08:13:12.487Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"925a827cd87bd95bda6c7391f587961009b21c8455c1c88c57ff9607b0050e58\"","stored_at":"2026-10-04T08:18:02.103Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"2dd213b40d6d16e50f4b809e6a86d0c90afb56d232e30b514c4b3d3a4f1aff09\"","stored_at":"2026-10-04T08:18:02.103Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"d1d7f5a41e4cefc4e782a2366cc0039d9075d8d282fe0add2eb21532eb2e8337\"","stored_at":"2026-10-04T08:23:01.950Z"}

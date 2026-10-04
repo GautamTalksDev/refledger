@@ -479,3 +479,4 @@
 {"repo":"actions/upload-artifact","archived":false}
 {"repo":"actions/dependency-review-action","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"reviewdog/action-actionlint","archived":false}
