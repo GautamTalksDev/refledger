@@ -517,3 +517,5 @@
 {"repo":"aws-actions/amazon-ecr-login","archived":false}
 {"repo":"azure/login","archived":false}
 {"repo":"actions/checkout","archived":false}
+{"repo":"actions/checkout","archived":false}
+{"repo":"actions/setup-python","archived":false}
