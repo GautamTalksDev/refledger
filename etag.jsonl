@@ -658,3 +658,4 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"6e52e805be5a7e7c2f55fcc07eff21955bfe53c250257194e6cc4442e73e0017\"","stored_at":"2026-10-03T23:43:50.109Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"3cd2b315cb0971e58f953e6f40eff5f564f86b295a77858793cc9b45b7fbaf53\"","stored_at":"2026-10-04T00:18:07.823Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"2dd213b40d6d16e50f4b809e6a86d0c90afb56d232e30b514c4b3d3a4f1aff09\"","stored_at":"2026-10-04T00:18:07.823Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"ce586b839bd00c7589a6a4ee09f8f2dbcce431f7186085440cb9476ff3aaeb83\"","stored_at":"2026-10-04T00:23:12.824Z"}
