@@ -486,3 +486,4 @@
 {"repo":"actions/attest-build-provenance","archived":false}
 {"repo":"reviewdog/action-actionlint","archived":false}
 {"repo":"actions/download-artifact","archived":false}
+{"repo":"actions/checkout","archived":false}

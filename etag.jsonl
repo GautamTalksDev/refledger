@@ -690,3 +690,4 @@
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"635110d4511146c36d563eacc66ba9e9e9476b0b283276854a48b842cad7bf37\"","stored_at":"2026-10-04T09:18:20.373Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"f46ab512f58bca12582eb7f2bc5c77bb90e7f32a59e53f3df552fd8fbf51d64a\"","stored_at":"2026-10-04T09:23:17.929Z"}
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"998f44114e45ca8efea791f792af1fbbb2301aac04d88273b2c4ace6a132f4c5\"","stored_at":"2026-10-04T10:38:25.543Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"54d88e63c25265301520b540b1c5ee464f9eb6266e40129eb74e8df81a57fcf9\"","stored_at":"2026-10-04T11:08:20.779Z"}
