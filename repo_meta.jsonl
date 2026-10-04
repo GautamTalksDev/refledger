@@ -525,3 +525,4 @@
 {"repo":"actions/download-artifact","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"aws-actions/configure-aws-credentials","archived":false}
+{"repo":"docker/build-push-action","archived":false}
