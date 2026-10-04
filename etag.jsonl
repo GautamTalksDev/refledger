@@ -685,3 +685,4 @@
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"d1d7f5a41e4cefc4e782a2366cc0039d9075d8d282fe0add2eb21532eb2e8337\"","stored_at":"2026-10-04T08:23:01.950Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"e9a1532e668a9d3a89378bea849bcf37656fa6925eea5d4566e0841703543a46\"","stored_at":"2026-10-04T08:28:17.393Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"4d2017cd507d928f6f4e0934ac4b3581435d2f786013abe5501263017910c68d\"","stored_at":"2026-10-04T08:28:17.393Z"}
+{"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"0b27b67e80afeba6b90703452e9f31d63dd5c7be2a4bfec91a0b4f2f07f56f5e\"","stored_at":"2026-10-04T09:13:15.136Z"}
