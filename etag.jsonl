@@ -738,3 +738,4 @@
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"bace2a5f4ab6e72af34d26b413d494f840d9deb246f7ef939f7eaa791649a10b\"","stored_at":"2026-10-04T21:58:16.699Z"}
 {"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"eae65ee3c8f9006c36b88ff5bd60b16d876b2b480a484b5338e83e531ec6b267\"","stored_at":"2026-10-04T22:24:01.690Z"}
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"e0212e37c4c959dac300cfc7bbeb13dd1ac0fe37588e238a14231b027bb0602f\"","stored_at":"2026-10-04T22:48:24.356Z"}
+{"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"deac1784eafa2774296ce8278d7a5bc679b700b57dab710149abb963f6e7d8dc\"","stored_at":"2026-10-04T23:43:22.364Z"}
