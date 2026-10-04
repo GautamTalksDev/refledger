@@ -477,3 +477,4 @@
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/cache","archived":false}
 {"repo":"actions/upload-artifact","archived":false}
+{"repo":"actions/dependency-review-action","archived":false}

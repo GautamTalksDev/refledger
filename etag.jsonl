@@ -679,3 +679,4 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"a49b1582f33ad319202d315a655d128ab46db316be29803b7177a630c2f3c7a3\"","stored_at":"2026-10-04T05:53:19.425Z"}
 {"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"6915709473743530034b675b59f2e419b65c4eb56874bd50e0c1efadb8761ed6\"","stored_at":"2026-10-04T07:53:15.545Z"}
 {"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"4c878ec51bccf28b598269990375885a830347115a548971876fab5eb0445783\"","stored_at":"2026-10-04T07:53:15.545Z"}
+{"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"77f03896221b7023de8fc7c83830901bb77c9463e8e26935a49ef10e383fa3dd\"","stored_at":"2026-10-04T08:13:12.487Z"}
