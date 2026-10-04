@@ -676,3 +676,4 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"2859cfc8a2ec9382009e5f810449f213345681b676fda2f37f4874e1d7f725ad\"","stored_at":"2026-10-04T04:18:17.513Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"a2900997f44b9222427876270a4e80e4c519d2d6c24090ff532c679925cd0d04\"","stored_at":"2026-10-04T05:18:16.365Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"d5f4abb107d45dc9454bbacb6c0fdcf9b2289cc88cb7e3b0969e3f94cfd92274\"","stored_at":"2026-10-04T05:43:20.185Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"a49b1582f33ad319202d315a655d128ab46db316be29803b7177a630c2f3c7a3\"","stored_at":"2026-10-04T05:53:19.425Z"}
