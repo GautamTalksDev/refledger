@@ -722,3 +722,4 @@
 {"repo":"azure/webapps-deploy","template":"/repos/{owner}/{repo}","query":"","etag":"\"e8c6a980629cac508fd25a6801c2e5e12193a9f5441bf50ae8282b1265a2def8\"","stored_at":"2026-10-04T18:08:05.015Z"}
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"24ff4d42c86362d93be34f18e5e6e366ad9eaf1eaff2dacef140c1506599cd11\"","stored_at":"2026-10-04T18:13:19.708Z"}
 {"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"d5d4b8cb671ecfccf997d3454b0181f7ce670f4b3d1698088955f36071f7f809\"","stored_at":"2026-10-04T18:38:25.924Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"e19a709872c7a639ef5a6e3d5f4a3ccdc9b6329f7f7179e64489bf75fe752778\"","stored_at":"2026-10-04T18:43:21.932Z"}
