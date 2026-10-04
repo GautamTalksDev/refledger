@@ -688,3 +688,4 @@
 {"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"0b27b67e80afeba6b90703452e9f31d63dd5c7be2a4bfec91a0b4f2f07f56f5e\"","stored_at":"2026-10-04T09:13:15.136Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"c965294263ecca42feeb9dce8d506c39478ae3b8f9608cb6687e54cdb93a3ce4\"","stored_at":"2026-10-04T09:18:20.373Z"}
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"635110d4511146c36d563eacc66ba9e9e9476b0b283276854a48b842cad7bf37\"","stored_at":"2026-10-04T09:18:20.373Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"f46ab512f58bca12582eb7f2bc5c77bb90e7f32a59e53f3df552fd8fbf51d64a\"","stored_at":"2026-10-04T09:23:17.929Z"}
