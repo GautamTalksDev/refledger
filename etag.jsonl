@@ -663,3 +663,4 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"b2a90610b509a55e96f85028a256cd57c0194ea25f5f584d4a72020960393fb2\"","stored_at":"2026-10-04T01:18:14.893Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"ff8fd90435c475cac32d97c4bfb7ab490bee1c0505b1ef938f1f3c3f19d18067\"","stored_at":"2026-10-04T01:23:20.343Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"6a12fbae1b23f509f772a01a552b3db3f8759e7f10be0829ce6c6a3cc7c78912\"","stored_at":"2026-10-04T01:28:20.284Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"b5aa2a5c9e856fb83ef397366c4e3958ec17355a807e8378635b948f329c2687\"","stored_at":"2026-10-04T02:03:14.216Z"}
