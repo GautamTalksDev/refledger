@@ -488,3 +488,4 @@
 {"repo":"actions/download-artifact","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/cache","archived":false}
+{"repo":"azure/login","archived":false}
