@@ -715,3 +715,4 @@
 {"repo":"docker/metadata-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"e09361d447f8b7b9d2f5c5785afe8b2581b87f97c5139887fcba6aa0e0834575\"","stored_at":"2026-10-04T16:13:14.393Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"400c1ee1d4fe4bd410a0fa23add6077183b2342e595aad5b5024d3d82e2502ac\"","stored_at":"2026-10-04T16:18:25.267Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"e12ba09b42a02585267d691deb57cd7df1ee32ec43ae5420b22fe597ed4c1ad2\"","stored_at":"2026-10-04T16:18:25.267Z"}
+{"repo":"docker/metadata-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"6a59b723c309eae41667310d165bb9c895e7d80accde02ed6d6857dd30aa4811\"","stored_at":"2026-10-04T17:13:26.180Z"}
