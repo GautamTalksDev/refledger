@@ -798,3 +798,4 @@
 {"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"ab483be3ad4312551f6ad8cd8d7fe2e1195a543c43430ab533cb37f24f4e9696\"","stored_at":"2026-10-05T12:48:39.246Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"1e4f5e14afa4faa2ce50bcf2ea1e2a8edf6449c9a2fc64d509d96fc37ba37edd\"","stored_at":"2026-10-05T12:48:39.246Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"ce5e21995d15f77f35d346b95e6100d05abb5f9868ac39235079b8cc1afc46bb\"","stored_at":"2026-10-05T13:03:21.593Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"8dc68de6dcc8c32e7bcc8bbc1e43ef66148d54e45117a34ab5e8f7ee5265ddd6\"","stored_at":"2026-10-05T13:08:35.534Z"}
