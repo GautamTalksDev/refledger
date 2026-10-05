@@ -872,3 +872,5 @@
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"91f63176a169b66b843afbb761c1221d4495f67e4bfd21adbb5dfdcc2c2172c6\"","stored_at":"2026-10-05T22:08:44.068Z"}
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"de35fe070c8c10462bc6180c59a8224781e2dc2dbf7c00d491ba622ecf492769\"","stored_at":"2026-10-05T22:13:40.775Z"}
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"38d91955d54e29a1b2d900231cd56520dbd92c432a2b10f18375868b4aed519e\"","stored_at":"2026-10-05T22:43:42.100Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"0e8af9ffc1d3e355f5705a0c3ae7dc6e5997140320532f93f4729c06a3f1cd47\"","stored_at":"2026-10-05T22:48:34.992Z"}
+{"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"b5a3f50e1bd5e55f89ae58e6b37b915eeaba18c76bb4a495b568fcc0ad46171d\"","stored_at":"2026-10-05T22:48:34.992Z"}
