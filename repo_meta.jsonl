@@ -618,3 +618,5 @@
 {"repo":"actions/attest-build-provenance","archived":false}
 {"repo":"tj-actions/glob","archived":false}
 {"repo":"tj-actions/json2file","archived":false}
+{"repo":"actions/setup-java","archived":false}
+{"repo":"actions/upload-artifact","archived":false}

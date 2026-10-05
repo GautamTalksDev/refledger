@@ -863,3 +863,5 @@
 {"repo":"tj-actions/glob","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"34c227e7bcd8019971111a0a82729b39ecc5b5ac6538a390f1afe93013efb0a5\"","stored_at":"2026-10-05T19:49:24.298Z"}
 {"repo":"tj-actions/json2file","template":"/repos/{owner}/{repo}","query":"","etag":"\"db65a3685c5b0ea2f39060eaa894a1712c98dcfd496abfe5908e114b698ce0a2\"","stored_at":"2026-10-05T19:49:24.298Z"}
 {"repo":"tj-actions/json2file","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"03918e01079bbd1b92008762b45b690be2073092678904d28b72e949038d548a\"","stored_at":"2026-10-05T19:49:24.298Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"24fe838369881a7b9bbfa924325ab76721260786237186abbcdc4dd28e0ff439\"","stored_at":"2026-10-05T20:49:09.207Z"}
+{"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"e4c7c68a08dc309f45aee9d28910a036c8884bf4f8c278c7d59a1665c6b3468d\"","stored_at":"2026-10-05T20:49:09.207Z"}
