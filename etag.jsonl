@@ -827,3 +827,6 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"7c2b56d677f4dc56a14149b553b67c5de68cb4ef86c92f0fb36db5d8c3fae925\"","stored_at":"2026-10-05T17:18:44.582Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"72bb560a12b1bdb77920badd8b547cbd5507d9e715a9133ee8c64c942a04ff2d\"","stored_at":"2026-10-05T17:43:12.145Z"}
 {"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"d68880ddff752ec67927b9a1cf369ed5c7656797dcbb3f4dacdc817b715cfe1e\"","stored_at":"2026-10-05T18:13:40.596Z"}
+{"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"48d75ebe0bf3e6deeefc34ba3708d488de4ebf1054406021619c5b65eb0e2b90\"","stored_at":"2026-10-05T19:29:02.058Z"}
+{"repo":"aquasecurity/setup-trivy","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"204863bae27709fbd7e908a7cce6f0ea981d242e19f69d7a7e135dbefa3e460e\"","stored_at":"2026-10-05T19:29:02.058Z"}
+{"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"8b18cd34f89adb44988f480fe7ce08a6768ba1fa02c493ff75fb052c405f1ec2\"","stored_at":"2026-10-05T19:29:02.058Z"}
