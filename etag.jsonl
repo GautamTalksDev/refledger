@@ -814,3 +814,4 @@
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"ab86711b17482fd3d162791ff8f5526f257686fe1c195bad1c3868b7e5523e26\"","stored_at":"2026-10-05T16:08:44.303Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"434b0886317fee043b4d8d3dfc3e1176fa32190dd833f824d2d38334b331a625\"","stored_at":"2026-10-05T16:18:30.932Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"e8be1ee726d594ce9aac21f1955e65118e6f9711cefc85dfe3b7c9f138329527\"","stored_at":"2026-10-05T16:18:30.932Z"}
+{"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"97b78509d34ac0d9bf3171609aa7bbd44bd4869cd9c4790761f7ae4e2732de21\"","stored_at":"2026-10-05T16:23:40.997Z"}
