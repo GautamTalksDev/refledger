@@ -603,3 +603,5 @@
 {"repo":"actions/setup-java","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"azure/login","archived":false}
+{"repo":"actions/setup-java","archived":false}
+{"repo":"docker/build-push-action","archived":false}
