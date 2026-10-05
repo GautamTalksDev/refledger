@@ -581,3 +581,4 @@
 {"repo":"actions/checkout","archived":false}
 {"repo":"docker/build-push-action","archived":false}
 {"repo":"docker/build-push-action","archived":false}
+{"repo":"docker/login-action","archived":false}
