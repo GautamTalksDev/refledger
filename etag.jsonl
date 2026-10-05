@@ -801,3 +801,4 @@
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"8dc68de6dcc8c32e7bcc8bbc1e43ef66148d54e45117a34ab5e8f7ee5265ddd6\"","stored_at":"2026-10-05T13:08:35.534Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"46ca73a0d234963d07a325f60b33307979cf705097c051e0eea5f19eef9f84c1\"","stored_at":"2026-10-05T13:18:33.624Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"00dfbfadd64e86c4c739899c60b39dfbdb7230b829e493ff34a7e7d2b64abad6\"","stored_at":"2026-10-05T13:23:15.380Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"e843ab30d55cee6f1edd590d22c6568dc08f031e8245c635549809b485bdc101\"","stored_at":"2026-10-05T13:33:37.320Z"}
