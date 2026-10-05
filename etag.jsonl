@@ -803,3 +803,5 @@
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"00dfbfadd64e86c4c739899c60b39dfbdb7230b829e493ff34a7e7d2b64abad6\"","stored_at":"2026-10-05T13:23:15.380Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"e843ab30d55cee6f1edd590d22c6568dc08f031e8245c635549809b485bdc101\"","stored_at":"2026-10-05T13:33:37.320Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"1916c23a8de1b3e53e53625a965b32cad3d073c973b043717b96cf4444263431\"","stored_at":"2026-10-05T13:38:34.137Z"}
+{"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"69cf703afcaca1bd6583767ef849dbf35ab5c04ab3ee5c458ac07e58ea08c990\"","stored_at":"2026-10-05T13:48:38.145Z"}
+{"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"262f8ad08306b53ba4b1df71dbb54990d089c1c79b361dc7c6bec70b24281c9c\"","stored_at":"2026-10-05T13:48:38.145Z"}
