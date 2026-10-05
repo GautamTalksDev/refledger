@@ -866,3 +866,5 @@
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"24fe838369881a7b9bbfa924325ab76721260786237186abbcdc4dd28e0ff439\"","stored_at":"2026-10-05T20:49:09.207Z"}
 {"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"e4c7c68a08dc309f45aee9d28910a036c8884bf4f8c278c7d59a1665c6b3468d\"","stored_at":"2026-10-05T20:49:09.207Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"dc06f3902f518d6da3602c0a646f9d0c9e9e5500f322b8bfa0bee9ee186a6f5a\"","stored_at":"2026-10-05T21:15:03.269Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"fd446ddf4b3953bd63b206122e2b15fa90469032c168e8daefd057a66f88135a\"","stored_at":"2026-10-05T21:54:11.775Z"}
+{"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"2ee8518b4c3ad2ec8841135bf884b8b3339f05e9255167098b79cd60ca36412d\"","stored_at":"2026-10-05T21:54:11.775Z"}
