@@ -808,3 +808,4 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"09f4c77f58622d8ebafd13e32b6593226518d73f5a7b029540bce2b1446ed3eb\"","stored_at":"2026-10-05T14:03:39.308Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"ee42c689730cd43939d56a172abb53c9efc91129ade05d1bf2319db1a84a6d86\"","stored_at":"2026-10-05T14:08:22.525Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"07852b3d9a4ddaa648cbcdcf52df9c521561c68e1260882ce3810ea5d1480985\"","stored_at":"2026-10-05T14:33:33.642Z"}
+{"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"83c4a32edf8d052be2e8f87b2137885d39b84651aa8307c3968763e2bceb7297\"","stored_at":"2026-10-05T15:04:18.569Z"}
