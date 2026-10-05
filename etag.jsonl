@@ -817,3 +817,5 @@
 {"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"97b78509d34ac0d9bf3171609aa7bbd44bd4869cd9c4790761f7ae4e2732de21\"","stored_at":"2026-10-05T16:23:40.997Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"21541003976252e6b371c89f2f07cfe56909220670336bf18b362147bda4d440\"","stored_at":"2026-10-05T16:33:13.707Z"}
 {"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"60c040e337cf3170e5ffcec7c16afdf36264d28309917bd12702eca0b90965b1\"","stored_at":"2026-10-05T16:33:13.707Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"78df5ae102729931022cc4b9c5f228914595da329afb06582463dbf121e4aecd\"","stored_at":"2026-10-05T16:43:23.463Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"b0256538007f5a945093f50212a8e0959d2c6c94b98e2fb77c4050436912647c\"","stored_at":"2026-10-05T16:43:23.463Z"}
