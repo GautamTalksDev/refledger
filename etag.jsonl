@@ -819,3 +819,4 @@
 {"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"60c040e337cf3170e5ffcec7c16afdf36264d28309917bd12702eca0b90965b1\"","stored_at":"2026-10-05T16:33:13.707Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"78df5ae102729931022cc4b9c5f228914595da329afb06582463dbf121e4aecd\"","stored_at":"2026-10-05T16:43:23.463Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"b0256538007f5a945093f50212a8e0959d2c6c94b98e2fb77c4050436912647c\"","stored_at":"2026-10-05T16:43:23.463Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"64e4911d94d873125dacba6302c5391e9b87259e008e7db5d1bc8ab75ad9aeb4\"","stored_at":"2026-10-05T16:48:29.111Z"}
