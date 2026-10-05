@@ -876,3 +876,4 @@
 {"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"b5a3f50e1bd5e55f89ae58e6b37b915eeaba18c76bb4a495b568fcc0ad46171d\"","stored_at":"2026-10-05T22:48:34.992Z"}
 {"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"e0dd470e6db8b772f96474bdd584af7ba4cdfcd213f5b54f74eb6c2ea72ed7fe\"","stored_at":"2026-10-05T22:53:48.351Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"033f59a50d6dfe26b29f6095ae5e3156400391b2a37e079839396f22ed82404c\"","stored_at":"2026-10-05T23:08:35.769Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"a8f7152b29dd7bc059a9bf8c07f418379df4e74da410c2f3bc57da7db3c1b824\"","stored_at":"2026-10-05T23:43:31.685Z"}
