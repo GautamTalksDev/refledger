@@ -810,3 +810,4 @@
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"07852b3d9a4ddaa648cbcdcf52df9c521561c68e1260882ce3810ea5d1480985\"","stored_at":"2026-10-05T14:33:33.642Z"}
 {"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"83c4a32edf8d052be2e8f87b2137885d39b84651aa8307c3968763e2bceb7297\"","stored_at":"2026-10-05T15:04:18.569Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"b65a2948eb7b6bab9ba76d1e2afc606c5a3a8d42ffa6f69d3ccc9287b8eccdd5\"","stored_at":"2026-10-05T15:43:38.395Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"6ec3c3e6f6816d9b5c5a286c6fbcf0877c9607d89bd7ea3bb5f4f69e798885b6\"","stored_at":"2026-10-05T15:53:22.934Z"}
