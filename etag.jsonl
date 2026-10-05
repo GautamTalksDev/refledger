@@ -806,3 +806,4 @@
 {"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"69cf703afcaca1bd6583767ef849dbf35ab5c04ab3ee5c458ac07e58ea08c990\"","stored_at":"2026-10-05T13:48:38.145Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"262f8ad08306b53ba4b1df71dbb54990d089c1c79b361dc7c6bec70b24281c9c\"","stored_at":"2026-10-05T13:48:38.145Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"09f4c77f58622d8ebafd13e32b6593226518d73f5a7b029540bce2b1446ed3eb\"","stored_at":"2026-10-05T14:03:39.308Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"ee42c689730cd43939d56a172abb53c9efc91129ade05d1bf2319db1a84a6d86\"","stored_at":"2026-10-05T14:08:22.525Z"}
