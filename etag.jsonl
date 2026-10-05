@@ -788,3 +788,4 @@
 {"repo":"actions/github-script","template":"/repos/{owner}/{repo}","query":"","etag":"\"43e1d8370ed2188337a95ab192c33e428dbc5c1063c81aa1a26c34476a42f7cf\"","stored_at":"2026-10-05T10:43:31.707Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"b5ef358706237f058929b8a67dd5aee8386c0c13bea276e962875efffb7d4585\"","stored_at":"2026-10-05T10:48:32.692Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"52db483355c5148262170abed974d67a6c8f87632d7aefb7dbd099d0c1478957\"","stored_at":"2026-10-05T10:53:32.169Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"99e5dcd8b270d02ffcf18cab4f95abba43c7269f6adb87258d019208dca146fb\"","stored_at":"2026-10-05T11:03:19.701Z"}
