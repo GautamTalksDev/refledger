@@ -584,3 +584,5 @@
 {"repo":"docker/login-action","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"docker/login-action","archived":false}
+{"repo":"actions/setup-dotnet","archived":false}
+{"repo":"actions/setup-python","archived":false}

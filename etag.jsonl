@@ -795,3 +795,5 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"172eb7d6bbe7649c3ce09116e56d861c2b4cb289e1a0ca72b7f8aa5e91fe744e\"","stored_at":"2026-10-05T12:18:14.288Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"fff09ecd1e768537e26096b5767d8e16a74afb099f915856128133109ef8af7a\"","stored_at":"2026-10-05T12:18:14.288Z"}
 {"repo":"docker/login-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"ea927702150d4c2d0d4741883d57ac8e6e8ca9999f7961d84b40296fea328ac2\"","stored_at":"2026-10-05T12:28:38.312Z"}
+{"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"ab483be3ad4312551f6ad8cd8d7fe2e1195a543c43430ab533cb37f24f4e9696\"","stored_at":"2026-10-05T12:48:39.246Z"}
+{"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"1e4f5e14afa4faa2ce50bcf2ea1e2a8edf6449c9a2fc64d509d96fc37ba37edd\"","stored_at":"2026-10-05T12:48:39.246Z"}
