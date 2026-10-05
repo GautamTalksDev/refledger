@@ -548,3 +548,4 @@
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/cache","archived":false}
+{"repo":"google-github-actions/setup-gcloud","archived":false}

@@ -757,3 +757,4 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"2d565e4891ab9771e38d42e42206b4d1f37099272ba50d9c711e3f486404a6a0\"","stored_at":"2026-10-05T05:18:27.889Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"b575932164d7a2f5bafd5aef03308cca6ffd8867647753cd2e60c881e4b70c7e\"","stored_at":"2026-10-05T05:38:35.062Z"}
 {"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"1bd570ca10e48c29ea2edf46696f3170ffd75fdd0cb0431ff874aeb97fd233eb\"","stored_at":"2026-10-05T05:48:33.502Z"}
+{"repo":"google-github-actions/setup-gcloud","template":"/repos/{owner}/{repo}","query":"","etag":"\"49831a0904847b6eedee10e6bf3878efeb8ea12a547fbb705546d9fb8b16056f\"","stored_at":"2026-10-05T05:58:27.269Z"}
