@@ -659,3 +659,6 @@
 {"repo":"actions/download-artifact","archived":false}
 {"repo":"actions/dependency-review-action","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"actions/ai-inference","archived":false}
+{"repo":"actions/attest","archived":false}
+{"repo":"actions/attest-build-provenance","archived":false}
