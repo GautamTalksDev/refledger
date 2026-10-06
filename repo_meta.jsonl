@@ -635,3 +635,5 @@
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"actions/setup-go","archived":false}
+{"repo":"aquasecurity/setup-trivy","archived":false}
+{"repo":"reviewdog/action-eslint","archived":false}

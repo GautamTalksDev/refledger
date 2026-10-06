@@ -882,3 +882,5 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"88eaf0347030c34edd46cea45d8afd2c1e020aa20ff5cacc323ddabbc02ba92a\"","stored_at":"2026-10-06T01:18:27.493Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"d0a0bf9ef7be6208ef3c589b7f4d20cac76c5905ddee36d86215140abc7e0981\"","stored_at":"2026-10-06T02:23:42.217Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"18e59c2c66eebadaa6eaf568c8e5d0d4dad996bdd5af2b1fed6881e2449c36c8\"","stored_at":"2026-10-06T02:38:37.402Z"}
+{"repo":"aquasecurity/setup-trivy","template":"/repos/{owner}/{repo}","query":"","etag":"\"e4924f71701cc9634576768432e8e012a2b0569f2fc2ed2f7008dab6f4ea8086\"","stored_at":"2026-10-06T03:18:40.326Z"}
+{"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"4a9a466a947cd0610b7bfc1bccdef6da712e083df0056c4caa30f1719b02249f\"","stored_at":"2026-10-06T03:18:40.326Z"}
