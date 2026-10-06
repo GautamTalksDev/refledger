@@ -913,3 +913,4 @@
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"57a11bfa267493f7fe1f150b07397f29d4d4cd6c5c1b43218bb691f7a4576188\"","stored_at":"2026-10-06T08:23:48.897Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"4d2017cd507d928f6f4e0934ac4b3581435d2f786013abe5501263017910c68d\"","stored_at":"2026-10-06T08:28:52.443Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"3dbc246f1fd216388032b22bcb6e127c7ed275b111eb4a594a8dbaa0fe8485e7\"","stored_at":"2026-10-06T09:08:36.554Z"}
+{"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"0b27b67e80afeba6b90703452e9f31d63dd5c7be2a4bfec91a0b4f2f07f56f5e\"","stored_at":"2026-10-06T09:13:34.951Z"}
