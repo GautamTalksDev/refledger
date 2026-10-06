@@ -650,3 +650,5 @@
 {"repo":"docker/setup-buildx-action","archived":false}
 {"repo":"aws-actions/configure-aws-credentials","archived":false}
 {"repo":"docker/setup-buildx-action","archived":false}
+{"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"actions/setup-python","archived":false}
