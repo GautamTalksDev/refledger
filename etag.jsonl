@@ -900,3 +900,4 @@
 {"repo":"docker/setup-buildx-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"5e47a8496e6ca712cf887c858f1c75be2d7b471e108541dcfd459db2d0765880\"","stored_at":"2026-10-06T04:48:17.854Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"1d7151ef64b8d1cea85c313f1ada579ac2d3cc0d18e3e43f2f28e300a0c6d2e2\"","stored_at":"2026-10-06T05:18:30.176Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"99de45f2c549adb79497c1939efd0793d1022bd07912cc25612578e2be46d9fd\"","stored_at":"2026-10-06T05:18:30.176Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"4c886e4f2c9075fa1ef6bc9681f7809c0c06fac5869dd5a22d33a844e4a451cc\"","stored_at":"2026-10-06T05:33:28.348Z"}

@@ -652,3 +652,4 @@
 {"repo":"docker/setup-buildx-action","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"actions/setup-python","archived":false}
+{"repo":"actions/setup-go","archived":false}
