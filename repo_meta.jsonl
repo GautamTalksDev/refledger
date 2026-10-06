@@ -657,3 +657,4 @@
 {"repo":"aws-actions/configure-aws-credentials","archived":false}
 {"repo":"actions/setup-node","archived":false}
 {"repo":"actions/download-artifact","archived":false}
+{"repo":"actions/dependency-review-action","archived":false}

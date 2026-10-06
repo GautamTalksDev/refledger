@@ -905,3 +905,4 @@
 {"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"7b6e8833872ed6fc277c0445d9389cdb8d357e855a90fda443885d0488f764f0\"","stored_at":"2026-10-06T06:03:47.620Z"}
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"fead2b53ee2559f84ee8cdf56f768125fbb0beedda081889077d442d1f2ad892\"","stored_at":"2026-10-06T06:54:18.577Z"}
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"2da40d18c920ff7c0a0402d3119261fd54c5e4f4d2a40b02f1d5e80d7dfe166a\"","stored_at":"2026-10-06T07:13:51.921Z"}
+{"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"e123274b168d57057874896ab958d36ee2c6733b0a405c64da36e51a4fc0325d\"","stored_at":"2026-10-06T08:08:41.816Z"}
