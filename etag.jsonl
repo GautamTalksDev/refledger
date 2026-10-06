@@ -885,3 +885,4 @@
 {"repo":"aquasecurity/setup-trivy","template":"/repos/{owner}/{repo}","query":"","etag":"\"e4924f71701cc9634576768432e8e012a2b0569f2fc2ed2f7008dab6f4ea8086\"","stored_at":"2026-10-06T03:18:40.326Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"4a9a466a947cd0610b7bfc1bccdef6da712e083df0056c4caa30f1719b02249f\"","stored_at":"2026-10-06T03:18:40.326Z"}
 {"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"49a94b70738d1bf408241f1b7dd2682ff5692522cca3bedcd84cd9269dd784a4\"","stored_at":"2026-10-06T03:48:43.299Z"}
+{"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"d93fe8fe9a5741dae6e371b025dee6fa14bd9a3a89f57fdd73283f8cf3e0b250\"","stored_at":"2026-10-06T04:13:44.103Z"}
