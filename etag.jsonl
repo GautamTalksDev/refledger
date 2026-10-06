@@ -915,3 +915,4 @@
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"3dbc246f1fd216388032b22bcb6e127c7ed275b111eb4a594a8dbaa0fe8485e7\"","stored_at":"2026-10-06T09:08:36.554Z"}
 {"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"0b27b67e80afeba6b90703452e9f31d63dd5c7be2a4bfec91a0b4f2f07f56f5e\"","stored_at":"2026-10-06T09:13:34.951Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"aaa3280363162b18e98292ae68d341b9537782ba3890b08f85ef28ab10367786\"","stored_at":"2026-10-06T09:18:48.600Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"f46ab512f58bca12582eb7f2bc5c77bb90e7f32a59e53f3df552fd8fbf51d64a\"","stored_at":"2026-10-06T09:23:53.367Z"}
