@@ -653,3 +653,5 @@
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"actions/setup-python","archived":false}
 {"repo":"actions/setup-go","archived":false}
+{"repo":"actions/checkout","archived":false}
+{"repo":"aws-actions/configure-aws-credentials","archived":false}

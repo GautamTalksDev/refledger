@@ -901,3 +901,5 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"1d7151ef64b8d1cea85c313f1ada579ac2d3cc0d18e3e43f2f28e300a0c6d2e2\"","stored_at":"2026-10-06T05:18:30.176Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"99de45f2c549adb79497c1939efd0793d1022bd07912cc25612578e2be46d9fd\"","stored_at":"2026-10-06T05:18:30.176Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"4c886e4f2c9075fa1ef6bc9681f7809c0c06fac5869dd5a22d33a844e4a451cc\"","stored_at":"2026-10-06T05:33:28.348Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"947f44f956ec7f48e045687a16531c93ab5ca4e64c0651dec995aede56c63757\"","stored_at":"2026-10-06T06:03:47.620Z"}
+{"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"7b6e8833872ed6fc277c0445d9389cdb8d357e855a90fda443885d0488f764f0\"","stored_at":"2026-10-06T06:03:47.620Z"}
