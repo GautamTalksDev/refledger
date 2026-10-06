@@ -906,3 +906,5 @@
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"fead2b53ee2559f84ee8cdf56f768125fbb0beedda081889077d442d1f2ad892\"","stored_at":"2026-10-06T06:54:18.577Z"}
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"2da40d18c920ff7c0a0402d3119261fd54c5e4f4d2a40b02f1d5e80d7dfe166a\"","stored_at":"2026-10-06T07:13:51.921Z"}
 {"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"e123274b168d57057874896ab958d36ee2c6733b0a405c64da36e51a4fc0325d\"","stored_at":"2026-10-06T08:08:41.816Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"68c560de4de1580b2c4521f82228a64ecbcdcd1cabf533ff363e272e0cd4f361\"","stored_at":"2026-10-06T08:18:54.927Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"66f84bf57d5f003c6cd70e5594d12593fc237e9c357ed02cb9436c45a848d58c\"","stored_at":"2026-10-06T08:18:54.927Z"}
