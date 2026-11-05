@@ -766,3 +766,4 @@
 {"repo":"actions/setup-java","archived":false}
 {"repo":"actions/setup-node","archived":false}
 {"repo":"actions/setup-go","archived":false}
+{"repo":"github/super-linter","archived":false}
