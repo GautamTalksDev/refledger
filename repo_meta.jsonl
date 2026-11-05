@@ -773,3 +773,4 @@
 {"repo":"docker/metadata-action","archived":false}
 {"repo":"docker/setup-buildx-action","archived":false}
 {"repo":"azure/login","archived":false}
+{"repo":"actions/setup-java","archived":false}
