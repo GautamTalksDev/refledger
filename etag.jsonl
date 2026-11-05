@@ -1068,3 +1068,4 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"de632621f651d147ba5e6f521778e95852008de7bc5a43a9cdf2deff1ba2903e\"","stored_at":"2026-11-05T20:18:57.107Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"9f8e36116f5fe1b0270385e89160f73f164c0f3d3d7cc1f87884beef0ce843d6\"","stored_at":"2026-11-05T20:18:57.107Z"}
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"c174f9797f19b017fcc534d53eb9baf14a0ceaa2fd6b7fd89470a37ba039542f\"","stored_at":"2026-11-05T20:53:15.534Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"8365b380435207d580f8def4597e1aca3ebf446899640bcef63ec59701275fb1\"","stored_at":"2026-11-05T20:58:35.451Z"}
