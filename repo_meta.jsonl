@@ -714,3 +714,4 @@
 {"repo":"actions/setup-java","archived":false}
 {"repo":"github/codeql-action","archived":false}
 {"repo":"actions/download-artifact","archived":false}
+{"repo":"docker/login-action","archived":false}
