@@ -1031,3 +1031,5 @@
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"9d8979d407ddc176151b47fcf46a8c860ea3b13ace25e54ebef677423b693a43\"","stored_at":"2026-11-05T13:33:25.596Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"356621b67376024f60d59547eef1cc65d660506920240dd69518092602533440\"","stored_at":"2026-11-05T13:38:33.252Z"}
 {"repo":"docker/login-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"b367a8277e663c75bb00c4f83efb19aafc02cf675b003f2f56c4cf6880a03f26\"","stored_at":"2026-11-05T13:53:30.020Z"}
+{"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"c29a422ac781c3cb6d9d864565cd40e1933f778b5f06609e95e52931ff5a5299\"","stored_at":"2026-11-05T13:58:24.335Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"f3f971b4c0761d4599b4570a8a8d9f1fbce64119f995d5ee0526b3d39519f19d\"","stored_at":"2026-11-05T13:58:24.335Z"}
