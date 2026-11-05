@@ -774,3 +774,4 @@
 {"repo":"docker/setup-buildx-action","archived":false}
 {"repo":"azure/login","archived":false}
 {"repo":"actions/setup-java","archived":false}
+{"repo":"actions/upload-artifact","archived":false}
