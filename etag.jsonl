@@ -1053,3 +1053,4 @@
 {"repo":"docker/metadata-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"48f32502a37a8ca28f922851e2206db8a8a3ab078b390f9eb174bde045a3ccaa\"","stored_at":"2026-11-05T16:28:40.057Z"}
 {"repo":"docker/setup-buildx-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"8088ffdc9e4a4f528647b19200da961cc38b5dcf055d20be83f8321b91f6d311\"","stored_at":"2026-11-05T16:28:40.057Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"d2b8960363c4ddba6988836ed135efd245e00292c95d2f0a0218d6c65643418f\"","stored_at":"2026-11-05T16:43:07.549Z"}
+{"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"dfc380a6a0c9e342350f551b20d34148d055df1ee4bfba760058f820b96e57fa\"","stored_at":"2026-11-05T16:58:42.699Z"}
