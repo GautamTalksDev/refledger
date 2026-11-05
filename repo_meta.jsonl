@@ -759,3 +759,7 @@
 {"repo":"docker/setup-buildx-action","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"azure/webapps-deploy","archived":false}
+{"repo":"docker/build-push-action","archived":false}
+{"repo":"docker/login-action","archived":false}
+{"repo":"docker/metadata-action","archived":false}
+{"repo":"docker/setup-buildx-action","archived":false}
