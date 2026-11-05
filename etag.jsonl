@@ -1036,3 +1036,5 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"5ab9313fe2b792f08d5d977764851c5467becc34e8104c05922f3d7be5d3dc34\"","stored_at":"2026-11-05T14:03:45.663Z"}
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"83344663c350e35bdc930e23e8546189befdddb1453c24a648a58271125bd028\"","stored_at":"2026-11-05T14:28:23.405Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"4ae5f21a51d42c963fc804a50e2db3bbdeae31eac305afddf88c2b9255b5a5a3\"","stored_at":"2026-11-05T14:33:34.528Z"}
+{"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"5b41a9b0a05f96660745d2ed2bdd4b78101503d16b6b940c067f95abf690889e\"","stored_at":"2026-11-05T14:38:22.491Z"}
+{"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"b69224b96005b5ab754eba6e34e47c1e1aebb8fa6b2ac22647769aba262840d7\"","stored_at":"2026-11-05T14:38:22.491Z"}

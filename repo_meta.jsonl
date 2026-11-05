@@ -748,3 +748,5 @@
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/setup-node","archived":false}
 {"repo":"github/super-linter","archived":false}
+{"repo":"actions/setup-node","archived":false}
+{"repo":"actions/setup-python","archived":false}
