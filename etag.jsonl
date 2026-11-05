@@ -1022,3 +1022,6 @@
 {"repo":"docker/login-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"06f24404a6e788a214cd851a8087c0ac68430ef3e735d46471b6bd74a4ac65d8\"","stored_at":"2026-11-05T12:18:36.343Z"}
 {"repo":"docker/login-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"4af6860a339696dd2b7106f7aff7b4a2978f1f55eed1b0170a8abd3b9db89f48\"","stored_at":"2026-11-05T12:33:37.427Z"}
 {"repo":"docker/login-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"1ef50f4e23ade56f1c59d6b5c3a5f26680c6de701de64f749f4b9629bdabc8b3\"","stored_at":"2026-11-05T12:53:38.239Z"}
+{"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"f4e1697197d7ae6c541b97c62b4d3b316d7617273f64f2fe5ae156d1c994d897\"","stored_at":"2026-11-05T12:58:26.460Z"}
+{"repo":"docker/login-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"2d1a86a31ca874cce9ff659fe10738c63050cb2912e3e3d073780b8fa6bf19d9\"","stored_at":"2026-11-05T12:58:26.460Z"}
+{"repo":"docker/login-action","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"410c9df2be1b5fba11d19cd6276e95e9594dabf66f44ea773bc03a315ebca5ce\"","stored_at":"2026-11-05T12:58:26.460Z"}
