@@ -784,3 +784,4 @@
 {"repo":"actions/upload-artifact","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/setup-go","archived":false}
+{"repo":"aquasecurity/trivy-action","archived":false}
