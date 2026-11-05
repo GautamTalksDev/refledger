@@ -1061,3 +1061,4 @@
 {"repo":"docker/login-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"94081276bd0684094e80a38bf48b2deb62350f67b38d4c6a8f4119b5327eaa87\"","stored_at":"2026-11-05T17:28:49.395Z"}
 {"repo":"docker/metadata-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"dd7b97157542d1c48f892360cae88f006cc02c010d12fb147c898a1b51827287\"","stored_at":"2026-11-05T17:28:49.395Z"}
 {"repo":"docker/setup-buildx-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"94edd0d9f1050973a30a2bc15416d23bfec563b3dbf7da4d2b83e2c9b8231d54\"","stored_at":"2026-11-05T17:28:49.395Z"}
+{"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"d9d552449863b83e5e5caba1962ecff5ef7becddd8ff62408623cbd889976f2e\"","stored_at":"2026-11-05T17:58:56.515Z"}
