@@ -745,3 +745,4 @@
 {"repo":"docker/login-action","archived":false}
 {"repo":"aquasecurity/trivy-action","archived":false}
 {"repo":"github/codeql-action","archived":false}
+{"repo":"actions/checkout","archived":false}
