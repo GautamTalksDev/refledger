@@ -768,3 +768,7 @@
 {"repo":"actions/setup-go","archived":false}
 {"repo":"github/super-linter","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"docker/build-push-action","archived":false}
+{"repo":"docker/login-action","archived":false}
+{"repo":"docker/metadata-action","archived":false}
+{"repo":"docker/setup-buildx-action","archived":false}
