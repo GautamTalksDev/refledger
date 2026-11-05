@@ -1035,3 +1035,4 @@
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"f3f971b4c0761d4599b4570a8a8d9f1fbce64119f995d5ee0526b3d39519f19d\"","stored_at":"2026-11-05T13:58:24.335Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"5ab9313fe2b792f08d5d977764851c5467becc34e8104c05922f3d7be5d3dc34\"","stored_at":"2026-11-05T14:03:45.663Z"}
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"83344663c350e35bdc930e23e8546189befdddb1453c24a648a58271125bd028\"","stored_at":"2026-11-05T14:28:23.405Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"4ae5f21a51d42c963fc804a50e2db3bbdeae31eac305afddf88c2b9255b5a5a3\"","stored_at":"2026-11-05T14:33:34.528Z"}
