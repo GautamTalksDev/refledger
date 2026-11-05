@@ -993,3 +993,5 @@
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"e32811c34bf2e1638177b3d5b7b90fa074480c14c569470409bbcd7d90cc75f3\"","stored_at":"2026-11-05T10:50:45.393Z"}
 {"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"db921bf30628f518bbdef8a0c035c77d4edfd9831b01d7725b95d8abc8bbda19\"","stored_at":"2026-11-05T10:50:45.393Z"}
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"d49f4af3c02d6c0c4095452d36f30b66c02f449e68af0b0be3917a1d659dc011\"","stored_at":"2026-11-05T10:53:47.910Z"}
+{"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"a2c525b382031a642c25af3dedc7c5e1819a0200de80cc0485e20ef7cb9ecaea\"","stored_at":"2026-11-05T10:58:33.742Z"}
+{"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"bc62b0eecca490c75ec0dffe73f2ca64a2401641afbae10def2281eda1e8daa8\"","stored_at":"2026-11-05T10:58:33.742Z"}
