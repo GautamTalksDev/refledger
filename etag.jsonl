@@ -995,3 +995,5 @@
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"d49f4af3c02d6c0c4095452d36f30b66c02f449e68af0b0be3917a1d659dc011\"","stored_at":"2026-11-05T10:53:47.910Z"}
 {"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"a2c525b382031a642c25af3dedc7c5e1819a0200de80cc0485e20ef7cb9ecaea\"","stored_at":"2026-11-05T10:58:33.742Z"}
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"bc62b0eecca490c75ec0dffe73f2ca64a2401641afbae10def2281eda1e8daa8\"","stored_at":"2026-11-05T10:58:33.742Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"d66d0eb885047b8957c65ac08513bac378d8575a8d17869b74c153aab09bf016\"","stored_at":"2026-11-05T11:08:39.734Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"22a39fa83d2ff51dc2b69f37a07af2831305b41aca1c42f672515a20f1b21b14\"","stored_at":"2026-11-05T11:08:39.734Z"}
