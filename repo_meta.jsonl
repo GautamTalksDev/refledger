@@ -782,3 +782,5 @@
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"github/super-linter","archived":false}
 {"repo":"actions/upload-artifact","archived":false}
+{"repo":"actions/checkout","archived":false}
+{"repo":"actions/setup-go","archived":false}
