@@ -1085,3 +1085,4 @@
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"d66d0eb885047b8957c65ac08513bac378d8575a8d17869b74c153aab09bf016\"","stored_at":"2026-11-06T01:24:05.469Z"}
 {"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"cabb14a697746f31bfdac25cd2232000ca33d9074275bfcb773d4900b58fb61d\"","stored_at":"2026-11-06T01:33:40.903Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"047aebfab0810001de42f3c88dbe756b63fc2dd6ed7a8b828b86000582bbe935\"","stored_at":"2026-11-06T01:49:51.114Z"}
+{"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"82991a8bc70a0c6c4a161e766a7e9f37bbc722d8243da06701a11c4dc3b36331\"","stored_at":"2026-11-06T01:58:39.289Z"}
