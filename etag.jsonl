@@ -1158,3 +1158,4 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"2ef83719fc143e5a246d54eea71854bfb02f39e06a5d510f32d24084beee55a4\"","stored_at":"2026-11-06T16:18:50.763Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"403aec7de2a976532657c679bd76b4cfc2ee26be2798c709e4b7f91a87f0cade\"","stored_at":"2026-11-06T16:18:50.763Z"}
 {"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"13c2e4c4153401af21d24afc70533cb7f483ae2dca30c24ebc36adfa424ca611\"","stored_at":"2026-11-06T16:18:50.763Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"25410530f894591bf6a1b363cd15f6935a7e9afaddd28d73c84e933be5aea3e0\"","stored_at":"2026-11-06T16:22:55.465Z"}
