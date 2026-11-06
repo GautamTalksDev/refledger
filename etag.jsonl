@@ -1138,3 +1138,4 @@
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"fb2f26072d22523a6338ee5f4ca819603210d1eec9717863f5b99a9e2393d380\"","stored_at":"2026-11-06T13:39:04.617Z"}
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"2113efb8f7c0d3190401af9fbcd851a591bdd3313ade494c8354a0d16ff7c3ff\"","stored_at":"2026-11-06T13:39:04.617Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"45c83a3181b8f8d8e87cd3ebcc293462b67050cde3ed86f168b56146671c4dd0\"","stored_at":"2026-11-06T13:39:04.617Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"ffc4f049d714578f206886db02417836bb0f847dcb252da1c89517c5ade4c717\"","stored_at":"2026-11-06T13:44:05.614Z"}
