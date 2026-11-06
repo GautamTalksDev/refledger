@@ -786,3 +786,4 @@
 {"repo":"actions/setup-go","archived":false}
 {"repo":"aquasecurity/trivy-action","archived":false}
 {"repo":"actions/setup-go","archived":false}
+{"repo":"github/codeql-action","archived":false}
