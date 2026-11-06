@@ -1194,3 +1194,4 @@
 {"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"2a4f6442ac8fb7620bdba33fd94c483174715aa038ddee12cb04475c42522cf2\"","stored_at":"2026-11-06T19:14:05.620Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"8d5b4e2309207e81d182711cc05f0f416368fa76b924a4bd015146eed96c116c\"","stored_at":"2026-11-06T19:23:53.595Z"}
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"57798599f3d90651a638783968c6cba27b1558c85a51248a868442a440873996\"","stored_at":"2026-11-06T19:38:27.326Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"c499ee6bedd8808848c9720818e3841aed11a089c1bfcbd541d5339b4ad5abae\"","stored_at":"2026-11-06T19:49:11.994Z"}
