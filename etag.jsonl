@@ -1086,3 +1086,5 @@
 {"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"cabb14a697746f31bfdac25cd2232000ca33d9074275bfcb773d4900b58fb61d\"","stored_at":"2026-11-06T01:33:40.903Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"047aebfab0810001de42f3c88dbe756b63fc2dd6ed7a8b828b86000582bbe935\"","stored_at":"2026-11-06T01:49:51.114Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"82991a8bc70a0c6c4a161e766a7e9f37bbc722d8243da06701a11c4dc3b36331\"","stored_at":"2026-11-06T01:58:39.289Z"}
+{"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"12cf3f42c182e3e143e71f7adf137e5b2fe91d04680508e1266c18db91ea8832\"","stored_at":"2026-11-06T02:03:58.499Z"}
+{"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"7c10abcb46162f1ada50cd8c33f857b3d0e7bbb50cf61631d743375caaa9d931\"","stored_at":"2026-11-06T02:03:58.499Z"}
