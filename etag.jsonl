@@ -1143,3 +1143,6 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"2b64098967e46b9e55c06af17f9207bf3007799e49a5fed7e5649194314a6a3f\"","stored_at":"2026-11-06T13:58:25.578Z"}
 {"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"9df8de38cf59d232bdcfdadfae2920a91035945242a22e1c3f8b851709a0d0ce\"","stored_at":"2026-11-06T14:43:23.783Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"a9c456f572be79449c9bd3b02d46dcd48759baf200a2bf20b2060364488c2337\"","stored_at":"2026-11-06T14:58:34.421Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"ace0489433f9411a5b0a8ba1756e2b787ac87528233f3ffb72d32d13f1f3e505\"","stored_at":"2026-11-06T15:04:03.310Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"642cb1f18a38d10aff8016d9b183e80567e66203092be3b5c8e4d2bf2f353fa7\"","stored_at":"2026-11-06T15:04:03.310Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"d378c03ad76fe9df5917ccf763ace99b693f36bfd0e89872d93753f24a45e82e\"","stored_at":"2026-11-06T15:04:03.310Z"}
