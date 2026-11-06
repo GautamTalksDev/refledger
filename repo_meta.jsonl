@@ -859,3 +859,6 @@
 {"repo":"reviewdog/action-actionlint","archived":false}
 {"repo":"actions/attest","archived":false}
 {"repo":"actions/stale","archived":false}
+{"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"actions/checkout","archived":false}
+{"repo":"aquasecurity/trivy-action","archived":false}
