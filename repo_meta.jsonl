@@ -890,3 +890,6 @@
 {"repo":"google-github-actions/auth","archived":false}
 {"repo":"azure/webapps-deploy","archived":false}
 {"repo":"actions/attest","archived":false}
+{"repo":"actions/attest","archived":false}
+{"repo":"actions/setup-node","archived":false}
+{"repo":"github/codeql-action","archived":false}

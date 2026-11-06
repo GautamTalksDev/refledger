@@ -1186,3 +1186,6 @@
 {"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"80a986dca79bdac4b038ecc5e20d072a8cc0ce67460c07546cb8aecac5ccd5bc\"","stored_at":"2026-11-06T17:43:19.786Z"}
 {"repo":"azure/webapps-deploy","template":"/repos/{owner}/{repo}","query":"","etag":"\"939f8b3971b8d66b3a2a98897c4d5d78b73ee2eae40753863f408a1f7d457be2\"","stored_at":"2026-11-06T17:48:21.958Z"}
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"49b186e670a7a4a0e37d3fce945921da636b754d59208bff95f2d4553a549e82\"","stored_at":"2026-11-06T17:59:02.036Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"9f393af4e7e5b37ad1a66ba2adbc7d57a4125e7447f10687d8f50efc3d12bee1\"","stored_at":"2026-11-06T18:24:05.267Z"}
+{"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"7df6b20d2f68ae2a19127980bdbc39ce5cbba2fdc4256386162712d04c69f372\"","stored_at":"2026-11-06T18:24:05.267Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"25f1796a4469706b246e64fbc23cecc35d9448963b60841fa4bbe2567daa93a6\"","stored_at":"2026-11-06T18:24:05.267Z"}
