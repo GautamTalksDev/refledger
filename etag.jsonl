@@ -1146,3 +1146,5 @@
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"ace0489433f9411a5b0a8ba1756e2b787ac87528233f3ffb72d32d13f1f3e505\"","stored_at":"2026-11-06T15:04:03.310Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"642cb1f18a38d10aff8016d9b183e80567e66203092be3b5c8e4d2bf2f353fa7\"","stored_at":"2026-11-06T15:04:03.310Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"d378c03ad76fe9df5917ccf763ace99b693f36bfd0e89872d93753f24a45e82e\"","stored_at":"2026-11-06T15:04:03.310Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"44f3770211faef64a7d6a42c1642828522eef0a0006f0e74a0ad1b0cef1db7b2\"","stored_at":"2026-11-06T15:09:06.703Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"534f27fb758123f8e7ed757137c82a1e62c70d6700123f20e29d4c9dab71280a\"","stored_at":"2026-11-06T15:09:06.703Z"}
