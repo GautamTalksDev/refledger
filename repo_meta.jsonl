@@ -888,3 +888,4 @@
 {"repo":"actions/setup-dotnet","archived":false}
 {"repo":"docker/metadata-action","archived":false}
 {"repo":"google-github-actions/auth","archived":false}
+{"repo":"azure/webapps-deploy","archived":false}
