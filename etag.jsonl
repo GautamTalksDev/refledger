@@ -1120,3 +1120,5 @@
 {"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"2c4aeba21500a8f5360250d11ec0619421163f603e9b2f991633e53d0896bdb2\"","stored_at":"2026-11-06T12:18:46.729Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"0f8482f16ce9b9247e15742759bb1ab7fa5fecbbae842c1b6d32055997d2786f\"","stored_at":"2026-11-06T12:18:46.729Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"ea643c4df4793081b5b065bc8666abaf5399f00a28692b6f7894f7034eefe745\"","stored_at":"2026-11-06T12:23:44.510Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"3a4ffba779f2836afbf819972fdb23f1b81dabc8a844bea8431161746ab93ef5\"","stored_at":"2026-11-06T12:48:51.204Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"ed8d6e95cdc1e3cce3f07e73da83877ac3e43bbb244e815e8adacfd1611824a6\"","stored_at":"2026-11-06T12:48:51.204Z"}
