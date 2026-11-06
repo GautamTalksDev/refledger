@@ -889,3 +889,4 @@
 {"repo":"docker/metadata-action","archived":false}
 {"repo":"google-github-actions/auth","archived":false}
 {"repo":"azure/webapps-deploy","archived":false}
+{"repo":"actions/attest","archived":false}
