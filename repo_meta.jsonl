@@ -809,3 +809,10 @@
 {"repo":"docker/login-action","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"actions/labeler","archived":false}
+{"repo":"actions/setup-dotnet","archived":false}
+{"repo":"actions/setup-go","archived":false}
+{"repo":"actions/setup-java","archived":false}
+{"repo":"actions/setup-node","archived":false}
+{"repo":"actions/setup-python","archived":false}
+{"repo":"actions/stale","archived":false}
