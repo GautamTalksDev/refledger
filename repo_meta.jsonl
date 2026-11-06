@@ -817,3 +817,4 @@
 {"repo":"actions/setup-python","archived":false}
 {"repo":"actions/stale","archived":false}
 {"repo":"actions/checkout","archived":false}
+{"repo":"reviewdog/action-actionlint","archived":false}
