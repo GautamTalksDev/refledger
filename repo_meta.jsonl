@@ -895,3 +895,4 @@
 {"repo":"github/codeql-action","archived":false}
 {"repo":"actions/attest","archived":false}
 {"repo":"actions/attest-build-provenance","archived":false}
+{"repo":"actions/stale","archived":false}
