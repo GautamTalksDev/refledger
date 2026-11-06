@@ -1150,3 +1150,5 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"534f27fb758123f8e7ed757137c82a1e62c70d6700123f20e29d4c9dab71280a\"","stored_at":"2026-11-06T15:09:06.703Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"cd748c670257289581a842194dbc9d8efc952bfa81de73f4ff353acf8152cdf8\"","stored_at":"2026-11-06T15:38:42.243Z"}
 {"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"67c65ba1453c90d440b67f91adc275d3e1e1e7df9db3cfe697370406e754fb59\"","stored_at":"2026-11-06T15:48:50.070Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"0021e942cc9d5722325e0c6e169aaf3ed82e51fbc44ffcf53e73a2108a8ad4e5\"","stored_at":"2026-11-06T15:59:09.646Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"4cf0e53d94bbd7ccd0d38ce5b13b6e29931776cddbc6ef933de886e21eba4586\"","stored_at":"2026-11-06T15:59:09.646Z"}
