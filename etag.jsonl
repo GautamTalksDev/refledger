@@ -1075,3 +1075,4 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"b42f23f423aa7ee80a0e5a221c01a44bfed240c82fac7935c0734bf58add023e\"","stored_at":"2026-11-05T23:03:46.633Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"0a6edf2d9684d117b4e321863962e6ef44591c171a31bb7575bab9d0a4d8f17a\"","stored_at":"2026-11-05T23:03:46.633Z"}
 {"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"0a800e3c400c55c48ef61fa2e676570f40609b5653b6c46b3069428ab8aff2b3\"","stored_at":"2026-11-05T23:33:15.948Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"a3bad829ed7766bf094566647a6b88697ee477d338b63eb82942a0da3c47feb4\"","stored_at":"2026-11-06T00:03:34.868Z"}
