@@ -858,3 +858,4 @@
 {"repo":"actions/checkout","archived":false}
 {"repo":"reviewdog/action-actionlint","archived":false}
 {"repo":"actions/attest","archived":false}
+{"repo":"actions/stale","archived":false}
