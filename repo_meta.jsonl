@@ -885,3 +885,6 @@
 {"repo":"docker/setup-buildx-action","archived":false}
 {"repo":"google-github-actions/setup-gcloud","archived":false}
 {"repo":"tj-actions/changed-files","archived":false}
+{"repo":"actions/setup-dotnet","archived":false}
+{"repo":"docker/metadata-action","archived":false}
+{"repo":"google-github-actions/auth","archived":false}

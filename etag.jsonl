@@ -1181,3 +1181,6 @@
 {"repo":"docker/setup-buildx-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"d48f144281d6c0f77bf5e19ff9f2e2055c468fc3b1e99b9402bcbcdbaa37615d\"","stored_at":"2026-11-06T17:39:03.073Z"}
 {"repo":"google-github-actions/setup-gcloud","template":"/repos/{owner}/{repo}","query":"","etag":"\"1fd48b44bccb7255959177096a32c878daa9eec6a2017fb8421864080063f759\"","stored_at":"2026-11-06T17:39:03.073Z"}
 {"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"c7c4bfe1986932d3c7580f21f67cacab7e3c6ba363231c7f47c5a4bbb8c79c3e\"","stored_at":"2026-11-06T17:39:03.073Z"}
+{"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"4694ec30d323284b44b190a4d0c15d818341464d158777a965c9ec09ed72436b\"","stored_at":"2026-11-06T17:43:19.786Z"}
+{"repo":"docker/metadata-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"db08cc8d3ca5050826c805e9c97c80563d4cd87f9979c28c6fc3daf6fa20f1d9\"","stored_at":"2026-11-06T17:43:19.786Z"}
+{"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"80a986dca79bdac4b038ecc5e20d072a8cc0ce67460c07546cb8aecac5ccd5bc\"","stored_at":"2026-11-06T17:43:19.786Z"}
