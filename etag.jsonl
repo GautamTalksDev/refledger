@@ -1200,3 +1200,4 @@
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"c0cc22125308eca282d7ec2c5a08c22b29a1e41869b95a23e5bd4cc6b38a0c5c\"","stored_at":"2026-11-06T21:04:05.757Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"f06eb63641cde08e5722bb3f316eba1c8931cac215a41c74fa99e17ffe69fc3b\"","stored_at":"2026-11-06T21:19:22.681Z"}
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"f5ef1ce9f6ca262c9703282229b17d5f758a857d538527a0976519c57859adf5\"","stored_at":"2026-11-06T21:19:22.681Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"b8e5b6f9ea78a29bea5bcc3dd4f0414cd30e0e8f46405e7c126848d2fed1c0f6\"","stored_at":"2026-11-06T21:24:12.747Z"}
