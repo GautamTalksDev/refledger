@@ -1142,3 +1142,4 @@
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"ca73b5cf447a9e60e2b111899c73cd6004035e913bf91450c5f1ae1ada4f37cc\"","stored_at":"2026-11-06T13:48:49.208Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"2b64098967e46b9e55c06af17f9207bf3007799e49a5fed7e5649194314a6a3f\"","stored_at":"2026-11-06T13:58:25.578Z"}
 {"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"9df8de38cf59d232bdcfdadfae2920a91035945242a22e1c3f8b851709a0d0ce\"","stored_at":"2026-11-06T14:43:23.783Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"a9c456f572be79449c9bd3b02d46dcd48759baf200a2bf20b2060364488c2337\"","stored_at":"2026-11-06T14:58:34.421Z"}
