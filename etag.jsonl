@@ -1233,3 +1233,5 @@
 {"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"f530512fcc9cc02fe85bf672c90aedad931f2cb466b56a4cf6b14a23a4662086\"","stored_at":"2026-11-07T09:23:53.208Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"4bc647b9a3079c5e0cab8b278002d47a814e62ca99c5625e8bf352b4633c3ac7\"","stored_at":"2026-11-07T09:23:53.208Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"4ca03ec28149825de22c2dfff8bb1af9d8d7802bdb342cf322ba9c331b0e7863\"","stored_at":"2026-11-07T09:23:53.208Z"}
+{"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"f22b4262c8c8429b811212315177d2ade5ff5069c7e68cfb85f8839abb8b760c\"","stored_at":"2026-11-07T09:28:55.310Z"}
+{"repo":"actions/github-script","template":"/repos/{owner}/{repo}","query":"","etag":"\"f15f0c14d03b07ea981e6a34c9b5ea191d1aadc16339c8a46a7314a83eedd9da\"","stored_at":"2026-11-07T09:28:55.310Z"}
