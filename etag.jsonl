@@ -1315,3 +1315,4 @@
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"cd3a00706359c4ba1158b9e4336a778a83ca43a99cf9c763763f87076b1106bf\"","stored_at":"2026-11-07T20:09:26.737Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"1537d7b0b52f6ca49e36490078153150ebb12b14d4be254b6d962fcce0e82716\"","stored_at":"2026-11-07T20:19:04.645Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"e91d0d49407259f62fec7e702959712c1249aaf0b3f9c7b48c4cf0b39bea2cd4\"","stored_at":"2026-11-07T20:19:04.645Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"753e87c84bfdb536da6ec9c890b39212986aba48134423e1df1a35757766719b\"","stored_at":"2026-11-07T20:24:29.670Z"}
