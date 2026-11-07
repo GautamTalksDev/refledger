@@ -1299,3 +1299,4 @@
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"9c987a9394df48f7483a6fe39314b035da4d1880fc083dd7a31893c5596f75a3\"","stored_at":"2026-11-07T14:29:24.918Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"203d07f53b0258134bbaa92042e998de107e1a8805800fd83ec85aa799f0232e\"","stored_at":"2026-11-07T14:29:24.918Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"78faa09161494afe70c62df56cc68f930e5326914b16f07b7e9b9748abe7673d\"","stored_at":"2026-11-07T15:04:20.418Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"8de054d564c535b7cc239004a611de48b3594ef94497fd8bc9bd626fae73b6b8\"","stored_at":"2026-11-07T15:49:21.069Z"}
