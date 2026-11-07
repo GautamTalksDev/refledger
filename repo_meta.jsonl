@@ -909,3 +909,4 @@
 {"repo":"actions/download-artifact","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"docker/build-push-action","archived":false}
+{"repo":"actions/setup-go","archived":false}
