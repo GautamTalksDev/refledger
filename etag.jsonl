@@ -1295,3 +1295,6 @@
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"6233f62c165fe5b19bb607dd566b6260c0d9ba95ac16763837db7406a8827eb6\"","stored_at":"2026-11-07T13:49:52.568Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"bb48c9232f7ad9e49bd9913e2d53acaf2c4de152643fc0c99f40fcc33cef7c34\"","stored_at":"2026-11-07T13:49:52.568Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"dcd2cd43d18794b1631aa76d9353381e4bdf3fd7ffd53ed4cc70824f930638cf\"","stored_at":"2026-11-07T13:49:52.568Z"}
+{"repo":"google-github-actions/setup-gcloud","template":"/repos/{owner}/{repo}","query":"","etag":"\"7f1ed8f3b776de6542a578dbbd90811a1e4b7f786d8640361419bd0ff1a6588c\"","stored_at":"2026-11-07T14:29:24.918Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"9c987a9394df48f7483a6fe39314b035da4d1880fc083dd7a31893c5596f75a3\"","stored_at":"2026-11-07T14:29:24.918Z"}
+{"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"203d07f53b0258134bbaa92042e998de107e1a8805800fd83ec85aa799f0232e\"","stored_at":"2026-11-07T14:29:24.918Z"}
