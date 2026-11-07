@@ -1208,3 +1208,5 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"bbe7a551e482ce8bc8f6ef380edb06a516a6c5b8f090563d72563db29f212ea9\"","stored_at":"2026-11-07T01:18:07.879Z"}
 {"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"eedb6dda2d154bdcabc4c7a9450b7f1cfcecfc232d1c2090db756411f4de749f\"","stored_at":"2026-11-07T01:53:50.097Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"5c3755ae259f8379fcf0ed545a1b44b32eea536ec80b17f61efb5baa997c5f02\"","stored_at":"2026-11-07T02:04:30.054Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"636ce9c9145f27ab675c7bac26323e709fed63e22aab13fc51ab3aa95edeb0cc\"","stored_at":"2026-11-07T02:14:10.592Z"}
+{"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"ad7d7a239e1fad6c87d6d0337d8ab2fba68f1184497bbf1641805e789a622f23\"","stored_at":"2026-11-07T02:14:10.592Z"}
