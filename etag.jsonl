@@ -1311,3 +1311,4 @@
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"b5e902450be38bf64eaaecb1176f713805911e62d5c9f028152bc3285d245c1e\"","stored_at":"2026-11-07T18:54:27.350Z"}
 {"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"285561ac8f1e84d898ae32d63cd588328befe810b7d1dc2c12a5529b23af43b3\"","stored_at":"2026-11-07T18:57:48.534Z"}
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"cfa12b7b9a17e5c1dde9f27ffd1a18775bbebe6258697ed71707c97972de858b\"","stored_at":"2026-11-07T19:44:35.463Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"fb2f26072d22523a6338ee5f4ca819603210d1eec9717863f5b99a9e2393d380\"","stored_at":"2026-11-07T19:49:30.136Z"}
