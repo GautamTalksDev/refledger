@@ -1306,3 +1306,5 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"9d49538b4c2846ef54238ad9d98f7d2039907ff7403f26b687f4614fade31e17\"","stored_at":"2026-11-07T17:19:53.868Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"f67f53e19f1acd245a937014a7be7780eee0c7305e1c11a8c02bb51960d18ad3\"","stored_at":"2026-11-07T17:29:25.114Z"}
 {"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"d9d552449863b83e5e5caba1962ecff5ef7becddd8ff62408623cbd889976f2e\"","stored_at":"2026-11-07T17:59:27.661Z"}
+{"repo":"actions/github-script","template":"/repos/{owner}/{repo}","query":"","etag":"\"843d55ae942eb018d555d4b0231212846527599b9945d5ccc8865adba9991f87\"","stored_at":"2026-11-07T18:38:31.022Z"}
+{"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"dad2fd2d4279cd2e71fd77b7950bd85e052746b8d5ccabbb7e6d878a5e1767fb\"","stored_at":"2026-11-07T18:38:31.022Z"}
