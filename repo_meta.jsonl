@@ -966,3 +966,4 @@
 {"repo":"docker/build-push-action","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"actions/setup-go","archived":false}
+{"repo":"azure/login","archived":false}
