@@ -1211,3 +1211,4 @@
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"636ce9c9145f27ab675c7bac26323e709fed63e22aab13fc51ab3aa95edeb0cc\"","stored_at":"2026-11-07T02:14:10.592Z"}
 {"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"ad7d7a239e1fad6c87d6d0337d8ab2fba68f1184497bbf1641805e789a622f23\"","stored_at":"2026-11-07T02:14:10.592Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"578a65657429fc2980e7cd1c214562030c564793df059e2414e7a2e4baad0192\"","stored_at":"2026-11-07T03:19:12.370Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"466067f71c5e5d38dabf154c5c20e003bc0f7fc19f7f59fc73cd7de7b960deb5\"","stored_at":"2026-11-07T03:44:17.924Z"}
