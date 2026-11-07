@@ -1308,3 +1308,4 @@
 {"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"d9d552449863b83e5e5caba1962ecff5ef7becddd8ff62408623cbd889976f2e\"","stored_at":"2026-11-07T17:59:27.661Z"}
 {"repo":"actions/github-script","template":"/repos/{owner}/{repo}","query":"","etag":"\"843d55ae942eb018d555d4b0231212846527599b9945d5ccc8865adba9991f87\"","stored_at":"2026-11-07T18:38:31.022Z"}
 {"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"dad2fd2d4279cd2e71fd77b7950bd85e052746b8d5ccabbb7e6d878a5e1767fb\"","stored_at":"2026-11-07T18:38:31.022Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"b5e902450be38bf64eaaecb1176f713805911e62d5c9f028152bc3285d245c1e\"","stored_at":"2026-11-07T18:54:27.350Z"}
