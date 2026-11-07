@@ -1291,3 +1291,7 @@
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"d81c7fcd378c89d8892c45d77964c2b03a94d2d300927f5b179bc0874cc088fd\"","stored_at":"2026-11-07T13:44:28.195Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"fd20cd47df0cf9dbba5a2ad72bdbbe77a7123f2ad5ea3eedeab0e5d1792563b0\"","stored_at":"2026-11-07T13:44:28.195Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"2a993796c8705431f8e9af0efb6a93580c211fde11403553b345a52ef14502b0\"","stored_at":"2026-11-07T13:44:28.195Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"ec80b65524162fa8fec0069c2dd1591b87399255b79119538d52e31f76f00da8\"","stored_at":"2026-11-07T13:49:52.568Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"6233f62c165fe5b19bb607dd566b6260c0d9ba95ac16763837db7406a8827eb6\"","stored_at":"2026-11-07T13:49:52.568Z"}
+{"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"bb48c9232f7ad9e49bd9913e2d53acaf2c4de152643fc0c99f40fcc33cef7c34\"","stored_at":"2026-11-07T13:49:52.568Z"}
+{"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"dcd2cd43d18794b1631aa76d9353381e4bdf3fd7ffd53ed4cc70824f930638cf\"","stored_at":"2026-11-07T13:49:52.568Z"}
