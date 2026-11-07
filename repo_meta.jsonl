@@ -938,3 +938,6 @@
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/checkout","archived":false}
+{"repo":"aquasecurity/setup-trivy","archived":false}
+{"repo":"tj-actions/glob","archived":false}
+{"repo":"tj-actions/json2file","archived":false}
