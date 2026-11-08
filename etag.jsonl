@@ -1380,3 +1380,5 @@
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"81bdccc8129f78070a8d760103ac70aded4d5d0b7bda9583614f1b05f7ae667d\"","stored_at":"2026-11-08T19:39:55.092Z"}
 {"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"f02cafc09da0863f579679fe9ccb4c330578780d9de877ccf6b45d7b25ff5adc\"","stored_at":"2026-11-08T19:56:35.015Z"}
 {"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"25f66ee27b877036350eda2c6f490c7e1a5e05e81f3af35513d59ead89626a78\"","stored_at":"2026-11-08T20:00:02.251Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"be27acd133f8d6119cf8d3727f785cd4ef566cc964423d6cfa29ae95b0651e03\"","stored_at":"2026-11-08T20:19:55.607Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"8c5c582a3d9bfb7280f57d878c7828eb605bc7dba2e5215770876b659a4cbea0\"","stored_at":"2026-11-08T20:19:55.607Z"}
