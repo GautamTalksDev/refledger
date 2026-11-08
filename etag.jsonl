@@ -1366,3 +1366,4 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"9c7064459e9ff874c8c3a48a629803d47e27446b0869799dbab279b7f440c221\"","stored_at":"2026-11-08T16:19:56.223Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"fa51aba955ad4fedbb0f72e40d6dfadc418dc2c1d0cdd85aaa92d44ea69ea6df\"","stored_at":"2026-11-08T16:19:56.223Z"}
 {"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"13c2e4c4153401af21d24afc70533cb7f483ae2dca30c24ebc36adfa424ca611\"","stored_at":"2026-11-08T16:19:56.223Z"}
+{"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"c191278c0a5cbd25fef7c83cff4451a6b29031faef938365466787a8387c2feb\"","stored_at":"2026-11-08T16:59:24.519Z"}
