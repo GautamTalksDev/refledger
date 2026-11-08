@@ -1023,3 +1023,4 @@
 {"repo":"aquasecurity/trivy-action","archived":false}
 {"repo":"reviewdog/action-eslint","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"aws-actions/configure-aws-credentials","archived":false}
