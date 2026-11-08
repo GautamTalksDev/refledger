@@ -1342,3 +1342,4 @@
 {"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"5ac6b0cd8d61c14d6b9bb40aee55f2ba1e5b468d95d0a8163fb3f6bd780246dc\"","stored_at":"2026-11-08T06:39:18.748Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"90f3a3012ca9940d2f425067d1f2aed4717e8554a399ab35bc4fd0513359988c\"","stored_at":"2026-11-08T06:59:20.823Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"84b6919662f65a33b294517ed73a85bdab4c6e4cd6b2eb03f4c9d8029120601d\"","stored_at":"2026-11-08T07:29:48.224Z"}
+{"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"94ca116f8d02cac3efd32ee6cb16a31fdc46e6bb8eae9d1c2940f0e5bebe50f3\"","stored_at":"2026-11-08T07:38:43.612Z"}
