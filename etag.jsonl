@@ -1361,3 +1361,4 @@
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"9990399ac86c92df5ff412201bb9cad3d35d76410a27c25c2aa88b5ece55b532\"","stored_at":"2026-11-08T13:19:24.792Z"}
 {"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"5d05ccebbf9ad6d64e7728098b357810bd822248a5c55b769a0eb6d43085f545\"","stored_at":"2026-11-08T13:19:24.792Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"691be67d4d42f298ef286efcaab98181d0982028df222ab9b6d3d7a9a9140e33\"","stored_at":"2026-11-08T13:19:24.792Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"240af2e40cc90f960bb25126a7976ed019525531407cb24fa3a2bba71fecad87\"","stored_at":"2026-11-08T13:24:52.769Z"}
