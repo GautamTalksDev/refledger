@@ -1363,3 +1363,6 @@
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"691be67d4d42f298ef286efcaab98181d0982028df222ab9b6d3d7a9a9140e33\"","stored_at":"2026-11-08T13:19:24.792Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"240af2e40cc90f960bb25126a7976ed019525531407cb24fa3a2bba71fecad87\"","stored_at":"2026-11-08T13:24:52.769Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"90eda957d428d91e4b14ac0cf4e207de6c559d147321e7f55059d876bce097f2\"","stored_at":"2026-11-08T15:39:56.104Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"9c7064459e9ff874c8c3a48a629803d47e27446b0869799dbab279b7f440c221\"","stored_at":"2026-11-08T16:19:56.223Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"fa51aba955ad4fedbb0f72e40d6dfadc418dc2c1d0cdd85aaa92d44ea69ea6df\"","stored_at":"2026-11-08T16:19:56.223Z"}
+{"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"13c2e4c4153401af21d24afc70533cb7f483ae2dca30c24ebc36adfa424ca611\"","stored_at":"2026-11-08T16:19:56.223Z"}
