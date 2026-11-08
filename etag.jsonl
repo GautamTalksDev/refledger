@@ -1340,3 +1340,4 @@
 {"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"a7a56e42c235cef919b314e326b7513420897a23a40462076f76602c71f69e52\"","stored_at":"2026-11-08T06:09:51.477Z"}
 {"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"9053ef7fdfcdc6549d6144b02c191e2ab82c972c977ac43076251420dd6d7b6a\"","stored_at":"2026-11-08T06:14:14.638Z"}
 {"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"5ac6b0cd8d61c14d6b9bb40aee55f2ba1e5b468d95d0a8163fb3f6bd780246dc\"","stored_at":"2026-11-08T06:39:18.748Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"90f3a3012ca9940d2f425067d1f2aed4717e8554a399ab35bc4fd0513359988c\"","stored_at":"2026-11-08T06:59:20.823Z"}
