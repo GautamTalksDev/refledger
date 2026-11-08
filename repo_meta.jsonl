@@ -1032,3 +1032,4 @@
 {"repo":"azure/webapps-deploy","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/attest-build-provenance","archived":false}
+{"repo":"github/super-linter","archived":false}
