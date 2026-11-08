@@ -1344,3 +1344,5 @@
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"84b6919662f65a33b294517ed73a85bdab4c6e4cd6b2eb03f4c9d8029120601d\"","stored_at":"2026-11-08T07:29:48.224Z"}
 {"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"94ca116f8d02cac3efd32ee6cb16a31fdc46e6bb8eae9d1c2940f0e5bebe50f3\"","stored_at":"2026-11-08T07:38:43.612Z"}
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"804420b8411dee5c946be71f5fb7254deaafae0e791ce4c9e5325a3bf8cd3ba5\"","stored_at":"2026-11-08T07:59:37.897Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"b8509afb9007a96b6f4f83da1ae633789fee46aa404d14e2118af54b1ff4f961\"","stored_at":"2026-11-08T08:19:08.762Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"f40befceb1b86d2d1e0278fcd78294797fcff89da52c6938db2f2f89720e3c4b\"","stored_at":"2026-11-08T08:19:08.762Z"}
