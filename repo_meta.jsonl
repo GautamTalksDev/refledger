@@ -1031,3 +1031,4 @@
 {"repo":"tj-actions/changed-files","archived":false}
 {"repo":"azure/webapps-deploy","archived":false}
 {"repo":"actions/checkout","archived":false}
+{"repo":"actions/attest-build-provenance","archived":false}

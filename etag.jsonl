@@ -1376,3 +1376,4 @@
 {"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"c7c4bfe1986932d3c7580f21f67cacab7e3c6ba363231c7f47c5a4bbb8c79c3e\"","stored_at":"2026-11-08T17:43:49.603Z"}
 {"repo":"azure/webapps-deploy","template":"/repos/{owner}/{repo}","query":"","etag":"\"939f8b3971b8d66b3a2a98897c4d5d78b73ee2eae40753863f408a1f7d457be2\"","stored_at":"2026-11-08T17:49:55.191Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"01b3288029da2fae3df6d501863f3353b4b7552f44bc72ecbf351ce7bc54fd37\"","stored_at":"2026-11-08T19:09:17.117Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"98916d48292f12afdb92840ef970803fa26ec71c8b52be14037ebc49264b4f4a\"","stored_at":"2026-11-08T19:25:00.470Z"}
