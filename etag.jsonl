@@ -1331,3 +1331,5 @@
 {"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"6d6d161d89c9756828cfb41e5c4c1fb557e3e778f967c7cd31002cc2930cefbf\"","stored_at":"2026-11-08T03:48:43.095Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"73b80b135e9712a00a065288f5e55e7e1a859b7f6317419e7350d8cffd3c3987\"","stored_at":"2026-11-08T03:48:43.095Z"}
 {"repo":"actions/github-script","template":"/repos/{owner}/{repo}","query":"","etag":"\"1396e39ac9d02a26da28c4ae7415ee937a96a213dd9a00a2f271228c15d4aa89\"","stored_at":"2026-11-08T03:59:11.969Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"447163f0120b7ea71e753e20c088c54166deea4719cd326431a05c3169c24f46\"","stored_at":"2026-11-08T04:18:44.451Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"e91d0d49407259f62fec7e702959712c1249aaf0b3f9c7b48c4cf0b39bea2cd4\"","stored_at":"2026-11-08T04:18:44.451Z"}
