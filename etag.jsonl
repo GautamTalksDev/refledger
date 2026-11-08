@@ -1327,3 +1327,4 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"915577879b76fcb01388937dae9dd59c4846328e48bff607cd88356b5d869914\"","stored_at":"2026-11-08T01:19:43.578Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"1634512a8f32e8487c5a2e27f63b48d45255a6f58ac292165155cfdcded1fa5a\"","stored_at":"2026-11-08T01:48:48.804Z"}
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"7c10abcb46162f1ada50cd8c33f857b3d0e7bbb50cf61631d743375caaa9d931\"","stored_at":"2026-11-08T02:04:59.012Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"7d2f316daa8c6a144ccd806fb3b86c9674d8dcfbc57fd2016f233af53c487c0d\"","stored_at":"2026-11-08T03:24:39.512Z"}
