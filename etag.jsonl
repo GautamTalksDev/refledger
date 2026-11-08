@@ -1379,3 +1379,4 @@
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"98916d48292f12afdb92840ef970803fa26ec71c8b52be14037ebc49264b4f4a\"","stored_at":"2026-11-08T19:25:00.470Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"81bdccc8129f78070a8d760103ac70aded4d5d0b7bda9583614f1b05f7ae667d\"","stored_at":"2026-11-08T19:39:55.092Z"}
 {"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"f02cafc09da0863f579679fe9ccb4c330578780d9de877ccf6b45d7b25ff5adc\"","stored_at":"2026-11-08T19:56:35.015Z"}
+{"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"25f66ee27b877036350eda2c6f490c7e1a5e05e81f3af35513d59ead89626a78\"","stored_at":"2026-11-08T20:00:02.251Z"}
