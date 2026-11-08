@@ -1328,3 +1328,5 @@
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"1634512a8f32e8487c5a2e27f63b48d45255a6f58ac292165155cfdcded1fa5a\"","stored_at":"2026-11-08T01:48:48.804Z"}
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"7c10abcb46162f1ada50cd8c33f857b3d0e7bbb50cf61631d743375caaa9d931\"","stored_at":"2026-11-08T02:04:59.012Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"7d2f316daa8c6a144ccd806fb3b86c9674d8dcfbc57fd2016f233af53c487c0d\"","stored_at":"2026-11-08T03:24:39.512Z"}
+{"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"6d6d161d89c9756828cfb41e5c4c1fb557e3e778f967c7cd31002cc2930cefbf\"","stored_at":"2026-11-08T03:48:43.095Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"73b80b135e9712a00a065288f5e55e7e1a859b7f6317419e7350d8cffd3c3987\"","stored_at":"2026-11-08T03:48:43.095Z"}
