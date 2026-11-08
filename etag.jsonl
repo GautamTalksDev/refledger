@@ -1321,3 +1321,4 @@
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"4f15e849e52a91617ee638b108631bfd9f5ad1bbdaa059ee798606b838fc1445\"","stored_at":"2026-11-07T21:39:04.559Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"4b76942eed828c0fee8032204213b9e1c9fb70aec2c21a9aeb94343d657c2129\"","stored_at":"2026-11-07T22:04:31.499Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"efddc60915664ee5e241af1328f533ace0757d7f857e11cd83ef875dd4333185\"","stored_at":"2026-11-07T23:54:37.461Z"}
+{"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"a1ac1dfe7150c6abbb30774e104ce5b6455dbb14cbc42c009fd68d1b390a5170\"","stored_at":"2026-11-08T00:09:32.635Z"}
