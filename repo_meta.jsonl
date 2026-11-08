@@ -1009,3 +1009,4 @@
 {"repo":"actions/setup-java","archived":false}
 {"repo":"actions/setup-java","archived":false}
 {"repo":"actions/download-artifact","archived":false}
+{"repo":"azure/login","archived":false}

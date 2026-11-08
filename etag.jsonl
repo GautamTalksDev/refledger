@@ -1352,3 +1352,4 @@
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"9707ab23779af414faad711e55532aa1bf8c973cf07c04141d3f31ee54e13f8a\"","stored_at":"2026-11-08T10:09:58.390Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"cd3a00706359c4ba1158b9e4336a778a83ca43a99cf9c763763f87076b1106bf\"","stored_at":"2026-11-08T10:33:43.864Z"}
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"6e26ba0c95d704bc7d0f6cf95c832c22368da338eb0686bc6a35224a1f29dc4d\"","stored_at":"2026-11-08T11:33:44.120Z"}
+{"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"060cd41bd79f95fd95d37bd0b4df6c65ced7e359fbdb23755bbef778a52b6110\"","stored_at":"2026-11-08T11:44:47.423Z"}
