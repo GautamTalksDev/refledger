@@ -991,3 +991,4 @@
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/github-script","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"docker/login-action","archived":false}
