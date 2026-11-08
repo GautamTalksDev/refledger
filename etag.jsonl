@@ -1374,3 +1374,4 @@
 {"repo":"docker/metadata-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"db08cc8d3ca5050826c805e9c97c80563d4cd87f9979c28c6fc3daf6fa20f1d9\"","stored_at":"2026-11-08T17:43:49.603Z"}
 {"repo":"docker/setup-buildx-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"d48f144281d6c0f77bf5e19ff9f2e2055c468fc3b1e99b9402bcbcdbaa37615d\"","stored_at":"2026-11-08T17:43:49.603Z"}
 {"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"c7c4bfe1986932d3c7580f21f67cacab7e3c6ba363231c7f47c5a4bbb8c79c3e\"","stored_at":"2026-11-08T17:43:49.603Z"}
+{"repo":"azure/webapps-deploy","template":"/repos/{owner}/{repo}","query":"","etag":"\"939f8b3971b8d66b3a2a98897c4d5d78b73ee2eae40753863f408a1f7d457be2\"","stored_at":"2026-11-08T17:49:55.191Z"}
