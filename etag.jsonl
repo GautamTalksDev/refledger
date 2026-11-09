@@ -1495,3 +1495,4 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"de3ae011c584707b39ae795d6e99d6f372a529444f0935218e12e11a926e268e\"","stored_at":"2026-11-09T16:19:46.481Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"36c8f4d8b2d3ede4e17f550934b961c0b4800c955ff6f7cf14965122cea63f5c\"","stored_at":"2026-11-09T17:20:26.300Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"024ac24d89e60b82d2e10d87381ecae3670d4f1b1a23f1fc52d20c5f67bf3e19\"","stored_at":"2026-11-09T17:20:26.300Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"caecc08eb3188a87e1f387d9c0c3af170ec333d03987fdd3625858ebc7183a1d\"","stored_at":"2026-11-09T17:39:39.544Z"}
