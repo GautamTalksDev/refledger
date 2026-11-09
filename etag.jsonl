@@ -1473,3 +1473,4 @@
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"f056bb4a8e6ae8845d357da23785186cda7134ac8489974e1a43807826360e20\"","stored_at":"2026-11-09T12:19:12.855Z"}
 {"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"6431b87c4adc66a816f76f743a179e26530a3d0e25652d04236a4bf566d49b57\"","stored_at":"2026-11-09T12:45:18.349Z"}
 {"repo":"docker/login-action","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"410c9df2be1b5fba11d19cd6276e95e9594dabf66f44ea773bc03a315ebca5ce\"","stored_at":"2026-11-09T13:00:22.973Z"}
+{"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"184ff60c82d35fcda5b00f5c9a81692835fd551fc5bef54d5c2266c11e3154e5\"","stored_at":"2026-11-09T13:04:10.038Z"}
