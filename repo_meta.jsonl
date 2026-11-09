@@ -1066,3 +1066,4 @@
 {"repo":"actions/setup-node","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/setup-node","archived":false}
+{"repo":"docker/build-push-action","archived":false}
