@@ -1475,3 +1475,4 @@
 {"repo":"docker/login-action","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"410c9df2be1b5fba11d19cd6276e95e9594dabf66f44ea773bc03a315ebca5ce\"","stored_at":"2026-11-09T13:00:22.973Z"}
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"184ff60c82d35fcda5b00f5c9a81692835fd551fc5bef54d5c2266c11e3154e5\"","stored_at":"2026-11-09T13:04:10.038Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"3d02a03cf35eb3719537902f5325a5212661e6b2a6ac46a83c78c5c9a6251f1d\"","stored_at":"2026-11-09T13:19:03.866Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"7a202f715b09d8061b4fdb232d43da3a7faaae10c553418d50947a5889866f8e\"","stored_at":"2026-11-09T13:29:46.034Z"}
