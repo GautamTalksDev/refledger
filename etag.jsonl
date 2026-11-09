@@ -1512,3 +1512,5 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"aba7f255eb1246515788c0658bdf6d43da64e3b24c63b09e400d8a2494cc58c3\"","stored_at":"2026-11-09T21:21:19.453Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"2c1c0c09a35eea658624018a4df73b2f97bdf1939b1d44d372d13502ff2ae33b\"","stored_at":"2026-11-09T21:50:31.617Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"798d3187fa99ddc106a5a75a3081637c988fef8e189a75755b3a2baf12045caa\"","stored_at":"2026-11-09T21:50:31.617Z"}
+{"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"3a46477e28d2c18ed10633bfd5d6c9a2066c1352b98ce19874fda607a24c4090\"","stored_at":"2026-11-09T21:55:30.006Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"a6198000a15684e39f4a6100fd7fd9f10ade28f66e425c1d688db8e7bbc295a7\"","stored_at":"2026-11-09T21:55:30.006Z"}
