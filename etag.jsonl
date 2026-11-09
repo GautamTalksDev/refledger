@@ -1458,3 +1458,4 @@
 {"repo":"tj-actions/json2file","template":"/repos/{owner}/{repo}","query":"","etag":"\"db65a3685c5b0ea2f39060eaa894a1712c98dcfd496abfe5908e114b698ce0a2\"","stored_at":"2026-11-09T10:55:17.847Z"}
 {"repo":"tj-actions/json2file","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"03918e01079bbd1b92008762b45b690be2073092678904d28b72e949038d548a\"","stored_at":"2026-11-09T10:55:17.847Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"f9923be30da8d787218c01b899a20c0dd53e7b6689ea1f0736e4645d69df56ba\"","stored_at":"2026-11-09T10:59:52.071Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"abea13b67ff11a510235b8f0d8f5d7304932035f5cba0573d702a7219005c7b6\"","stored_at":"2026-11-09T11:05:28.503Z"}

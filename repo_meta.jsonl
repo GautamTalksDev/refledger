@@ -1077,3 +1077,4 @@
 {"repo":"tj-actions/glob","archived":false}
 {"repo":"tj-actions/json2file","archived":false}
 {"repo":"actions/setup-go","archived":false}
+{"repo":"github/codeql-action","archived":false}
