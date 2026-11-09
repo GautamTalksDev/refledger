@@ -1486,3 +1486,4 @@
 {"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"fdf9f73649909e4ee669c18edad3e2d1464a2b76bc89326ad7eb94ccd0210f9b\"","stored_at":"2026-11-09T14:30:23.067Z"}
 {"repo":"google-github-actions/setup-gcloud","template":"/repos/{owner}/{repo}","query":"","etag":"\"7f1ed8f3b776de6542a578dbbd90811a1e4b7f786d8640361419bd0ff1a6588c\"","stored_at":"2026-11-09T14:30:23.067Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"9c987a9394df48f7483a6fe39314b035da4d1880fc083dd7a31893c5596f75a3\"","stored_at":"2026-11-09T14:30:23.067Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"73a6d1812a473ed416bc8a1cf904f6b6bcc45379d991b6ff43c53bc404f81296\"","stored_at":"2026-11-09T14:34:15.214Z"}
