@@ -1460,3 +1460,4 @@
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"f9923be30da8d787218c01b899a20c0dd53e7b6689ea1f0736e4645d69df56ba\"","stored_at":"2026-11-09T10:59:52.071Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"abea13b67ff11a510235b8f0d8f5d7304932035f5cba0573d702a7219005c7b6\"","stored_at":"2026-11-09T11:05:28.503Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"452b71ae0f0df5313ab2989f477caca7464da2decb62180f75033f3781c84fbb\"","stored_at":"2026-11-09T11:15:14.146Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"8dcaa882745133ce0f59ad5194a8d2bf07dd0ba4c15f02bc97d4d141eb27540a\"","stored_at":"2026-11-09T11:30:50.771Z"}
