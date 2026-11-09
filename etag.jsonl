@@ -1501,3 +1501,5 @@
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"8e3e7fa2478c9d62714ec4dd0f718553426cff26b35a3a1f11aa7fc591d4b047\"","stored_at":"2026-11-09T18:30:27.054Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"154aa8307890846739ba73870b803f0b2b2d6cf56fac49da2eaab73549217869\"","stored_at":"2026-11-09T18:30:27.054Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"030dcd60705a01f4c43c24991c77540122f641c825fb0169d0f52ae83da7bb05\"","stored_at":"2026-11-09T18:30:27.054Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"2d463e8001d9ac2dba36aba002944707a42680313e7f2ee222ca76753f5c8fc1\"","stored_at":"2026-11-09T18:40:39.300Z"}
+{"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"dad2fd2d4279cd2e71fd77b7950bd85e052746b8d5ccabbb7e6d878a5e1767fb\"","stored_at":"2026-11-09T18:40:39.300Z"}
