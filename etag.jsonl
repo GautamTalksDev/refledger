@@ -1483,3 +1483,6 @@
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"dcd2cd43d18794b1631aa76d9353381e4bdf3fd7ffd53ed4cc70824f930638cf\"","stored_at":"2026-11-09T13:54:52.114Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"056a884211c744f4dc90426dd27ca1eb391c9d34b3e3e09a5d0168342b5bab0d\"","stored_at":"2026-11-09T14:10:16.514Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"446f88afa25049d21f1456519b45fcbcd4ab1b0f4d15e0839c292f003944e200\"","stored_at":"2026-11-09T14:25:23.781Z"}
+{"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"fdf9f73649909e4ee669c18edad3e2d1464a2b76bc89326ad7eb94ccd0210f9b\"","stored_at":"2026-11-09T14:30:23.067Z"}
+{"repo":"google-github-actions/setup-gcloud","template":"/repos/{owner}/{repo}","query":"","etag":"\"7f1ed8f3b776de6542a578dbbd90811a1e4b7f786d8640361419bd0ff1a6588c\"","stored_at":"2026-11-09T14:30:23.067Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"9c987a9394df48f7483a6fe39314b035da4d1880fc083dd7a31893c5596f75a3\"","stored_at":"2026-11-09T14:30:23.067Z"}
