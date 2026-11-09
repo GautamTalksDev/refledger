@@ -1497,3 +1497,4 @@
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"024ac24d89e60b82d2e10d87381ecae3670d4f1b1a23f1fc52d20c5f67bf3e19\"","stored_at":"2026-11-09T17:20:26.300Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"caecc08eb3188a87e1f387d9c0c3af170ec333d03987fdd3625858ebc7183a1d\"","stored_at":"2026-11-09T17:39:39.544Z"}
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"e40183be34a11c83f277811680f2dc88e0154cd868d55dde5c97d68bc7714e99\"","stored_at":"2026-11-09T17:45:42.842Z"}
+{"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"5730ae79b2d1c1ff253329b1805d3feb340982e9ddfdf7ed267c5c9f53cc8c49\"","stored_at":"2026-11-09T17:59:55.440Z"}

@@ -1111,3 +1111,4 @@
 {"repo":"reviewdog/action-actionlint","archived":false}
 {"repo":"github/codeql-action","archived":false}
 {"repo":"actions/attest-build-provenance","archived":false}
+{"repo":"actions/setup-node","archived":false}
