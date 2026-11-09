@@ -1476,3 +1476,5 @@
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"184ff60c82d35fcda5b00f5c9a81692835fd551fc5bef54d5c2266c11e3154e5\"","stored_at":"2026-11-09T13:04:10.038Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"3d02a03cf35eb3719537902f5325a5212661e6b2a6ac46a83c78c5c9a6251f1d\"","stored_at":"2026-11-09T13:19:03.866Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"7a202f715b09d8061b4fdb232d43da3a7faaae10c553418d50947a5889866f8e\"","stored_at":"2026-11-09T13:29:46.034Z"}
+{"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"332a59981aa1ce00faaf91dbab3b7a52a1be11314b59d0fcc2edc666835f003d\"","stored_at":"2026-11-09T13:35:20.922Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"f2c668709e0eefdd43570494e424024354180d68a56031265038128ad0effd8c\"","stored_at":"2026-11-09T13:35:20.922Z"}
