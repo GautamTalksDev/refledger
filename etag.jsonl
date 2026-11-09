@@ -1462,3 +1462,4 @@
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"452b71ae0f0df5313ab2989f477caca7464da2decb62180f75033f3781c84fbb\"","stored_at":"2026-11-09T11:15:14.146Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"8dcaa882745133ce0f59ad5194a8d2bf07dd0ba4c15f02bc97d4d141eb27540a\"","stored_at":"2026-11-09T11:30:50.771Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"c914b90e7f24abcafa681f5def24f5f307bd1d06837887e91bb0e46729b77c63\"","stored_at":"2026-11-09T11:44:11.229Z"}
+{"repo":"aquasecurity/setup-trivy","template":"/repos/{owner}/{repo}","query":"","etag":"\"2432e5064e3ec568c3b5118ae70b2c96eee6a6a97b3ded9d26abf6e44c496693\"","stored_at":"2026-11-09T11:50:22.501Z"}
