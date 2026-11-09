@@ -1488,3 +1488,4 @@
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"9c987a9394df48f7483a6fe39314b035da4d1880fc083dd7a31893c5596f75a3\"","stored_at":"2026-11-09T14:30:23.067Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"73a6d1812a473ed416bc8a1cf904f6b6bcc45379d991b6ff43c53bc404f81296\"","stored_at":"2026-11-09T14:34:15.214Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"fec35f5d19fb278f8fa36df01f44cb17964a329e449597e599da61f3153f9baf\"","stored_at":"2026-11-09T15:24:39.925Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"f0fd460235666d7ca045face0af92b2fdfd46f59f9cd2f48f5b50848618b3a7d\"","stored_at":"2026-11-09T15:36:18.202Z"}
