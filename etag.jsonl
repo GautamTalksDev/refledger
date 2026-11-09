@@ -1498,3 +1498,6 @@
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"caecc08eb3188a87e1f387d9c0c3af170ec333d03987fdd3625858ebc7183a1d\"","stored_at":"2026-11-09T17:39:39.544Z"}
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"e40183be34a11c83f277811680f2dc88e0154cd868d55dde5c97d68bc7714e99\"","stored_at":"2026-11-09T17:45:42.842Z"}
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"5730ae79b2d1c1ff253329b1805d3feb340982e9ddfdf7ed267c5c9f53cc8c49\"","stored_at":"2026-11-09T17:59:55.440Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"8e3e7fa2478c9d62714ec4dd0f718553426cff26b35a3a1f11aa7fc591d4b047\"","stored_at":"2026-11-09T18:30:27.054Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"154aa8307890846739ba73870b803f0b2b2d6cf56fac49da2eaab73549217869\"","stored_at":"2026-11-09T18:30:27.054Z"}
+{"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"030dcd60705a01f4c43c24991c77540122f641c825fb0169d0f52ae83da7bb05\"","stored_at":"2026-11-09T18:30:27.054Z"}
