@@ -1232,3 +1232,4 @@
 {"repo":"actions/attest-build-provenance","archived":false}
 {"repo":"reviewdog/action-actionlint","archived":false}
 {"repo":"aquasecurity/trivy-action","archived":false}
+{"repo":"aws-actions/amazon-ecr-login","archived":false}
