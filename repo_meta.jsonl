@@ -1168,3 +1168,4 @@
 {"repo":"actions/download-artifact","archived":false}
 {"repo":"actions/setup-java","archived":false}
 {"repo":"actions/checkout","archived":false}
+{"repo":"github/super-linter","archived":false}
