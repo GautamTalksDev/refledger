@@ -1201,3 +1201,5 @@
 {"repo":"actions/github-script","archived":false}
 {"repo":"azure/login","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"actions/dependency-review-action","archived":false}
+{"repo":"actions/setup-python","archived":false}
