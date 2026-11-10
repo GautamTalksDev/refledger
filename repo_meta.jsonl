@@ -1174,3 +1174,5 @@
 {"repo":"reviewdog/action-actionlint","archived":false}
 {"repo":"docker/login-action","archived":false}
 {"repo":"actions/cache","archived":false}
+{"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"reviewdog/action-eslint","archived":false}
