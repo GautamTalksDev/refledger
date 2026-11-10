@@ -1211,3 +1211,4 @@
 {"repo":"actions/upload-artifact","archived":false}
 {"repo":"azure/login","archived":false}
 {"repo":"github/codeql-action","archived":false}
+{"repo":"actions/dependency-review-action","archived":false}
