@@ -1555,3 +1555,5 @@
 {"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"025c716d858063d7e0d687520a02ee933c429aa72675c565b00274033bda8574\"","stored_at":"2026-11-10T09:26:26.391Z"}
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"498b07535a04841d0306bfe904838c4a4e39543e6a5d3865c66e93220139e0a6\"","stored_at":"2026-11-10T09:26:26.391Z"}
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"4b138c2e6d71b907f6fda66a16199a43ac6e3d284daef09f592f640d79623363\"","stored_at":"2026-11-10T09:26:26.391Z"}
+{"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"7ead2fb4738c41f567d1d45a1c9f468ef5e5e085123f57e46616ac3d022212f1\"","stored_at":"2026-11-10T10:00:50.965Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"6100517cdd5935053a5ab196fa3fe82fc6a2cbfdc88817fca04f23f4db3a592c\"","stored_at":"2026-11-10T10:00:50.965Z"}
