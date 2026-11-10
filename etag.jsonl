@@ -1536,3 +1536,5 @@
 {"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"88019da9dc95a1d368a50dbc593e22f595142fb31684e3694ee2ab8dd59030a9\"","stored_at":"2026-11-10T03:49:29.431Z"}
 {"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"f8686565bd3ec53eae06220b0153d8840ca4200a0b8477f5845ce09940f4c8c9\"","stored_at":"2026-11-10T03:53:16.483Z"}
 {"repo":"actions/github-script","template":"/repos/{owner}/{repo}","query":"","etag":"\"1396e39ac9d02a26da28c4ae7415ee937a96a213dd9a00a2f271228c15d4aa89\"","stored_at":"2026-11-10T04:01:04.170Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"61dd1d0cce64307578713c7f79b72925dbe14be27fbcdac1add6605ee46d208c\"","stored_at":"2026-11-10T04:19:16.724Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"b8f2baa26302942fdf09177b2ef1b1dac3068ef17fe75bb39ef99b38de2b5cb2\"","stored_at":"2026-11-10T04:19:16.724Z"}
