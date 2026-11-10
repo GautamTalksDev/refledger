@@ -1142,3 +1142,5 @@
 {"repo":"github/codeql-action","archived":false}
 {"repo":"tj-actions/changed-files","archived":false}
 {"repo":"azure/login","archived":false}
+{"repo":"actions/setup-go","archived":false}
+{"repo":"actions/setup-python","archived":false}
