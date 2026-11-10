@@ -1520,3 +1520,5 @@
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"ae884ad719fc6f120dfa9d3406f47b249e9864e351b6c1db56f8e0def4745fe2\"","stored_at":"2026-11-09T23:39:20.340Z"}
 {"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"a1ac1dfe7150c6abbb30774e104ce5b6455dbb14cbc42c009fd68d1b390a5170\"","stored_at":"2026-11-10T00:10:13.314Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"c20c3f6587ef61766fc73fe70d0c3b1eecd201bf9708fd3e6876a02b94a9d1cb\"","stored_at":"2026-11-10T00:16:19.798Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"865fdc6594afd29fd38afca4c59a6bbae3908a4be4785cc57d47fe9067ef782a\"","stored_at":"2026-11-10T00:20:21.299Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"a74ec2e7b78da151cf07769e2f1da9d6a76d56d1dd99734c0b68325fe35010e4\"","stored_at":"2026-11-10T00:20:21.299Z"}
