@@ -1570,3 +1570,7 @@
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"23372b4685d9564148b1894e019cff5995664670cfeefd04dc8bbf4bf7e4098d\"","stored_at":"2026-11-10T12:18:23.159Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"0d2b4939ad51593895560318c3a7ed422f467b89055f36e03ea843d47a9d417d\"","stored_at":"2026-11-10T12:36:09.735Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"e7b5e2b9d4aa96100bd307521bac0d8b3ffd40f4395cef80e30465d27869f3e3\"","stored_at":"2026-11-10T13:19:12.437Z"}
+{"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"8f2c68f8ac8e5c780b00f774a0447987a01824c4cefa58ed358de7e1745bf63f\"","stored_at":"2026-11-10T13:23:42.909Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"7474bf45cd8803014f3a19cfc2f455471e8929e686ceece127e5d36a788a5b70\"","stored_at":"2026-11-10T13:23:42.909Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"1439a54b5b487d20d9aedc07e75954d4e0f7b107b5da3d32f1a9c65809106c0b\"","stored_at":"2026-11-10T13:23:42.909Z"}
+{"repo":"actions/labeler","template":"/repos/{owner}/{repo}","query":"","etag":"\"94af3c59e9320c7aa3d71b024d338090693a629e6ac5d6bcbce937b167853191\"","stored_at":"2026-11-10T13:23:42.909Z"}
