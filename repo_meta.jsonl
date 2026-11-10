@@ -1185,3 +1185,4 @@
 {"repo":"actions/setup-java","archived":false}
 {"repo":"actions/setup-python","archived":false}
 {"repo":"aquasecurity/setup-trivy","archived":false}
+{"repo":"github/super-linter","archived":false}
