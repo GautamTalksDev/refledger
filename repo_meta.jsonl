@@ -1223,3 +1223,5 @@
 {"repo":"reviewdog/action-actionlint","archived":false}
 {"repo":"reviewdog/action-eslint","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"azure/webapps-deploy","archived":false}
+{"repo":"github/codeql-action","archived":false}
