@@ -1561,3 +1561,5 @@
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"6e6507170dfe0498c41ef9219ce2c45d86b84b5647d1e17803bf44c7a2b2e134\"","stored_at":"2026-11-10T10:34:25.300Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"303ccc2df9a14e9a3ec9bf995448f27812c33b513667b60f76340f18b6227881\"","stored_at":"2026-11-10T11:16:27.509Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"5aff8b6ee9d08ac4221a841db321a85c68f4da9618677d8f1beb5a868ce44d7c\"","stored_at":"2026-11-10T11:21:15.242Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"4160f4d9c7c2006e5cdbf40a756984d036a6f4f136f2785d9c2e79fcf352c594\"","stored_at":"2026-11-10T11:37:22.252Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"9c59644f1ee4a5753f859c64eb2c1ec4118a38058e7e8572fc215199504e2377\"","stored_at":"2026-11-10T11:37:22.252Z"}
