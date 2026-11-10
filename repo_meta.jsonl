@@ -1139,3 +1139,4 @@
 {"repo":"tj-actions/changed-files","archived":false}
 {"repo":"actions/setup-node","archived":false}
 {"repo":"actions/setup-dotnet","archived":false}
+{"repo":"github/codeql-action","archived":false}
