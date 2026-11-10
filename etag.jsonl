@@ -1600,3 +1600,4 @@
 {"repo":"azure/webapps-deploy","template":"/repos/{owner}/{repo}","query":"","etag":"\"939f8b3971b8d66b3a2a98897c4d5d78b73ee2eae40753863f408a1f7d457be2\"","stored_at":"2026-11-10T17:51:17.589Z"}
 {"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"d19ba75a3277d8a20bb4d293697ece8dd4760353c63d4c204b5d76af6583b206\"","stored_at":"2026-11-10T18:01:19.187Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"3339da58e2570d2f90c271010c8df465598826b97b173d12d3a9f74ca36d0832\"","stored_at":"2026-11-10T18:06:32.663Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"68e2118e6380469cb27a30c605ea7652f7405b8747c2ae33edab0cbac1e2e126\"","stored_at":"2026-11-10T18:10:45.804Z"}
