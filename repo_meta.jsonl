@@ -1235,3 +1235,4 @@
 {"repo":"aws-actions/amazon-ecr-login","archived":false}
 {"repo":"actions/attest","archived":false}
 {"repo":"github/codeql-action","archived":false}
+{"repo":"actions/upload-artifact","archived":false}
