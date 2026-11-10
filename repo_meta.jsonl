@@ -1182,3 +1182,6 @@
 {"repo":"actions/attest","archived":false}
 {"repo":"actions/attest-build-provenance","archived":false}
 {"repo":"actions/labeler","archived":false}
+{"repo":"actions/setup-java","archived":false}
+{"repo":"actions/setup-python","archived":false}
+{"repo":"aquasecurity/setup-trivy","archived":false}

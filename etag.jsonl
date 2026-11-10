@@ -1574,3 +1574,6 @@
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"7474bf45cd8803014f3a19cfc2f455471e8929e686ceece127e5d36a788a5b70\"","stored_at":"2026-11-10T13:23:42.909Z"}
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"1439a54b5b487d20d9aedc07e75954d4e0f7b107b5da3d32f1a9c65809106c0b\"","stored_at":"2026-11-10T13:23:42.909Z"}
 {"repo":"actions/labeler","template":"/repos/{owner}/{repo}","query":"","etag":"\"94af3c59e9320c7aa3d71b024d338090693a629e6ac5d6bcbce937b167853191\"","stored_at":"2026-11-10T13:23:42.909Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"5cbb6889476926c0d2ce7dab47e11d1289e0e8eb88fb2122afec01455b15bc0a\"","stored_at":"2026-11-10T13:27:17.710Z"}
+{"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"a30de749b7ee7be4f4b5ac3ebd079e7615025143df9fc4076202757958f48860\"","stored_at":"2026-11-10T13:27:17.710Z"}
+{"repo":"aquasecurity/setup-trivy","template":"/repos/{owner}/{repo}","query":"","etag":"\"6f1f932d84ff263b8191770f9c06c51f9ee363694d090d2af6b7657b48517804\"","stored_at":"2026-11-10T13:27:17.710Z"}
