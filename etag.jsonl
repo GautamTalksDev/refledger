@@ -1596,3 +1596,4 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"4456c13b7be244fcd672ee0e8232be9c412bcec2d0df298db5ca73853b56cb26\"","stored_at":"2026-11-10T17:20:55.406Z"}
 {"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"89dc5df123d6eeab320eed35cacf1517782b3a4fe3c5905af8467af302f2775c\"","stored_at":"2026-11-10T17:37:23.932Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"4ac8efe930ae47b8d4668442c6cdea97938bf103cbeb586fea82259b3873f7ab\"","stored_at":"2026-11-10T17:37:23.932Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"c0b53ee6c936c17d06384f3a3730441758efed1f5c272e7580c686f4855cc642\"","stored_at":"2026-11-10T17:46:46.062Z"}
