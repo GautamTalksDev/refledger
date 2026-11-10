@@ -1578,3 +1578,4 @@
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"a30de749b7ee7be4f4b5ac3ebd079e7615025143df9fc4076202757958f48860\"","stored_at":"2026-11-10T13:27:17.710Z"}
 {"repo":"aquasecurity/setup-trivy","template":"/repos/{owner}/{repo}","query":"","etag":"\"6f1f932d84ff263b8191770f9c06c51f9ee363694d090d2af6b7657b48517804\"","stored_at":"2026-11-10T13:27:17.710Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"7f462ad560b61e3090993f7d2e868aea73d5dc86cb177deeb7a56271da7a35f8\"","stored_at":"2026-11-10T13:38:41.763Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"8f7454af383bc8255bbe157c63510f982978826456abb811da0fd999ea16ebb5\"","stored_at":"2026-11-10T14:31:03.687Z"}
