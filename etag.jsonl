@@ -1625,3 +1625,4 @@
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"659b54676d6c7052848af29717c07515602748a89b81abde79d04aebea9363f4\"","stored_at":"2026-11-10T22:06:59.761Z"}
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"e5b01e91634c13bcc919696cba6565ef096517f43cce048b15d424fe251a3bb1\"","stored_at":"2026-11-10T22:06:59.761Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"041a55748de678f92c82299a7ab829ecbb92d5f7e597f82ba097a53a8d6a8ec6\"","stored_at":"2026-11-10T22:06:59.761Z"}
+{"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"c91b5052933b8da61d70289603f3ffdeefb9d546604f52f8cfd62e0aba6cf864\"","stored_at":"2026-11-10T22:22:36.044Z"}
