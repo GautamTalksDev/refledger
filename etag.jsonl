@@ -1621,3 +1621,7 @@
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"fcbc4975aedc770df3315a002e1d5c1a926aa1a4d3c77d1694d4b5b92b7f500b\"","stored_at":"2026-11-10T21:31:13.137Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"e038add43add1a9ac16e6ea6960dc945ab19c9302f44c68143cf2ec668f9c1a3\"","stored_at":"2026-11-10T22:01:50.394Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"8dbfebab5f2272a89259fe099e618cd560d701545d2a08951f15188ea5ba461a\"","stored_at":"2026-11-10T22:01:50.394Z"}
+{"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"c9d95ee60fc192c1a08ea9e85409664945ffbb315e4c291d28e5d15de9893fea\"","stored_at":"2026-11-10T22:06:59.761Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"659b54676d6c7052848af29717c07515602748a89b81abde79d04aebea9363f4\"","stored_at":"2026-11-10T22:06:59.761Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"e5b01e91634c13bcc919696cba6565ef096517f43cce048b15d424fe251a3bb1\"","stored_at":"2026-11-10T22:06:59.761Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"041a55748de678f92c82299a7ab829ecbb92d5f7e597f82ba097a53a8d6a8ec6\"","stored_at":"2026-11-10T22:06:59.761Z"}
