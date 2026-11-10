@@ -1559,3 +1559,4 @@
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"6100517cdd5935053a5ab196fa3fe82fc6a2cbfdc88817fca04f23f4db3a592c\"","stored_at":"2026-11-10T10:00:50.965Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"990db986921bfd845abc2e6478cb1419ae1104f9381ef8f4eec59ac85e78aa91\"","stored_at":"2026-11-10T10:25:56.628Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"6e6507170dfe0498c41ef9219ce2c45d86b84b5647d1e17803bf44c7a2b2e134\"","stored_at":"2026-11-10T10:34:25.300Z"}
+{"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"303ccc2df9a14e9a3ec9bf995448f27812c33b513667b60f76340f18b6227881\"","stored_at":"2026-11-10T11:16:27.509Z"}
