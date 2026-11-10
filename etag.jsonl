@@ -1627,3 +1627,5 @@
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"041a55748de678f92c82299a7ab829ecbb92d5f7e597f82ba097a53a8d6a8ec6\"","stored_at":"2026-11-10T22:06:59.761Z"}
 {"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"c91b5052933b8da61d70289603f3ffdeefb9d546604f52f8cfd62e0aba6cf864\"","stored_at":"2026-11-10T22:22:36.044Z"}
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"69f206addd836da7ef0ddb164a720ffe3e2376981ef3909f9f37e6d15e530cf8\"","stored_at":"2026-11-10T22:42:29.615Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"0f82155eb9898f252c927a18cb5eadfb48ea3c606a408394d62d1137672f1700\"","stored_at":"2026-11-10T23:06:10.464Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"4039bf59ea80ef34dcb2d5578196b621f2cf90349fb57f3d1cecde4fef2d0313\"","stored_at":"2026-11-10T23:06:10.464Z"}

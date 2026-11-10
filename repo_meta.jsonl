@@ -1233,3 +1233,5 @@
 {"repo":"reviewdog/action-actionlint","archived":false}
 {"repo":"aquasecurity/trivy-action","archived":false}
 {"repo":"aws-actions/amazon-ecr-login","archived":false}
+{"repo":"actions/attest","archived":false}
+{"repo":"github/codeql-action","archived":false}
