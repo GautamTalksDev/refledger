@@ -1557,3 +1557,4 @@
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"4b138c2e6d71b907f6fda66a16199a43ac6e3d284daef09f592f640d79623363\"","stored_at":"2026-11-10T09:26:26.391Z"}
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"7ead2fb4738c41f567d1d45a1c9f468ef5e5e085123f57e46616ac3d022212f1\"","stored_at":"2026-11-10T10:00:50.965Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"6100517cdd5935053a5ab196fa3fe82fc6a2cbfdc88817fca04f23f4db3a592c\"","stored_at":"2026-11-10T10:00:50.965Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"990db986921bfd845abc2e6478cb1419ae1104f9381ef8f4eec59ac85e78aa91\"","stored_at":"2026-11-10T10:25:56.628Z"}
