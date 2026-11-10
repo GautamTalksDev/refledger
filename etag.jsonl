@@ -1613,3 +1613,4 @@
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"1558bffe0297a5f199c7aa5b2647f6e940b5826517cf1708d6ad64a446f0700f\"","stored_at":"2026-11-10T20:41:52.467Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"10adf071f86ddcb0ce712e29d6e72c6d91bba827d030cbc0c658f9a64517d66b\"","stored_at":"2026-11-10T20:51:40.662Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"9721e70471bc27ba5c410ca69d2cdf134cfcd2d9b02605c7d98945605dbd4e0e\"","stored_at":"2026-11-10T20:56:10.072Z"}
+{"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"3a149b857b70e913b6a2ac06e16cfd33716006caaef207cea8dae54507edf519\"","stored_at":"2026-11-10T21:01:48.952Z"}

@@ -1219,3 +1219,4 @@
 {"repo":"actions/setup-node","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/setup-java","archived":false}
+{"repo":"reviewdog/action-eslint","archived":false}
