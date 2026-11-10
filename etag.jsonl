@@ -1552,3 +1552,6 @@
 {"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"d94198747cb3b36a543efcd67ef3951c81d162e18ec76ff9ad901d4fdde95d72\"","stored_at":"2026-11-10T09:10:46.205Z"}
 {"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"33b2db76fe3ddfd9280877f54909caa09c0953626f0c38767b3d1108cbcc021e\"","stored_at":"2026-11-10T09:15:49.959Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"32d1ee039d1721483663795d6d96b1d3b4132158a1cbd4e583893ff0090e05d6\"","stored_at":"2026-11-10T09:19:25.573Z"}
+{"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"025c716d858063d7e0d687520a02ee933c429aa72675c565b00274033bda8574\"","stored_at":"2026-11-10T09:26:26.391Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"498b07535a04841d0306bfe904838c4a4e39543e6a5d3865c66e93220139e0a6\"","stored_at":"2026-11-10T09:26:26.391Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"4b138c2e6d71b907f6fda66a16199a43ac6e3d284daef09f592f640d79623363\"","stored_at":"2026-11-10T09:26:26.391Z"}
