@@ -1538,3 +1538,4 @@
 {"repo":"actions/github-script","template":"/repos/{owner}/{repo}","query":"","etag":"\"1396e39ac9d02a26da28c4ae7415ee937a96a213dd9a00a2f271228c15d4aa89\"","stored_at":"2026-11-10T04:01:04.170Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"61dd1d0cce64307578713c7f79b72925dbe14be27fbcdac1add6605ee46d208c\"","stored_at":"2026-11-10T04:19:16.724Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"b8f2baa26302942fdf09177b2ef1b1dac3068ef17fe75bb39ef99b38de2b5cb2\"","stored_at":"2026-11-10T04:19:16.724Z"}
+{"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"646f7a654896ba002970b3f0a2f3adebeb1d46fe0019c45a3979244097f2bb4b\"","stored_at":"2026-11-10T04:44:29.472Z"}
