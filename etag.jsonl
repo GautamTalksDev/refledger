@@ -1568,3 +1568,4 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"c9d9210e34c41e85c4ce0303ab5e1e3b648770f6b1ba7dc144d15642a1442abc\"","stored_at":"2026-11-10T12:18:23.159Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"86c082c8af83c963ae1c6700eb69b5d058a9e2be752af9104adbad6f992ad569\"","stored_at":"2026-11-10T12:18:23.159Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"23372b4685d9564148b1894e019cff5995664670cfeefd04dc8bbf4bf7e4098d\"","stored_at":"2026-11-10T12:18:23.159Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"0d2b4939ad51593895560318c3a7ed422f467b89055f36e03ea843d47a9d417d\"","stored_at":"2026-11-10T12:36:09.735Z"}
