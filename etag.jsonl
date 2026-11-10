@@ -1532,3 +1532,4 @@
 {"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"daa5733d3507991ce21b262430481066018e5d445366a95b11cd4353c7f39971\"","stored_at":"2026-11-10T02:50:47.382Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"453c1029eba9c79c596583508663108253767b00b34c167c57d586f883f8886d\"","stored_at":"2026-11-10T03:40:05.077Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"460346136a987a5e15ba42d499fd8f248ab6b749bf5759b07fb8858b7182f06e\"","stored_at":"2026-11-10T03:40:05.077Z"}
+{"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"d558454e0d39264b37e11b7221283caa4cdbba765f221ddaaf40b0c6ab5d09d5\"","stored_at":"2026-11-10T03:44:44.884Z"}
