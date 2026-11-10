@@ -1141,3 +1141,4 @@
 {"repo":"actions/setup-dotnet","archived":false}
 {"repo":"github/codeql-action","archived":false}
 {"repo":"tj-actions/changed-files","archived":false}
+{"repo":"azure/login","archived":false}

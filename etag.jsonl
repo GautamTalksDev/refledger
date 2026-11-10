@@ -1529,3 +1529,4 @@
 {"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"971ee912a468e958bab9a17bd09ec648850e23ecc6c796031c31a044d22827d6\"","stored_at":"2026-11-10T02:06:10.680Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"e8a433ab5c80e450a1f4ad81efe38487897ef2ffcc8e242883977f9e3331bf09\"","stored_at":"2026-11-10T02:11:27.362Z"}
 {"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"e5deaecc3fba5699d87b8f8eaf6af6dba38b9612d076312f803e752404b88974\"","stored_at":"2026-11-10T02:35:07.957Z"}
+{"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"daa5733d3507991ce21b262430481066018e5d445366a95b11cd4353c7f39971\"","stored_at":"2026-11-10T02:50:47.382Z"}
