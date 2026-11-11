@@ -1634,3 +1634,5 @@
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"864b0e62fa4e316738f2177cc076d4b393761448d4c62dae632ad1cc5e165e8f\"","stored_at":"2026-11-11T00:01:17.413Z"}
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"85a4a48aa2049eba47a79f6bec8db9dacd6f43e8cf7ef1ef9c9e367ca7600534\"","stored_at":"2026-11-11T00:05:26.056Z"}
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"3a5a3bf0fb9bee85780988e811861fd98c10626d34cff7b80d9cc4dc04696a1c\"","stored_at":"2026-11-11T00:11:36.201Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"c9aa7e2bc513896c9ac8272ba89dfa2d41765d8b3a8fadec0c4c65ffeb278f76\"","stored_at":"2026-11-11T00:21:36.595Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"dd5d8f2b9eefb83ba33b0fab147ba8a3da15cab78a519e32a2e51de16cf4b62b\"","stored_at":"2026-11-11T00:21:36.595Z"}
