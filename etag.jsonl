@@ -1656,3 +1656,5 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"c24cb9a05bb7c60c222fae10cfc00abca9d66f3208b06d579b80e9cbf2e5e00c\"","stored_at":"2026-11-11T04:19:10.106Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"6adf00e5a07a72696f6fa863269bebbc62787a215ba9efd2c391cc1f84cb43ec\"","stored_at":"2026-11-11T04:19:10.106Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"d932e4ad9bdfd82ba66e24258ca93b1c5423dc2fee584e5487b8291f0706a4d9\"","stored_at":"2026-11-11T04:24:15.164Z"}
+{"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"318c1faf603a1ae4fa2d98aa2e49ac38223a34a1ad63565ff53eb273bb8163a6\"","stored_at":"2026-11-11T04:39:34.934Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"3d3fa241f384627e5ed4f74e62801ee0555545d2e0f8e22b93ccdb9db4a2bdd4\"","stored_at":"2026-11-11T04:39:34.934Z"}
