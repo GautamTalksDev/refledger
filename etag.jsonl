@@ -1673,3 +1673,4 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"b2cc8ae1b91689727be45522869da8e54c5fb70c1d3ecfdf5566e45fcbc4cd12\"","stored_at":"2026-11-11T08:22:11.990Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"134acb8e3663b1007f76affa22b43afb38dd284f46737b3da954ba1c02be4acb\"","stored_at":"2026-11-11T08:22:11.990Z"}
 {"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"155968cc132ae3bb073c6fd38ae988a1790c3f4865d817d9530d8b2aad97b0d3\"","stored_at":"2026-11-11T08:53:04.294Z"}
+{"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"bbc07169d5ed40f8dcb599f76db3282022f166004c00112569b21039377dc921\"","stored_at":"2026-11-11T08:58:27.077Z"}
