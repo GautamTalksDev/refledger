@@ -1652,3 +1652,4 @@
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"76dae1c7a40b8814e4ff176392e325fe5b290758909c7098a3e34d94978b4ae5\"","stored_at":"2026-11-11T02:36:50.941Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"d0f1da4e631821f12f950ea0c72a52f5d0fca3614687222e1f7b63d87101dadf\"","stored_at":"2026-11-11T02:46:23.670Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"ca891b2c60c66274516900bec9d5f23038df472efa7463ef15438b2e44335634\"","stored_at":"2026-11-11T03:39:53.777Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"6a09d4fba8c6dec16ead15707308ffc4000ac2a12871b709d49a9226a0a45a2e\"","stored_at":"2026-11-11T04:03:13.978Z"}
