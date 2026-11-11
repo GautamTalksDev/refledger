@@ -1296,3 +1296,5 @@
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"google-github-actions/setup-gcloud","archived":false}
 {"repo":"docker/setup-buildx-action","archived":false}
+{"repo":"actions/download-artifact","archived":false}
+{"repo":"actions/setup-dotnet","archived":false}
