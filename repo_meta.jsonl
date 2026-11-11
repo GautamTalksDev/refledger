@@ -1298,3 +1298,4 @@
 {"repo":"docker/setup-buildx-action","archived":false}
 {"repo":"actions/download-artifact","archived":false}
 {"repo":"actions/setup-dotnet","archived":false}
+{"repo":"actions/setup-dotnet","archived":false}

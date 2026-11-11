@@ -1730,3 +1730,4 @@
 {"repo":"docker/setup-buildx-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"0420b871ad6525d7e1b67737ca857762c6fd16cc7333bc66016699bec85e46a1\"","stored_at":"2026-11-11T14:43:24.091Z"}
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"43119f2e6efb0a06a356ebcb5008bf4bfc0b70311abb9e4a7610b56470d80bb4\"","stored_at":"2026-11-11T14:48:17.147Z"}
 {"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"db52b6e57c9a4052ae144c0027b884c064a938c67c82c3cecbf281e743bdbb62\"","stored_at":"2026-11-11T14:48:17.147Z"}
+{"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"f92a29dd127b3bcc619743633a8372cfc8f2144523bf917a1f76ba9dda581d95\"","stored_at":"2026-11-11T14:59:01.029Z"}
