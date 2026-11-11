@@ -1721,3 +1721,5 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"0a4f72a1bdd9c1e4bac539b793b876ea6b6f276656e49158e42d68bfc961c1b2\"","stored_at":"2026-11-11T12:20:09.475Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"8f816eda7d0be76fe5203e16f69af54f983147d8b9bbc83ac62c2d079002f4c7\"","stored_at":"2026-11-11T12:20:09.475Z"}
 {"repo":"actions/labeler","template":"/repos/{owner}/{repo}","query":"","etag":"\"c34744222063e6003b890bfc6bdf2ff3e200e2c7c86c792640ed36830c00171a\"","stored_at":"2026-11-11T12:20:09.475Z"}
+{"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"ba73e61a4d9eb2ee4793fd1afc2ee2819ae5a54176d3a6ee4114f43086f5f53a\"","stored_at":"2026-11-11T12:57:08.757Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"2aa10d50dce099a6014895193ad8c1ab500772572885cf86ad2c15672c274323\"","stored_at":"2026-11-11T12:57:08.757Z"}
