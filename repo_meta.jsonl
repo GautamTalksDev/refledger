@@ -1284,3 +1284,6 @@
 {"repo":"tj-actions/glob","archived":false}
 {"repo":"tj-actions/json2file","archived":false}
 {"repo":"github/codeql-action","archived":false}
+{"repo":"actions/cache","archived":false}
+{"repo":"actions/setup-node","archived":false}
+{"repo":"google-github-actions/auth","archived":false}
