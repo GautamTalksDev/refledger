@@ -1754,3 +1754,5 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"8a69e295796d95e3137a80b23dffb736e538f1acca8314388de38fa65cbe6f98\"","stored_at":"2026-11-11T19:31:38.050Z"}
 {"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"26af3980faf741586d27c8279c688824726def9dc55ed91315a3f99ebbee42e7\"","stored_at":"2026-11-11T20:06:14.290Z"}
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"e003fc40e31ca76e2824b01de90c63e22f0f8c543233f755b95bec79ecd73b7b\"","stored_at":"2026-11-11T20:18:36.366Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"de31d51b586d148caad578836bbfe77e16d179d41fdb83bd17f1a1b4d8bca2bd\"","stored_at":"2026-11-11T21:06:47.346Z"}
+{"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"914ce1afd5997773501bf934e6eca749dbbe9a73e4258a5e47a3faa470bd978a\"","stored_at":"2026-11-11T21:06:47.346Z"}
