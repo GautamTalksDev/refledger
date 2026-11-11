@@ -1760,3 +1760,5 @@
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"2f273e9c93180d1fee49dbdf747f1daec262da143a6e7c10fb2394da5d1abb18\"","stored_at":"2026-11-11T21:17:08.192Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"b27819efd77b4ddf35b9b1f5846538c34da2beb161388dabe4064eb2788166fa\"","stored_at":"2026-11-11T21:22:56.609Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"5e389f14b47f702328dc9c82f0ffe361e2e4f8c14a4265799938b7e40f4f89e7\"","stored_at":"2026-11-11T21:29:32.352Z"}
+{"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"51b444293939a4f07c5d7fa12bdd17588f53cadb1b74fe1eb32e6883e6c6d0bf\"","stored_at":"2026-11-11T21:39:45.437Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"c30b2e39cb0eb4cc772b4cd90902094973f270e020578342414d7d967f5b8db2\"","stored_at":"2026-11-11T21:39:45.437Z"}
