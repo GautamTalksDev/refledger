@@ -1640,3 +1640,5 @@
 {"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"d21afd7c975235736dfe44623d2bcdf98f3bb0569445092b2de308cdcf8829b2\"","stored_at":"2026-11-11T00:28:24.866Z"}
 {"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"b425b15f8859330eac25e6a3be7dced6f04b0ade84d6f32b297f21ed92841a93\"","stored_at":"2026-11-11T00:28:24.866Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"82056eb812fad66aa6c3c980c3d5940ef9fd72c7eda9f21b81294a4af14328b5\"","stored_at":"2026-11-11T00:47:16.409Z"}
+{"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"9547cecb650e06b4a564a0b7b7d22f500d2ce7507b8f069082e4c05c9d1401bd\"","stored_at":"2026-11-11T00:52:55.847Z"}
+{"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"a3e2f24bff08d736f97250f177c9a666cc382c2f90c0e823b43d738cf811255d\"","stored_at":"2026-11-11T00:52:55.847Z"}
