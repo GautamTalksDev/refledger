@@ -1320,3 +1320,4 @@
 {"repo":"actions/attest","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"tj-actions/changed-files","archived":false}
+{"repo":"actions/setup-node","archived":false}

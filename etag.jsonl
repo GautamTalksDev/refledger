@@ -1753,3 +1753,4 @@
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"3788067c7298f3dd71c739bcc0ba3ca4b13fcd87c55063ea3340c97fd71661c9\"","stored_at":"2026-11-11T19:31:38.050Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"8a69e295796d95e3137a80b23dffb736e538f1acca8314388de38fa65cbe6f98\"","stored_at":"2026-11-11T19:31:38.050Z"}
 {"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"26af3980faf741586d27c8279c688824726def9dc55ed91315a3f99ebbee42e7\"","stored_at":"2026-11-11T20:06:14.290Z"}
+{"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"e003fc40e31ca76e2824b01de90c63e22f0f8c543233f755b95bec79ecd73b7b\"","stored_at":"2026-11-11T20:18:36.366Z"}
