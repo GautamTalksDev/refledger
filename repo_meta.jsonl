@@ -1295,3 +1295,4 @@
 {"repo":"github/codeql-action","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"google-github-actions/setup-gcloud","archived":false}
+{"repo":"docker/setup-buildx-action","archived":false}
