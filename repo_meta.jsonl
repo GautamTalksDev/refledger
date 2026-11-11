@@ -1281,3 +1281,5 @@
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"actions/attest","archived":false}
 {"repo":"actions/attest-build-provenance","archived":false}
+{"repo":"tj-actions/glob","archived":false}
+{"repo":"tj-actions/json2file","archived":false}
