@@ -1253,3 +1253,4 @@
 {"repo":"docker/build-push-action","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"google-github-actions/auth","archived":false}
+{"repo":"actions/upload-artifact","archived":false}
