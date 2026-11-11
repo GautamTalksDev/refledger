@@ -1735,3 +1735,5 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"1d5e994a96e4696d869f5ef0387268d3ce5d220c4cb55ce4ccd858d2db2ef93e\"","stored_at":"2026-11-11T16:21:03.650Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"a6b2329cebd028f66ac3f074df42e40b0b067da20a6d150befe4679d61845aac\"","stored_at":"2026-11-11T16:21:03.650Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"6def90fc9d6530aac269d2dbc4d5757f32006d668e890e4b3b22320da23fded7\"","stored_at":"2026-11-11T16:21:03.650Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"db50564a2ccfe07f3b3aca120d9a40f20e28be02bd8152c021bde363758fea61\"","stored_at":"2026-11-11T17:03:59.823Z"}
+{"repo":"google-github-actions/setup-gcloud","template":"/repos/{owner}/{repo}","query":"","etag":"\"f6dbbf5f4ce6519a8a8be463aee7f15009c46f96ffc5e01494f7d5775a2f423d\"","stored_at":"2026-11-11T17:03:59.823Z"}
