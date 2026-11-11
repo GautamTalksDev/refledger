@@ -1712,3 +1712,4 @@
 {"repo":"tj-actions/glob","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"34c227e7bcd8019971111a0a82729b39ecc5b5ac6538a390f1afe93013efb0a5\"","stored_at":"2026-11-11T11:00:11.839Z"}
 {"repo":"tj-actions/json2file","template":"/repos/{owner}/{repo}","query":"","etag":"\"db65a3685c5b0ea2f39060eaa894a1712c98dcfd496abfe5908e114b698ce0a2\"","stored_at":"2026-11-11T11:00:11.839Z"}
 {"repo":"tj-actions/json2file","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"03918e01079bbd1b92008762b45b690be2073092678904d28b72e949038d548a\"","stored_at":"2026-11-11T11:00:11.839Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"1c73bb31fa7d24f6930f65ebd46b195a8049c6745206fb5c0747167d52465fd2\"","stored_at":"2026-11-11T11:16:02.132Z"}
