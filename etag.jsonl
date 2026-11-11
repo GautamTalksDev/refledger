@@ -1726,3 +1726,4 @@
 {"repo":"docker/login-action","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"410c9df2be1b5fba11d19cd6276e95e9594dabf66f44ea773bc03a315ebca5ce\"","stored_at":"2026-11-11T13:03:03.532Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"175238da5e66608364e473a184b5d536fd52d44da27aefb95bf7c44053b039c6\"","stored_at":"2026-11-11T13:19:39.654Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"dcd2cd43d18794b1631aa76d9353381e4bdf3fd7ffd53ed4cc70824f930638cf\"","stored_at":"2026-11-11T13:57:01.818Z"}
+{"repo":"google-github-actions/setup-gcloud","template":"/repos/{owner}/{repo}","query":"","etag":"\"7f1ed8f3b776de6542a578dbbd90811a1e4b7f786d8640361419bd0ff1a6588c\"","stored_at":"2026-11-11T14:31:12.016Z"}
