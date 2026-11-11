@@ -1278,3 +1278,6 @@
 {"repo":"actions/setup-dotnet","archived":false}
 {"repo":"actions/setup-dotnet","archived":false}
 {"repo":"actions/setup-python","archived":false}
+{"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"actions/attest","archived":false}
+{"repo":"actions/attest-build-provenance","archived":false}
