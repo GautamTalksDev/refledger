@@ -1333,3 +1333,4 @@
 {"repo":"github/super-linter","archived":false}
 {"repo":"docker/build-push-action","archived":false}
 {"repo":"actions/setup-node","archived":false}
+{"repo":"google-github-actions/auth","archived":false}

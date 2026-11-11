@@ -1766,3 +1766,4 @@
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"f2efe988a6b4b7cb4e101a64f8a82fa84fc3fdaa175c8905a96118bd8c05c19f\"","stored_at":"2026-11-11T22:01:35.589Z"}
 {"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"92fc95199d073a410f69aa1b4c0cb3a4ddac7876a3bbedb1f5ac9ceb8f789674\"","stored_at":"2026-11-11T23:07:54.911Z"}
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"ea8c04c075c48cbde1ea9dcb7ff7472f182b0202efa5587921b88f74118f50bb\"","stored_at":"2026-11-11T23:45:11.047Z"}
+{"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"0d8ad0a4f85a5f104c60b7bfdef183be67d29c67711ea0005899ec44e59f2edf\"","stored_at":"2026-11-11T23:56:57.426Z"}
