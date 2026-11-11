@@ -1752,3 +1752,4 @@
 {"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"d5ee86fdfd71c7ad19beb55a8355227ef49ca4d4254bf4e4c8c61f49e2a23a9f\"","stored_at":"2026-11-11T19:02:02.018Z"}
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"3788067c7298f3dd71c739bcc0ba3ca4b13fcd87c55063ea3340c97fd71661c9\"","stored_at":"2026-11-11T19:31:38.050Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"8a69e295796d95e3137a80b23dffb736e538f1acca8314388de38fa65cbe6f98\"","stored_at":"2026-11-11T19:31:38.050Z"}
+{"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"26af3980faf741586d27c8279c688824726def9dc55ed91315a3f99ebbee42e7\"","stored_at":"2026-11-11T20:06:14.290Z"}
