@@ -1323,3 +1323,4 @@
 {"repo":"actions/setup-node","archived":false}
 {"repo":"actions/setup-go","archived":false}
 {"repo":"actions/upload-artifact","archived":false}
+{"repo":"actions/setup-go","archived":false}

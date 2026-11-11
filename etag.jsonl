@@ -1756,3 +1756,4 @@
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"e003fc40e31ca76e2824b01de90c63e22f0f8c543233f755b95bec79ecd73b7b\"","stored_at":"2026-11-11T20:18:36.366Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"de31d51b586d148caad578836bbfe77e16d179d41fdb83bd17f1a1b4d8bca2bd\"","stored_at":"2026-11-11T21:06:47.346Z"}
 {"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"914ce1afd5997773501bf934e6eca749dbbe9a73e4258a5e47a3faa470bd978a\"","stored_at":"2026-11-11T21:06:47.346Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"6f68e653dd24f3890615827bd3bee72fecc8f91c6e2d8064a0db1127bf516c3c\"","stored_at":"2026-11-11T21:12:13.137Z"}
