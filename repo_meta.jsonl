@@ -1394,3 +1394,6 @@
 {"repo":"reviewdog/action-actionlint","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"actions/setup-go","archived":false}
+{"repo":"actions/ai-inference","archived":false}
+{"repo":"actions/attest","archived":false}
+{"repo":"actions/attest-build-provenance","archived":false}
