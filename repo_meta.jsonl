@@ -1367,3 +1367,7 @@
 {"repo":"actions/stale","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"actions/ai-inference","archived":false}
+{"repo":"actions/dependency-review-action","archived":false}
+{"repo":"actions/setup-dotnet","archived":false}
+{"repo":"actions/setup-go","archived":false}
+{"repo":"actions/stale","archived":false}

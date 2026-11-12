@@ -1802,3 +1802,7 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"8ae0d06ce25fcb834bc3d2065cf1960f5130d3692dbf17a80083f5b77f581fe6\"","stored_at":"2026-11-12T04:22:05.865Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"4b051eacdf93d8ccb2a38536fd8b119c74f5204a71a93a8d6dc6a537d8d3e8de\"","stored_at":"2026-11-12T04:22:05.865Z"}
 {"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"663ab89835778f79cb95f1f64e2e027182f3d1b6e57e668b6460fc0b8ef60052\"","stored_at":"2026-11-12T04:32:50.874Z"}
+{"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"0da989226c0f5dce04aab2f302333e1df18c6d2c3a1ecd98f6af2730be7c3e46\"","stored_at":"2026-11-12T04:44:52.389Z"}
+{"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"2116038f20fe768fe1f2570151c5c6d8fc84f7395d10e5025185677cd5c8f2ac\"","stored_at":"2026-11-12T04:44:52.389Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"88dbd8d497de91b0b597faa82a386dd98caa5fd384d7ad67ec281bcaf581232e\"","stored_at":"2026-11-12T04:44:52.389Z"}
+{"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"2cef9d5054f16e64e36ff5ab89a8767deb74252f0f1d84bb8f000c8844105ef8\"","stored_at":"2026-11-12T04:44:52.389Z"}
