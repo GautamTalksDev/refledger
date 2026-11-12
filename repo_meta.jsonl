@@ -1442,3 +1442,8 @@
 {"repo":"actions/setup-python","archived":false}
 {"repo":"aws-actions/configure-aws-credentials","archived":false}
 {"repo":"tj-actions/changed-files","archived":false}
+{"repo":"actions/download-artifact","archived":false}
+{"repo":"actions/setup-go","archived":false}
+{"repo":"actions/setup-java","archived":false}
+{"repo":"actions/stale","archived":false}
+{"repo":"google-github-actions/setup-gcloud","archived":false}
