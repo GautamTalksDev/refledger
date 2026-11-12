@@ -1865,3 +1865,4 @@
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"dd0b2c3a22ca0db72b4d17740ceaad4d99502d2f53f7959167c6079b2fcc910e\"","stored_at":"2026-11-12T13:01:38.012Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"594b70ea50f133155f69b952f3d12934d23df9695a2905d1d0c4b3e94ac7d0f5\"","stored_at":"2026-11-12T13:23:22.888Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"5ab2deef9d2eb0493729ebe469bd982cc5a1873dbbf2ea806e3776dabadd29c9\"","stored_at":"2026-11-12T13:23:22.888Z"}
+{"repo":"aquasecurity/setup-trivy","template":"/repos/{owner}/{repo}","query":"","etag":"\"6f1f932d84ff263b8191770f9c06c51f9ee363694d090d2af6b7657b48517804\"","stored_at":"2026-11-12T13:30:22.289Z"}
