@@ -1826,3 +1826,6 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"dc92b472201c8d9ab7e8c992ad8088f35dbc0b7e53b1c4fd6b773defec8dd369\"","stored_at":"2026-11-12T08:21:06.107Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"019b52574b9d481bc0b4ba9012fc7c816c41d7b0ad908576ca268124a254b1c0\"","stored_at":"2026-11-12T08:39:18.722Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"a890b68ebb1ce27ce1ce148e4c2dec6de70273fe575321525c374bd9b5aea9dc\"","stored_at":"2026-11-12T08:57:16.259Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"ba3e35e8d4d5d0f874851fa3aa256618676e87249ecf06e3905adb6bb5956b77\"","stored_at":"2026-11-12T09:14:39.214Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"e8e987a71150ace1512392fa4573d21a75b0d5f8362e1cbc81032d4e24e420ff\"","stored_at":"2026-11-12T09:14:39.214Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"9a5533e9aec02272f70862f6c1874b4e22b5259e83aa234143b60796e963d64a\"","stored_at":"2026-11-12T09:14:39.214Z"}
