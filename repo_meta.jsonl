@@ -1447,3 +1447,5 @@
 {"repo":"actions/setup-java","archived":false}
 {"repo":"actions/stale","archived":false}
 {"repo":"google-github-actions/setup-gcloud","archived":false}
+{"repo":"aquasecurity/trivy-action","archived":false}
+{"repo":"docker/login-action","archived":false}
