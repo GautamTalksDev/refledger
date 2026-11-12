@@ -1355,3 +1355,7 @@
 {"repo":"actions/setup-python","archived":false}
 {"repo":"actions/upload-artifact","archived":false}
 {"repo":"actions/dependency-review-action","archived":false}
+{"repo":"docker/build-push-action","archived":false}
+{"repo":"docker/login-action","archived":false}
+{"repo":"docker/metadata-action","archived":false}
+{"repo":"docker/setup-buildx-action","archived":false}
