@@ -1840,3 +1840,6 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"33f68f8211f5f816c40534656f5a068c13236ad6c4a07353b4058a478a2bc42e\"","stored_at":"2026-11-12T10:50:41.833Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"508156989e026f5cbdc9734d2dd987030efa321cd1fa11a73076c353c7aa297e\"","stored_at":"2026-11-12T10:50:41.833Z"}
 {"repo":"actions/github-script","template":"/repos/{owner}/{repo}","query":"","etag":"\"8d54cc327671549d4e882f5138c3fbeb71c74a998dbab4cacfa5ce6be14a1820\"","stored_at":"2026-11-12T10:56:21.260Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"11baf4b23cb5d842838b8497aa5a5c648f4176627ea264cc6d0ae03ee0751d7e\"","stored_at":"2026-11-12T11:09:33.733Z"}
+{"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"d8e9040da50e9624c9eb25b5531655c0f4e9f15eaca1d70bc1d91a3672db766d\"","stored_at":"2026-11-12T11:09:33.733Z"}
+{"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"84679bb172c428a81c4e177483465d1bb3febe970829bc6fcdc14b31dcba5443\"","stored_at":"2026-11-12T11:09:33.733Z"}
