@@ -1450,3 +1450,4 @@
 {"repo":"aquasecurity/trivy-action","archived":false}
 {"repo":"docker/login-action","archived":false}
 {"repo":"aws-actions/configure-aws-credentials","archived":false}
+{"repo":"aquasecurity/trivy-action","archived":false}
