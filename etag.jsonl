@@ -1808,3 +1808,5 @@
 {"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"2cef9d5054f16e64e36ff5ab89a8767deb74252f0f1d84bb8f000c8844105ef8\"","stored_at":"2026-11-12T04:44:52.389Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"36f57604179a956679f9b38836af0bc368dc7c826bc4d774b145505c5cea2d73\"","stored_at":"2026-11-12T05:07:17.006Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"f560ab3b385f4a7ed85fbcf9b5ae89a3a3d267319a6f4ab4978f59755c5efd96\"","stored_at":"2026-11-12T05:19:18.097Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"788e14cd50983b1991e9dbb701a575739941fc632cc3bc7a51a304c9adc603de\"","stored_at":"2026-11-12T05:24:16.139Z"}
+{"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"f2fa1a7d244bff22c28e95f1e2b1c8dffe16656816d7a15f04ebfd4d91cd6ba1\"","stored_at":"2026-11-12T05:24:16.139Z"}

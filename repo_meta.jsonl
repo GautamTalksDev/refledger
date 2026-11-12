@@ -1373,3 +1373,5 @@
 {"repo":"actions/stale","archived":false}
 {"repo":"actions/setup-go","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"actions/setup-java","archived":false}
+{"repo":"actions/setup-python","archived":false}
