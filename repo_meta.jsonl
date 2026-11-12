@@ -1454,3 +1454,5 @@
 {"repo":"github/codeql-action","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/setup-node","archived":false}
+{"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"actions/attest","archived":false}
