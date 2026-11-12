@@ -1793,3 +1793,4 @@
 {"repo":"docker/login-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"d6125797ef1ebadecc70006095e40c17cba39d0219a60b31378d295f28e0717c\"","stored_at":"2026-11-12T03:09:00.961Z"}
 {"repo":"docker/metadata-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"d8c7720f0b42a6226eaf4bb00aa9668f03e6a90446ac7652e8b971a98abab83e\"","stored_at":"2026-11-12T03:09:00.961Z"}
 {"repo":"docker/setup-buildx-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"10fc838cdc1afde2faf22e03207fa2904716c0ea480fac017d40ffe14e6c5539\"","stored_at":"2026-11-12T03:09:00.961Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"fe0af1d4d4b777bd58925500508565f1a03e9050f551812c087efd00cb65d357\"","stored_at":"2026-11-12T03:26:44.008Z"}
