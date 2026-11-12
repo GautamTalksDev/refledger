@@ -1767,3 +1767,5 @@
 {"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"92fc95199d073a410f69aa1b4c0cb3a4ddac7876a3bbedb1f5ac9ceb8f789674\"","stored_at":"2026-11-11T23:07:54.911Z"}
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"ea8c04c075c48cbde1ea9dcb7ff7472f182b0202efa5587921b88f74118f50bb\"","stored_at":"2026-11-11T23:45:11.047Z"}
 {"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"0d8ad0a4f85a5f104c60b7bfdef183be67d29c67711ea0005899ec44e59f2edf\"","stored_at":"2026-11-11T23:56:57.426Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"05891e409b6c7296929f5b08ef7742137b94a9330dadd7a721a0c6efe86e0490\"","stored_at":"2026-11-12T00:19:37.651Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"dc92b472201c8d9ab7e8c992ad8088f35dbc0b7e53b1c4fd6b773defec8dd369\"","stored_at":"2026-11-12T00:19:37.651Z"}
