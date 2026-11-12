@@ -1820,3 +1820,5 @@
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"30ede073878fa938924aa73a8f45ba40261fb88015c06ff824825b9f5a1b68d0\"","stored_at":"2026-11-12T07:35:08.931Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"f21df226e6815e9da7b83db2f9a8cea9f07f4bc597cfe8f0c4f2ed6f27f772a0\"","stored_at":"2026-11-12T07:46:23.479Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"010387703d7df5556f3e05c785f82a0e3a958402a51dceee4792f19e6f15f3de\"","stored_at":"2026-11-12T07:52:33.413Z"}
+{"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"0b44ec6d0f9262c2e9fb3f7ff2a473b2183928ccbe48147b208cb785c187c39b\"","stored_at":"2026-11-12T08:16:13.290Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"79342063ada9a827d4c3b17fd614e0fe814e39576c0ee54dc705e58d5e5ff0e8\"","stored_at":"2026-11-12T08:16:13.290Z"}
