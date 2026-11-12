@@ -1794,3 +1794,8 @@
 {"repo":"docker/metadata-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"d8c7720f0b42a6226eaf4bb00aa9668f03e6a90446ac7652e8b971a98abab83e\"","stored_at":"2026-11-12T03:09:00.961Z"}
 {"repo":"docker/setup-buildx-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"10fc838cdc1afde2faf22e03207fa2904716c0ea480fac017d40ffe14e6c5539\"","stored_at":"2026-11-12T03:09:00.961Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"fe0af1d4d4b777bd58925500508565f1a03e9050f551812c087efd00cb65d357\"","stored_at":"2026-11-12T03:26:44.008Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"bd11408951a0db3027f9956596094a5ee1f2932ee0178772863ce99d3eb9d9a4\"","stored_at":"2026-11-12T03:43:28.357Z"}
+{"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"b36f41f1cb4b8b564febb43773ec1cf526c75500de92c32ba884170d47723b31\"","stored_at":"2026-11-12T03:43:28.357Z"}
+{"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"1329a061fbc02bf75e0b14661014489fc59fcf655c013472086efb44d4b8d61e\"","stored_at":"2026-11-12T03:43:28.357Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"cf9fcbab185334e9096f89cde9ab2c90dc228d5cd1c418c9a036cf7f36b6ec9d\"","stored_at":"2026-11-12T03:43:28.357Z"}
+{"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"93f1e5baf39caac56bc9c24a7bdfdda75a0590d8a5fc3ca77da5c133f0283baa\"","stored_at":"2026-11-12T03:43:28.357Z"}

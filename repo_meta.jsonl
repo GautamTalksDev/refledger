@@ -1360,3 +1360,8 @@
 {"repo":"docker/metadata-action","archived":false}
 {"repo":"docker/setup-buildx-action","archived":false}
 {"repo":"actions/checkout","archived":false}
+{"repo":"actions/attest-build-provenance","archived":false}
+{"repo":"actions/dependency-review-action","archived":false}
+{"repo":"actions/setup-dotnet","archived":false}
+{"repo":"actions/setup-go","archived":false}
+{"repo":"actions/stale","archived":false}
