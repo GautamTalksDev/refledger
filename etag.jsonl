@@ -1816,3 +1816,4 @@
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"1cad527cb2b84d7c52226ce65f99d612b4547370289c253cfb90c20a82f992c1\"","stored_at":"2026-11-12T06:26:56.475Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"faa0fbb809d6582e12d41476b28d972c98166e890070ec0c8e8643cda982cc1d\"","stored_at":"2026-11-12T06:26:56.475Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"515e452d9afbc822a46812c2af0efcd8270bf7f8000561e186e14eb7f350d2b8\"","stored_at":"2026-11-12T07:17:57.684Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"9b9ccacc7fc1139db2df68e080577ae366cbc82ab2fa2a260692664f3b3bc14e\"","stored_at":"2026-11-12T07:23:39.051Z"}
