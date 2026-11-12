@@ -1384,3 +1384,4 @@
 {"repo":"actions/setup-go","archived":false}
 {"repo":"actions/setup-go","archived":false}
 {"repo":"actions/setup-go","archived":false}
+{"repo":"reviewdog/action-actionlint","archived":false}
