@@ -1788,3 +1788,4 @@
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"aa41a02b81c0de6272902f9028add7cc44103e3e5d8284324bb822ec8e1d7203\"","stored_at":"2026-11-12T02:41:40.037Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"5cfeb6f0bd09147b9304f0bc038a1a8ca80f922ad06f7302c527d0a95f7b1c15\"","stored_at":"2026-11-12T02:41:40.037Z"}
 {"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"4af0eac4da133ee19df68174a12d6dab5ca2d253850df8e5619b8bad581ba4bf\"","stored_at":"2026-11-12T02:41:40.037Z"}
+{"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"60f64c3f629f53407fcaf47fc35de9c3ad9a89f7d1ff75d9da1756911b04b5a3\"","stored_at":"2026-11-12T02:46:44.210Z"}
