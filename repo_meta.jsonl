@@ -1428,3 +1428,5 @@
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"github/codeql-action","archived":false}
 {"repo":"aquasecurity/setup-trivy","archived":false}
+{"repo":"reviewdog/action-actionlint","archived":false}
+{"repo":"reviewdog/action-eslint","archived":false}
