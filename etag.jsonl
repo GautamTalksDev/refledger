@@ -1910,3 +1910,4 @@
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"ff92ace05a90b5d8cabc49f4cae8a392ba09821d750d2736a009d0f8578a20fe\"","stored_at":"2026-11-12T20:22:29.775Z"}
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"a1cc5c40cf72f093aa626b9b217057b71fbe20a6a590bec5fbe51e3e2fa0112f\"","stored_at":"2026-11-12T20:30:11.888Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"86a257104e0ad27dbb1ba2e187ce908f7eb69a627f7a5e792af264f70544c407\"","stored_at":"2026-11-12T21:23:06.882Z"}
+{"repo":"azure/webapps-deploy","template":"/repos/{owner}/{repo}","query":"","etag":"\"d882834fd3234c0ca4a17e66522344170ab623d57b10826b2e4d983483b3d358\"","stored_at":"2026-11-12T21:34:20.265Z"}
