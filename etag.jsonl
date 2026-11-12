@@ -1897,3 +1897,5 @@
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"584d4159a2715051e603618015436644c5bcbfddd7891472fff2ba2ee1877d95\"","stored_at":"2026-11-12T16:21:18.140Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"d623773bbcf388b5e384ab2a5f77d4fefe19d4af18ed87a293aef51ad3c791a1\"","stored_at":"2026-11-12T16:39:49.468Z"}
 {"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"3c6f415bad0a3a9f0695b2f77126cc84b83db152a7f6c81984ea223984fca8b3\"","stored_at":"2026-11-12T16:52:24.432Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"7b23a27272f54534764a5e4757c761c73aed544b0a148db267eb49a1124d47b6\"","stored_at":"2026-11-12T17:24:20.669Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"673ab2a6f778635fd2289f7152c4f9d3ca661dd186705f00c86fb971f86d084a\"","stored_at":"2026-11-12T17:24:20.669Z"}
