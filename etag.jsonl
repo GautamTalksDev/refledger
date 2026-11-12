@@ -1868,3 +1868,4 @@
 {"repo":"aquasecurity/setup-trivy","template":"/repos/{owner}/{repo}","query":"","etag":"\"6f1f932d84ff263b8191770f9c06c51f9ee363694d090d2af6b7657b48517804\"","stored_at":"2026-11-12T13:30:22.289Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"46b17b5852c8a9926331b36c39c8088f6793f120017eb08d1c34dcf98118c324\"","stored_at":"2026-11-12T13:36:45.568Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"0dfc2a6eceac5b8cfc66c9365e16d5fea85b2afb694b429fc93943a2934e2de6\"","stored_at":"2026-11-12T13:36:45.568Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"2a8ea37c555e2e2a6b899857c47c08c0d827d37f9eaeeced0f8cf5f0831d17eb\"","stored_at":"2026-11-12T13:49:02.677Z"}
