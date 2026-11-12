@@ -1806,3 +1806,4 @@
 {"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"2116038f20fe768fe1f2570151c5c6d8fc84f7395d10e5025185677cd5c8f2ac\"","stored_at":"2026-11-12T04:44:52.389Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"88dbd8d497de91b0b597faa82a386dd98caa5fd384d7ad67ec281bcaf581232e\"","stored_at":"2026-11-12T04:44:52.389Z"}
 {"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"2cef9d5054f16e64e36ff5ab89a8767deb74252f0f1d84bb8f000c8844105ef8\"","stored_at":"2026-11-12T04:44:52.389Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"36f57604179a956679f9b38836af0bc368dc7c826bc4d774b145505c5cea2d73\"","stored_at":"2026-11-12T05:07:17.006Z"}
