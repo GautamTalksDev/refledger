@@ -1834,3 +1834,4 @@
 {"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"7f874d0041f85aeabd4e7933342486b21c3f7879d99c1350e518362912a964a0\"","stored_at":"2026-11-12T09:44:36.427Z"}
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"925d28bd0325491a8860ce3362bc79b49d50724c77d6f5b19a221b6ba5bd3e39\"","stored_at":"2026-11-12T09:44:36.427Z"}
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"76ded5496e8fa488bb0f78e004832780e76977938bb4f1cad9615a5218b6d39a\"","stored_at":"2026-11-12T09:44:36.427Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"e7d1688a357daa52c0bf81bc4fe1bca03b6256948dd3e1056287004d9ae3309d\"","stored_at":"2026-11-12T10:14:05.676Z"}
