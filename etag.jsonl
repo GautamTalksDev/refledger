@@ -1843,3 +1843,5 @@
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"11baf4b23cb5d842838b8497aa5a5c648f4176627ea264cc6d0ae03ee0751d7e\"","stored_at":"2026-11-12T11:09:33.733Z"}
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"d8e9040da50e9624c9eb25b5531655c0f4e9f15eaca1d70bc1d91a3672db766d\"","stored_at":"2026-11-12T11:09:33.733Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"84679bb172c428a81c4e177483465d1bb3febe970829bc6fcdc14b31dcba5443\"","stored_at":"2026-11-12T11:09:33.733Z"}
+{"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"7869a0a13ef8693ca1b6e30f9551b3d56102fc8a20f058e4ebb09fb7504b6e10\"","stored_at":"2026-11-12T11:14:55.400Z"}
+{"repo":"docker/setup-buildx-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"dc36bfbe47b6d978a07a0f2a4475e4f78a3a60ce4a9fb262ecdf6d518d56d50f\"","stored_at":"2026-11-12T11:14:55.400Z"}

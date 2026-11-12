@@ -1406,3 +1406,5 @@
 {"repo":"actions/setup-go","archived":false}
 {"repo":"actions/setup-node","archived":false}
 {"repo":"actions/setup-python","archived":false}
+{"repo":"actions/ai-inference","archived":false}
+{"repo":"docker/setup-buildx-action","archived":false}
