@@ -1380,3 +1380,4 @@
 {"repo":"aquasecurity/trivy-action","archived":false}
 {"repo":"actions/setup-java","archived":false}
 {"repo":"actions/setup-python","archived":false}
+{"repo":"actions/setup-go","archived":false}
