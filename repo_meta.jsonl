@@ -1399,3 +1399,4 @@
 {"repo":"actions/attest-build-provenance","archived":false}
 {"repo":"reviewdog/action-actionlint","archived":false}
 {"repo":"actions/setup-go","archived":false}
+{"repo":"github/codeql-action","archived":false}
