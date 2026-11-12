@@ -1846,3 +1846,4 @@
 {"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"7869a0a13ef8693ca1b6e30f9551b3d56102fc8a20f058e4ebb09fb7504b6e10\"","stored_at":"2026-11-12T11:14:55.400Z"}
 {"repo":"docker/setup-buildx-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"dc36bfbe47b6d978a07a0f2a4475e4f78a3a60ce4a9fb262ecdf6d518d56d50f\"","stored_at":"2026-11-12T11:14:55.400Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"cb6422cd80fd5cab3dacfec145e5032c0456ef6b0cfc60a81daad2461e6aa5f3\"","stored_at":"2026-11-12T11:26:36.810Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"fd5f1b7e92053df515069162b333d33e4595fee9517b3424382cc1f1ee66fd12\"","stored_at":"2026-11-12T11:37:26.366Z"}
