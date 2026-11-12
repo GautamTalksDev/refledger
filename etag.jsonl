@@ -1811,3 +1811,5 @@
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"788e14cd50983b1991e9dbb701a575739941fc632cc3bc7a51a304c9adc603de\"","stored_at":"2026-11-12T05:24:16.139Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"f2fa1a7d244bff22c28e95f1e2b1c8dffe16656816d7a15f04ebfd4d91cd6ba1\"","stored_at":"2026-11-12T05:24:16.139Z"}
 {"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"c3492d49547d9f0f6c4d518df6f3107576981c564f46fcc90544825ae6f475bf\"","stored_at":"2026-11-12T05:35:00.080Z"}
+{"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"5f28e94949823ca8d586ac596d36b7b0d2d28cc41814f5989e19a645ce9417a1\"","stored_at":"2026-11-12T06:16:22.246Z"}
+{"repo":"aquasecurity/trivy-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"3250bbb1847c58c37c0da61d9e06b25b32ed27494e16ce1788925a31ddbdac3a\"","stored_at":"2026-11-12T06:16:22.246Z"}

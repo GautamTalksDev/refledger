@@ -1376,3 +1376,5 @@
 {"repo":"actions/setup-java","archived":false}
 {"repo":"actions/setup-python","archived":false}
 {"repo":"actions/ai-inference","archived":false}
+{"repo":"actions/setup-dotnet","archived":false}
+{"repo":"aquasecurity/trivy-action","archived":false}
