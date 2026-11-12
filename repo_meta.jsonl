@@ -1340,3 +1340,7 @@
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"actions/dependency-review-action","archived":false}
 {"repo":"actions/github-script","archived":false}
+{"repo":"docker/build-push-action","archived":false}
+{"repo":"docker/login-action","archived":false}
+{"repo":"docker/metadata-action","archived":false}
+{"repo":"docker/setup-buildx-action","archived":false}
