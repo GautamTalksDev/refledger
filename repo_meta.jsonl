@@ -1431,3 +1431,4 @@
 {"repo":"reviewdog/action-actionlint","archived":false}
 {"repo":"reviewdog/action-eslint","archived":false}
 {"repo":"actions/checkout","archived":false}
+{"repo":"actions/setup-node","archived":false}
