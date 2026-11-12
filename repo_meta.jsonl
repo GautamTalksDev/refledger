@@ -1422,3 +1422,5 @@
 {"repo":"reviewdog/action-actionlint","archived":false}
 {"repo":"reviewdog/action-eslint","archived":false}
 {"repo":"github/codeql-action","archived":false}
+{"repo":"azure/login","archived":false}
+{"repo":"github/codeql-action","archived":false}
