@@ -1398,3 +1398,4 @@
 {"repo":"actions/attest","archived":false}
 {"repo":"actions/attest-build-provenance","archived":false}
 {"repo":"reviewdog/action-actionlint","archived":false}
+{"repo":"actions/setup-go","archived":false}
