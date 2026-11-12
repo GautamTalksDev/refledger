@@ -1338,3 +1338,5 @@
 {"repo":"actions/attest","archived":false}
 {"repo":"actions/setup-node","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"actions/dependency-review-action","archived":false}
+{"repo":"actions/github-script","archived":false}
