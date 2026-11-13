@@ -2020,3 +2020,5 @@
 {"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"bff2fafa2518bcfa3e6395ec55f4380cd05fa908503a0fd986576c7997536355\"","stored_at":"2026-11-13T19:02:46.301Z"}
 {"repo":"docker/login-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"3ef4be43ef09b58ce6a61cc5f1d529be8403056c3328b3691d983aa4dc1a7f9e\"","stored_at":"2026-11-13T19:02:46.301Z"}
 {"repo":"docker/metadata-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"89f0d60bd755d86682c8ebafb01eb4b18387ecc9daa2d080d1ad14345b618672\"","stored_at":"2026-11-13T19:02:46.301Z"}
+{"repo":"actions/labeler","template":"/repos/{owner}/{repo}","query":"","etag":"\"9118d8effc450b0aff1e0612171eae8cc80b3d54855ee4a888b5df8782f504cd\"","stored_at":"2026-11-13T19:08:42.702Z"}
+{"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"a5d81e9572310b5aba6a1da3cec2ba518f4fcba164fca703962fda742e23fbf3\"","stored_at":"2026-11-13T19:08:42.702Z"}
