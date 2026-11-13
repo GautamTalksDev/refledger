@@ -1937,3 +1937,6 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"1fb3670bd2b2c51b90105a8369949ce28dbfd37ae0d930b84a4ce0f50589ad2e\"","stored_at":"2026-11-13T05:20:14.243Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"4bdd0d60b948df529585de939280a64c62591c8bf9021b58c112963fd4c3be6a\"","stored_at":"2026-11-13T05:26:54.231Z"}
 {"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"e28ddb7868b27ff5be91228639e91829ce767f7d20a5af04ff76d23c9f2d6c89\"","stored_at":"2026-11-13T05:33:25.890Z"}
+{"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"8cb84fb5e255fdf1ef18ac0e8a51f305656693bb716574640cb4a1a142d92603\"","stored_at":"2026-11-13T07:10:49.246Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"1eb8924fa886aa76b8781448efe8bac8eea179406cd1f0207b9f55e95f08b4fc\"","stored_at":"2026-11-13T07:10:49.246Z"}
+{"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"d41427fa18dc0ebbe53f86ab13993c23393d71629da100e03255d3865e3943e5\"","stored_at":"2026-11-13T07:10:49.246Z"}
