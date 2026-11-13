@@ -1486,3 +1486,5 @@
 {"repo":"actions/cache","archived":false}
 {"repo":"tj-actions/changed-files","archived":false}
 {"repo":"actions/checkout","archived":false}
+{"repo":"actions/github-script","archived":false}
+{"repo":"github/codeql-action","archived":false}
