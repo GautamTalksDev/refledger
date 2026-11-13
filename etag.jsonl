@@ -2015,3 +2015,4 @@
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"fd0509703994ffe1c3a462911ae307fa080928ec59e544991c8f911b33cf6068\"","stored_at":"2026-11-13T18:17:26.279Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"f374fefa56f0ff68c25cf7a3a15cc3d8073c2a23c6abbf8f0c57ec736153a5c0\"","stored_at":"2026-11-13T18:23:14.314Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"900075ec26c158e61638fb6e63c790ab2e1d3989c140906ac933191d5ddd9f14\"","stored_at":"2026-11-13T18:41:39.417Z"}
+{"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"e96ff877dceaca3dfa2b3bca42ac7976a8bb542e23706712d7796120098e1887\"","stored_at":"2026-11-13T18:48:41.785Z"}
