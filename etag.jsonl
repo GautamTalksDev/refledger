@@ -1922,3 +1922,4 @@
 {"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"fc001e21b79c5a8db63a8082028d747aae3ce2b84673e6a28b3964638e0d9b87\"","stored_at":"2026-11-13T01:00:49.163Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"e2d9e1b353c9b808417c029fe01312209920dc6ec653a7ba944461a8c5fd9993\"","stored_at":"2026-11-13T01:19:55.948Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"333e1b8178a0212ed5141fa88a8a1826b1cc22017494f8f026e70b21b01dcf91\"","stored_at":"2026-11-13T01:31:59.554Z"}
+{"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"0eda56a0a06154c6e852b4fba715f0b14f5d9ec73cdeddeac26515bcc774d29c\"","stored_at":"2026-11-13T01:38:33.425Z"}
