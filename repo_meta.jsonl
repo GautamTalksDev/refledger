@@ -1545,3 +1545,4 @@
 {"repo":"actions/stale","archived":false}
 {"repo":"actions/setup-python","archived":false}
 {"repo":"aws-actions/amazon-ecr-login","archived":false}
+{"repo":"actions/checkout","archived":false}
