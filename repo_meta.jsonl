@@ -1543,3 +1543,4 @@
 {"repo":"docker/metadata-action","archived":false}
 {"repo":"actions/labeler","archived":false}
 {"repo":"actions/stale","archived":false}
+{"repo":"actions/setup-python","archived":false}
