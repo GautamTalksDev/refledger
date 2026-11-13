@@ -1552,3 +1552,5 @@
 {"repo":"actions/checkout","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"tj-actions/changed-files","archived":false}
+{"repo":"actions/setup-go","archived":false}
+{"repo":"actions/setup-python","archived":false}

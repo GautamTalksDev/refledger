@@ -2032,3 +2032,5 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"ee48311721fcd5a23472ad0d9c5ce22abb5c8d1d116ea03428d54291ddd7c6f4\"","stored_at":"2026-11-13T21:17:53.162Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"5a18778d7368b3e45889e3a1f98a4627554e3d2f796c61673f048a14445e6dee\"","stored_at":"2026-11-13T21:23:00.886Z"}
 {"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"b74e9beb8cb2482e2eef5fa0d26be44ca3127cd7c2b0a884e82a14f7ce4bc26e\"","stored_at":"2026-11-13T21:28:54.499Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"bf33342c41c79078e9e115c0575879f4ee51e452a1fa09e3951be846d153a902\"","stored_at":"2026-11-13T21:45:43.855Z"}
+{"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"489d71cfd7472760fe6234a6ddabc88f306ab4996e26476fb9023febecd380da\"","stored_at":"2026-11-13T21:45:43.855Z"}
