@@ -1914,3 +1914,4 @@
 {"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"94bcb8ee8f8cd1d6c8e462ee1118811ccc992d294bb7882d60375f23101a2431\"","stored_at":"2026-11-12T21:57:53.358Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"baa8c1a39a8b2efdf8d9d073de402cb363c9d4c8ff0b839b91e742af98a87a81\"","stored_at":"2026-11-12T22:57:58.139Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"467c9b03f8de9fa66a9b30b5830a85fb71c1e5cbbb90bcf6ddbc3e74682fb567\"","stored_at":"2026-11-12T23:04:39.868Z"}
+{"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"ecdc13a3dbba631b4c748450a59dd7c554b8ed6fc755075eab15d9c2c8ec1c5f\"","stored_at":"2026-11-13T00:12:32.145Z"}

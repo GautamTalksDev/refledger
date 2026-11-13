@@ -1474,3 +1474,4 @@
 {"repo":"google-github-actions/auth","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/checkout","archived":false}
+{"repo":"actions/dependency-review-action","archived":false}
