@@ -2041,3 +2041,4 @@
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"a70774bcb19f954ac76b1b75af2fc375642a6dd1873f9ff492d86de56f4cce52\"","stored_at":"2026-11-13T22:53:45.347Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"fad38d82c57be5097e28f6394ce5b06816d620fc4f667bd7023864514998b430\"","stored_at":"2026-11-13T23:11:32.877Z"}
 {"repo":"actions/github-script","template":"/repos/{owner}/{repo}","query":"","etag":"\"3db43ef357b2e218a1ce7b2949e5f952a20201c59bdfd2eaf75d4939b38c9b44\"","stored_at":"2026-11-13T23:22:27.636Z"}
+{"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"7c3589fefc0b307c1376d2629038319c864791dd22d5f2283429357863396e11\"","stored_at":"2026-11-13T23:33:48.386Z"}
