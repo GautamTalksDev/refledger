@@ -1997,3 +1997,4 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"9951b0f84aa657a0a83d935a7afe05f59e71e1b7679838c850cf416819ce0c27\"","stored_at":"2026-11-13T14:05:59.131Z"}
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"60701e3be7a43af40a44780504c3873b77868f00bc2537e2d4eea89c39e7b3ef\"","stored_at":"2026-11-13T14:05:59.131Z"}
 {"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"c8a50cc20626cebe84aca356f1e70a39e5f75a587dece090042d481f18bf4253\"","stored_at":"2026-11-13T14:05:59.131Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"1f2394ef4067c20ecf093175fe20476c7c505de322d4a5c3543721fe70d70a7e\"","stored_at":"2026-11-13T14:24:33.488Z"}
