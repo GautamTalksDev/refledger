@@ -1936,3 +1936,4 @@
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"1205492cf21d4b0cab076115fd5215639fac88bd3bc6479df09ee894d5edfbbd\"","stored_at":"2026-11-13T05:01:56.065Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"1fb3670bd2b2c51b90105a8369949ce28dbfd37ae0d930b84a4ce0f50589ad2e\"","stored_at":"2026-11-13T05:20:14.243Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"4bdd0d60b948df529585de939280a64c62591c8bf9021b58c112963fd4c3be6a\"","stored_at":"2026-11-13T05:26:54.231Z"}
+{"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"e28ddb7868b27ff5be91228639e91829ce767f7d20a5af04ff76d23c9f2d6c89\"","stored_at":"2026-11-13T05:33:25.890Z"}
