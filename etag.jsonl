@@ -1919,3 +1919,4 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"c1f33aab0bb01f8f9799dd4216442b9fd2b9c30e93032b079f826c62cb12a8e0\"","stored_at":"2026-11-13T00:18:58.103Z"}
 {"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"b189509a1a0cc9b1e14cf7427cfd50df843589248f0757e81879293ea85b63f7\"","stored_at":"2026-11-13T00:55:27.412Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"fbb2705e60b38f9a8d3cd568aa423f3cc0705ee5d0ae5e330283b387fb8b6ed3\"","stored_at":"2026-11-13T00:55:27.412Z"}
+{"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"fc001e21b79c5a8db63a8082028d747aae3ce2b84673e6a28b3964638e0d9b87\"","stored_at":"2026-11-13T01:00:49.163Z"}
