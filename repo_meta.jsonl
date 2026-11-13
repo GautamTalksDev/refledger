@@ -1527,3 +1527,5 @@
 {"repo":"actions/checkout","archived":false}
 {"repo":"tj-actions/changed-files","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"actions/stale","archived":false}
+{"repo":"aws-actions/configure-aws-credentials","archived":false}

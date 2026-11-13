@@ -2006,3 +2006,5 @@
 {"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"542f5fd94e29d64b1392edb52b6268e9e05f8f6e5e8d1017e52415e0e08977c1\"","stored_at":"2026-11-13T16:02:49.476Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"13271f2f8e16c8e7d9bb7de1c6b8378280d41e20879d83e56d43d7212fa77c69\"","stored_at":"2026-11-13T16:24:46.397Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"63f895e34e15dbb63205927e41b7d6cba3117bd751dd7d06d3b334ea75aa6b1c\"","stored_at":"2026-11-13T16:24:46.397Z"}
+{"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"3392fa9a4b2deb9b91dc3e90212d2fdbdbabf271e1a7cef125438c9daa19d0bb\"","stored_at":"2026-11-13T16:33:03.890Z"}
+{"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"1d4b54eaf08ec88cfa0f127d0e0e4a0537832019774bcb8c050624f5216531c4\"","stored_at":"2026-11-13T16:33:03.890Z"}
