@@ -1948,3 +1948,4 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"97fbf7746fe6f8b488fa3162e08f7cc28fa710a3ed2b3868339212a568901e0d\"","stored_at":"2026-11-13T09:22:44.152Z"}
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"36ad71c31eed1ac29fe3310f5be60b54b315ab83413431f5839e3f0068fba871\"","stored_at":"2026-11-13T09:55:27.913Z"}
 {"repo":"github/codeql-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"1ae4cb917d22432e06dc67dc1447cc8d506fc69c8abc10713565953d26eab74b\"","stored_at":"2026-11-13T10:42:54.084Z"}
+{"repo":"azure/login","template":"/repos/{owner}/{repo}","query":"","etag":"\"59aec0c5e3c649106fdc58519fc442f9d416df3acf1473a8e02e27b3667ff389\"","stored_at":"2026-11-13T10:47:44.084Z"}
