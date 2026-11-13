@@ -1551,3 +1551,4 @@
 {"repo":"aquasecurity/trivy-action","archived":false}
 {"repo":"actions/checkout","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"tj-actions/changed-files","archived":false}
