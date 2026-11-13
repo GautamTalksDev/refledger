@@ -1548,3 +1548,4 @@
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/labeler","archived":false}
 {"repo":"GautamTalksDev/canary","archived":false}
+{"repo":"aquasecurity/trivy-action","archived":false}
