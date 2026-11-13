@@ -2023,3 +2023,4 @@
 {"repo":"actions/labeler","template":"/repos/{owner}/{repo}","query":"","etag":"\"9118d8effc450b0aff1e0612171eae8cc80b3d54855ee4a888b5df8782f504cd\"","stored_at":"2026-11-13T19:08:42.702Z"}
 {"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"a5d81e9572310b5aba6a1da3cec2ba518f4fcba164fca703962fda742e23fbf3\"","stored_at":"2026-11-13T19:08:42.702Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"2182b2295a9206793aa95e5b4d8cbcf5ffdf423e748e569a12cb689015f53b04\"","stored_at":"2026-11-13T19:19:42.614Z"}
+{"repo":"aws-actions/amazon-ecr-login","template":"/repos/{owner}/{repo}","query":"","etag":"\"00fd942b092550bb9b6d15cba2fd15470ca72525be0c5289bc9d6058dc198d3a\"","stored_at":"2026-11-13T19:39:44.084Z"}
