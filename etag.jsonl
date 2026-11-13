@@ -2034,3 +2034,4 @@
 {"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"b74e9beb8cb2482e2eef5fa0d26be44ca3127cd7c2b0a884e82a14f7ce4bc26e\"","stored_at":"2026-11-13T21:28:54.499Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"bf33342c41c79078e9e115c0575879f4ee51e452a1fa09e3951be846d153a902\"","stored_at":"2026-11-13T21:45:43.855Z"}
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"489d71cfd7472760fe6234a6ddabc88f306ab4996e26476fb9023febecd380da\"","stored_at":"2026-11-13T21:45:43.855Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"3dbb8dc0c947a63c3dc0b2c3d4d95cb65b90b68fa915627a99f8af8bfd46c156\"","stored_at":"2026-11-13T21:59:15.614Z"}

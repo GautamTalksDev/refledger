@@ -1554,3 +1554,4 @@
 {"repo":"tj-actions/changed-files","archived":false}
 {"repo":"actions/setup-go","archived":false}
 {"repo":"actions/setup-python","archived":false}
+{"repo":"github/super-linter","archived":false}
