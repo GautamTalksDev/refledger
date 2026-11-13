@@ -1940,3 +1940,4 @@
 {"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"8cb84fb5e255fdf1ef18ac0e8a51f305656693bb716574640cb4a1a142d92603\"","stored_at":"2026-11-13T07:10:49.246Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"1eb8924fa886aa76b8781448efe8bac8eea179406cd1f0207b9f55e95f08b4fc\"","stored_at":"2026-11-13T07:10:49.246Z"}
 {"repo":"tj-actions/changed-files","template":"/repos/{owner}/{repo}","query":"","etag":"\"d41427fa18dc0ebbe53f86ab13993c23393d71629da100e03255d3865e3943e5\"","stored_at":"2026-11-13T07:10:49.246Z"}
+{"repo":"actions/labeler","template":"/repos/{owner}/{repo}","query":"","etag":"\"9c04241d94fa41789228dba9207e4a63a7ea98c44dea480dd77e6af8cdd17c82\"","stored_at":"2026-11-13T07:53:02.036Z"}

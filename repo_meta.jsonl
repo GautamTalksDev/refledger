@@ -1498,3 +1498,4 @@
 {"repo":"actions/dependency-review-action","archived":false}
 {"repo":"actions/setup-go","archived":false}
 {"repo":"tj-actions/changed-files","archived":false}
+{"repo":"actions/labeler","archived":false}
