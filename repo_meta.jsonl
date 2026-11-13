@@ -1531,3 +1531,4 @@
 {"repo":"aws-actions/configure-aws-credentials","archived":false}
 {"repo":"actions/setup-python","archived":false}
 {"repo":"github/super-linter","archived":false}
+{"repo":"github/codeql-action","archived":false}
