@@ -2132,3 +2132,4 @@
 {"repo":"google-github-actions/auth","template":"/repos/{owner}/{repo}","query":"","etag":"\"94bcb8ee8f8cd1d6c8e462ee1118811ccc992d294bb7882d60375f23101a2431\"","stored_at":"2026-11-14T22:00:19.751Z"}
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"7b7833ed3140d56ef655c3064883dbeb6da198b14f1b3135a4bb1e98d3474a6c\"","stored_at":"2026-11-14T22:08:09.050Z"}
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"e4ab303a5adc304067518a430e24110fec7ef03d39747e30ed8a9d35f82ae6f7\"","stored_at":"2026-11-14T22:20:11.181Z"}
+{"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"cf2ae50b8b8af40508d91996d13f2af6db592cbf255eab8cdb85ec7b6d98c178\"","stored_at":"2026-11-14T22:25:38.338Z"}
