@@ -2103,3 +2103,6 @@
 {"repo":"actions/cache","template":"/repos/{owner}/{repo}","query":"","etag":"\"d9c9bc9ce5e0fd12187253d9b3230c545454d46f52d956b20ab86783587ee7ea\"","stored_at":"2026-11-14T12:55:15.622Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"3fd0934dfe78c885d9aa3bc62c18dfcf49d82547d52835a08c1adfe9b908b1b6\"","stored_at":"2026-11-14T13:22:31.915Z"}
 {"repo":"aquasecurity/setup-trivy","template":"/repos/{owner}/{repo}","query":"","etag":"\"6f1f932d84ff263b8191770f9c06c51f9ee363694d090d2af6b7657b48517804\"","stored_at":"2026-11-14T13:36:22.362Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"df2aa3375aba52c6d9772b453ab6025da65c7634782d3108281929e31980c20d\"","stored_at":"2026-11-14T13:43:57.732Z"}
+{"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"46b17b5852c8a9926331b36c39c8088f6793f120017eb08d1c34dcf98118c324\"","stored_at":"2026-11-14T13:43:57.732Z"}
+{"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"0dfc2a6eceac5b8cfc66c9365e16d5fea85b2afb694b429fc93943a2934e2de6\"","stored_at":"2026-11-14T13:43:57.732Z"}
