@@ -1630,3 +1630,4 @@
 {"repo":"actions/stale","archived":false}
 {"repo":"actions/setup-java","archived":false}
 {"repo":"actions/setup-node","archived":false}
+{"repo":"actions/attest","archived":false}
