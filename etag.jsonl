@@ -2113,3 +2113,4 @@
 {"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"8c0a7bf107096cbd888d0e019be1d8376b807a04824572bc1e3a001cfab73fd3\"","stored_at":"2026-11-14T17:17:41.251Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"64df81ace6dcb7b1b319c1f25099666e4ea5329066c47f712d22772c8f8e9d5a\"","stored_at":"2026-11-14T17:25:48.891Z"}
 {"repo":"actions/dependency-review-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"967d24663dca88096d8685259d52b994e334f64f3d33c0d24b7c7520902a6cf3\"","stored_at":"2026-11-14T17:32:08.597Z"}
+{"repo":"actions/github-script","template":"/repos/{owner}/{repo}","query":"","etag":"\"7425517780d8990068b9e3e002bedf23c70bde223a7f4f4b2272f14a6979e57b\"","stored_at":"2026-11-14T18:05:59.397Z"}
