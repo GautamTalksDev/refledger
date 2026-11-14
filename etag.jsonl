@@ -2122,3 +2122,6 @@
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"a8441cde914d2d2e3c0c0360ffde98206c46db9720092b37cc8c8f0fbf006457\"","stored_at":"2026-11-14T20:21:30.108Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"6bf07cf0ebadc1a0b1368a1ffc7beb4c43e0dd441637b77ff27f6ea85d504ec9\"","stored_at":"2026-11-14T20:21:30.108Z"}
 {"repo":"actions/download-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"018675cee68bc47d6978bf2c5ffe545bc262c675c97fb53c0bc587051af5a7f7\"","stored_at":"2026-11-14T20:21:30.108Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"2843303f11cf61e3dd84821ba3f7475351ca255a1b884965fee08fd24ffab4f8\"","stored_at":"2026-11-14T20:49:28.968Z"}
+{"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"281ad2b4036c8e89881f641daa772d921372fd7153434fa4654ad71941b904bb\"","stored_at":"2026-11-14T20:49:28.968Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"74049e5d549b907e5e66489272953bf83cfc9ecd18e870405cbba98ee89222de\"","stored_at":"2026-11-14T20:49:28.968Z"}
