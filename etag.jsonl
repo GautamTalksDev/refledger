@@ -2077,3 +2077,4 @@
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"8419103fccf47513b03fddc25dbe80b5d0ed118027b3e8723db9afd9e4eeb118\"","stored_at":"2026-11-14T07:11:22.197Z"}
 {"repo":"actions/labeler","template":"/repos/{owner}/{repo}","query":"","etag":"\"4099eaf1f12c4a993a39df5ba66ce8151fde600c45b48d2a4ec6b62f4df3ff7e\"","stored_at":"2026-11-14T07:11:22.197Z"}
 {"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"68b0d12d825de122934116b79a876dc470e5c2805e9176c6b002b27ff2f081bd\"","stored_at":"2026-11-14T07:11:22.197Z"}
+{"repo":"docker/build-push-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"b5919db2ad8b574485010cdf94f91161a7cfde36a1da7463d6ae40c18e5a5643\"","stored_at":"2026-11-14T07:39:48.153Z"}

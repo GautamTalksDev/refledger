@@ -1593,3 +1593,4 @@
 {"repo":"actions/attest-build-provenance","archived":false}
 {"repo":"actions/labeler","archived":false}
 {"repo":"actions/setup-node","archived":false}
+{"repo":"docker/build-push-action","archived":false}
