@@ -2049,3 +2049,4 @@
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"7639710627ec274b3cad3cfe9d8612846bc5da9a862fa1defbc97d7429d6daa4\"","stored_at":"2026-11-14T00:41:22.525Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"cdd9e29d32a9e0a690f231bccd08af715567d57cc64b1e2b3daa1ebe9ae24eff\"","stored_at":"2026-11-14T01:20:32.411Z"}
 {"repo":"actions/setup-go","template":"/repos/{owner}/{repo}","query":"","etag":"\"5289ef06c3657f55ef9df6a9439e57cb4f3d9b63fbb3feec8ecb5055df590d90\"","stored_at":"2026-11-14T01:20:32.411Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"f9f95d790669791efc99844315ea2d9270184acbea47dde02262f969d400ee3c\"","stored_at":"2026-11-14T04:04:52.298Z"}
