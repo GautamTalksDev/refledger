@@ -1600,3 +1600,8 @@
 {"repo":"GautamTalksDev/canary","archived":false}
 {"repo":"actions/labeler","archived":false}
 {"repo":"actions/setup-go","archived":false}
+{"repo":"actions/cache","archived":false}
+{"repo":"actions/checkout","archived":false}
+{"repo":"actions/setup-python","archived":false}
+{"repo":"actions/upload-artifact","archived":false}
+{"repo":"aws-actions/configure-aws-credentials","archived":false}
