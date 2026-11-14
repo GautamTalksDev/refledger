@@ -2072,3 +2072,8 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"da38f087f710cce49d767b08ce62a7a5a50dd2af1c20b19a54ed32557eeb6c0d\"","stored_at":"2026-11-14T05:37:17.140Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"04c095484667a9dc0e141a6372439b89cc9af038dac4cfcd7897c52ff0f34620\"","stored_at":"2026-11-14T06:11:57.621Z"}
 {"repo":"actions/setup-dotnet","template":"/repos/{owner}/{repo}","query":"","etag":"\"5f28e94949823ca8d586ac596d36b7b0d2d28cc41814f5989e19a645ce9417a1\"","stored_at":"2026-11-14T06:17:28.395Z"}
+{"repo":"actions/ai-inference","template":"/repos/{owner}/{repo}","query":"","etag":"\"86800f44ab9549a2fabadf877254d184e0defb4b602be05212b5c93ac38c67a0\"","stored_at":"2026-11-14T07:11:22.197Z"}
+{"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"cba03cea1b7e851d8c064c7fbcc183c77b2dba3030679c5d6c94583f9560de2e\"","stored_at":"2026-11-14T07:11:22.197Z"}
+{"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"8419103fccf47513b03fddc25dbe80b5d0ed118027b3e8723db9afd9e4eeb118\"","stored_at":"2026-11-14T07:11:22.197Z"}
+{"repo":"actions/labeler","template":"/repos/{owner}/{repo}","query":"","etag":"\"4099eaf1f12c4a993a39df5ba66ce8151fde600c45b48d2a4ec6b62f4df3ff7e\"","stored_at":"2026-11-14T07:11:22.197Z"}
+{"repo":"actions/setup-node","template":"/repos/{owner}/{repo}","query":"","etag":"\"68b0d12d825de122934116b79a876dc470e5c2805e9176c6b002b27ff2f081bd\"","stored_at":"2026-11-14T07:11:22.197Z"}
