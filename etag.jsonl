@@ -2106,3 +2106,4 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"df2aa3375aba52c6d9772b453ab6025da65c7634782d3108281929e31980c20d\"","stored_at":"2026-11-14T13:43:57.732Z"}
 {"repo":"reviewdog/action-actionlint","template":"/repos/{owner}/{repo}","query":"","etag":"\"46b17b5852c8a9926331b36c39c8088f6793f120017eb08d1c34dcf98118c324\"","stored_at":"2026-11-14T13:43:57.732Z"}
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"0dfc2a6eceac5b8cfc66c9365e16d5fea85b2afb694b429fc93943a2934e2de6\"","stored_at":"2026-11-14T13:43:57.732Z"}
+{"repo":"google-github-actions/setup-gcloud","template":"/repos/{owner}/{repo}","query":"","etag":"\"7a8ac8ecc3bcc413148629e4dc2371c8a25710a085f44a4ad62e3ff18057068c\"","stored_at":"2026-11-14T15:07:32.476Z"}
