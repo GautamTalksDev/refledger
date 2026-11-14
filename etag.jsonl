@@ -2065,3 +2065,4 @@
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"92df0fa6523a069dd8c8c479e173a5d57f53992b091bf0f4f6661d8a16e7c339\"","stored_at":"2026-11-14T04:56:07.623Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"8ae5793ef590abda38360d8985283df3f9ed113c57f1632c81ec0c6266d285a6\"","stored_at":"2026-11-14T05:03:52.172Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"aa232e72868fcb6f21deb6af21c73324b1398b7513bed8d3777d776a98eb7dd8\"","stored_at":"2026-11-14T05:03:52.172Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"d790231f3e898a29ed1b792beb39e4443561b2da97140ba2eb7a2d20f868055d\"","stored_at":"2026-11-14T05:09:16.863Z"}
