@@ -2091,3 +2091,4 @@
 {"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"702804b822c671642775c7486935f93bfa40edd52fbdf46338bfbf6acd4b65b1\"","stored_at":"2026-11-14T10:20:49.966Z"}
 {"repo":"actions/upload-artifact","template":"/repos/{owner}/{repo}","query":"","etag":"\"3e32fbd218d41080e0604f2e96c5d705dfbe4bec096b7d0ee0a472a0557de51c\"","stored_at":"2026-11-14T10:20:49.966Z"}
 {"repo":"aws-actions/configure-aws-credentials","template":"/repos/{owner}/{repo}","query":"","etag":"\"c49bf4258d9ad6ba14a1b4a9bc242c79e85af27aa35fa4e69e7a111f0f8aa4bb\"","stored_at":"2026-11-14T10:20:49.966Z"}
+{"repo":"docker/setup-buildx-action","template":"/repos/{owner}/{repo}","query":"","etag":"\"dc36bfbe47b6d978a07a0f2a4475e4f78a3a60ce4a9fb262ecdf6d518d56d50f\"","stored_at":"2026-11-14T11:21:28.701Z"}
