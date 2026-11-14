@@ -1611,3 +1611,4 @@
 {"repo":"actions/attest","archived":false}
 {"repo":"actions/attest-build-provenance","archived":false}
 {"repo":"actions/checkout","archived":false}
+{"repo":"actions/setup-python","archived":false}

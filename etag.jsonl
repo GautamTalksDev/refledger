@@ -2098,3 +2098,4 @@
 {"repo":"actions/attest","template":"/repos/{owner}/{repo}","query":"","etag":"\"a27c0af9c8a1690e8402fddf2a8df28678cda44e14ba9447254ada2afbce0a08\"","stored_at":"2026-11-14T12:22:17.811Z"}
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"bda8e7bde635f96ece796e98ac7bd91afdd8bdec46d0cb0beb40714ef5a7aeda\"","stored_at":"2026-11-14T12:22:17.811Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"b4f5e09c7f12b33bbaa1d5df4214a47ed24ba6b7639769787e8938c473dd2bed\"","stored_at":"2026-11-14T12:22:17.811Z"}
+{"repo":"actions/setup-python","template":"/repos/{owner}/{repo}","query":"","etag":"\"8fd476a7804fe7823cb21710da186a6d104e447439415d3384c8be634d3a4c2c\"","stored_at":"2026-11-14T12:41:40.173Z"}
