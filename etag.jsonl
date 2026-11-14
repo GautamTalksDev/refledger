@@ -2110,3 +2110,4 @@
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"b5e96e798cac338498f5b8328fd76b052fc1f4776a6e5479dd87b235e092d934\"","stored_at":"2026-11-14T15:13:40.972Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"e377786d34ee43ec50b033282d365946ce9b7c3f70cc77e9e228231543079b4f\"","stored_at":"2026-11-14T16:22:17.900Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"e5a10792ab2d0fc9a7d73580c4eea34ceb2c4513a3f1baafc026c98167127510\"","stored_at":"2026-11-14T16:22:17.900Z"}
+{"repo":"github/super-linter","template":"/repos/{owner}/{repo}","query":"","etag":"\"8c0a7bf107096cbd888d0e019be1d8376b807a04824572bc1e3a001cfab73fd3\"","stored_at":"2026-11-14T17:17:41.251Z"}
