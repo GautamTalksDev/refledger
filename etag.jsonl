@@ -2069,3 +2069,4 @@
 {"repo":"actions/attest-build-provenance","template":"/repos/{owner}/{repo}","query":"","etag":"\"2e8ad20982008c310af4d7250079559875579d3361576ea2404f1626ff47a897\"","stored_at":"2026-11-14T05:16:44.584Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"abbdf30f132767163c8184fb6fc59318f35474bce9d12a9c30ddadc742cedf98\"","stored_at":"2026-11-14T05:16:44.584Z"}
 {"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"1a442497f0b5359aacb74e08bc6901742d7db8fc881e83fa4b0b5fc3c09a64ce\"","stored_at":"2026-11-14T05:23:53.258Z"}
+{"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"da38f087f710cce49d767b08ce62a7a5a50dd2af1c20b19a54ed32557eeb6c0d\"","stored_at":"2026-11-14T05:37:17.140Z"}
