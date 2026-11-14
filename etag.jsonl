@@ -2116,3 +2116,4 @@
 {"repo":"actions/github-script","template":"/repos/{owner}/{repo}","query":"","etag":"\"7425517780d8990068b9e3e002bedf23c70bde223a7f4f4b2272f14a6979e57b\"","stored_at":"2026-11-14T18:05:59.397Z"}
 {"repo":"actions/github-script","template":"/repos/{owner}/{repo}","query":"","etag":"\"43bdefbd8a6a9debf9abc684fb3d4f7ccd9c8a536acc6a1829b08e8fc35740de\"","stored_at":"2026-11-14T18:11:49.568Z"}
 {"repo":"actions/stale","template":"/repos/{owner}/{repo}","query":"","etag":"\"837072a13fc4a66e0cdf8bce848860014e1cf96fc10dc38d19118bffdf697a6f\"","stored_at":"2026-11-14T18:11:49.568Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"e3f307eaae19b9ff7d3d3378cb665d9fa2cbd30f423ac46678a56b358dee42b8\"","stored_at":"2026-11-14T19:21:28.670Z"}
