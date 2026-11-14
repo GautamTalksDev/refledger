@@ -2061,3 +2061,5 @@
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"c8a6f6eaea48c4477a56450c20986aa83fe7879a8a39bf897b50fa1abb2754c6\"","stored_at":"2026-11-14T04:36:13.636Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"aa1d3558f2996d50d9a5b1b3fe3adeeb3decae4e572c87d5099342f00a945780\"","stored_at":"2026-11-14T04:42:16.663Z"}
 {"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"2dd7e2545248544d8801cc700e5e944faf26a23b3d232a4a65609435956493df\"","stored_at":"2026-11-14T04:50:06.357Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}","query":"","etag":"\"e0eb73439144c328f99db83a4a61afbc2d56f87fdd34349bd2a522e156773eff\"","stored_at":"2026-11-14T04:56:07.623Z"}
+{"repo":"actions/setup-java","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"92df0fa6523a069dd8c8c479e173a5d57f53992b091bf0f4f6661d8a16e7c339\"","stored_at":"2026-11-14T04:56:07.623Z"}
