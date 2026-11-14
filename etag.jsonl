@@ -2108,3 +2108,5 @@
 {"repo":"reviewdog/action-eslint","template":"/repos/{owner}/{repo}","query":"","etag":"\"0dfc2a6eceac5b8cfc66c9365e16d5fea85b2afb694b429fc93943a2934e2de6\"","stored_at":"2026-11-14T13:43:57.732Z"}
 {"repo":"google-github-actions/setup-gcloud","template":"/repos/{owner}/{repo}","query":"","etag":"\"7a8ac8ecc3bcc413148629e4dc2371c8a25710a085f44a4ad62e3ff18057068c\"","stored_at":"2026-11-14T15:07:32.476Z"}
 {"repo":"actions/checkout","template":"/repos/{owner}/{repo}","query":"","etag":"\"b5e96e798cac338498f5b8328fd76b052fc1f4776a6e5479dd87b235e092d934\"","stored_at":"2026-11-14T15:13:40.972Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}","query":"","etag":"\"e377786d34ee43ec50b033282d365946ce9b7c3f70cc77e9e228231543079b4f\"","stored_at":"2026-11-14T16:22:17.900Z"}
+{"repo":"GautamTalksDev/canary","template":"/repos/{owner}/{repo}/git/matching-refs/tags","query":"per_page=100&page=1","etag":"\"e5a10792ab2d0fc9a7d73580c4eea34ceb2c4513a3f1baafc026c98167127510\"","stored_at":"2026-11-14T16:22:17.900Z"}
