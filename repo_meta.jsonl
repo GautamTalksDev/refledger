@@ -1665,3 +1665,5 @@
 {"repo":"actions/checkout","archived":false}
 {"repo":"actions/cache","archived":false}
 {"repo":"azure/login","archived":false}
+{"repo":"tj-actions/glob","archived":false}
+{"repo":"tj-actions/json2file","archived":false}
